@@ -7,13 +7,13 @@
 
 ## 项目构建流程
 
-### 1.使用[vite](https://vitejs.dev/guide/)初始化项目
+### 使用[vite](https://vitejs.dev/guide/)初始化项目
 
 ```bash
 pnpm create vite one-day --template react-ts
 ```
 
-### 2.使用[shadcn-ui](https://ui.shadcn.com/docs/installation/vite)初始化ui组件库
+### 使用[shadcn-ui](https://ui.shadcn.com/docs/installation/vite)初始化ui组件库
 
 (1) 安装`Tailwind`并初始化
 
@@ -80,7 +80,7 @@ pnpm dlx shadcn-ui@latest init
 ✔ Write configuration to components.json. Proceed? … yes
 ```
 
-### 增加`stylelint`
+### 增加[stylelint](https://stylelint.io/)
 
 ```bash
 # 初始化stylelint
