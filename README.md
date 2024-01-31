@@ -3,7 +3,7 @@
 ## 开发环境
 
 - node 20.11.0
-- pnpm 8.15.0
+- pnpm 8.15.1
 
 ## 项目构建流程
 
@@ -78,6 +78,45 @@ pnpm dlx shadcn-ui@latest init
 ✔ Configure the import alias for utils: … @/lib/utils
 ✔ Are you using React Server Components? … no
 ✔ Write configuration to components.json. Proceed? … yes
+```
+
+### 增加`stylelint`
+
+```bash
+# 初始化stylelint
+pnpm create stylelint
+```
+
+会自动安装`stylelint`和`stylelint-config-standard`, 并且生成`.stylelintrc.json`配置文件
+
+`rules`配置参考[`stylelint`官网](https://stylelint.io/user-guide/rules)
+
+### 配置支持`tailwindcss`
+
+`rules`中新增配置
+
+```ts
+export default {
+  // ...
+  rules: {
+    // ...
+    // tailwindcss
+    "at-rule-no-unknown": [
+      true,
+      {
+        ignoreAtRules: [
+          "tailwind",
+          "apply",
+          "variants",
+          "responsive",
+          "screen",
+        ],
+      },
+    ],
+    // ...
+  },
+};
+
 ```
 
 ## React + TypeScript + Vite
