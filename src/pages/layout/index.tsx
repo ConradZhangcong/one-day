@@ -8,9 +8,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <>
       <Header />
-      <main className="od-content-container tw-mt-6">
-        {children}
-      </main>
+      <main className="od-content-container">{children}</main>
     </>
   );
 };
