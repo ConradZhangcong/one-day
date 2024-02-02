@@ -1,12 +1,9 @@
-import Layout from "./pages/layout";
-import TasksPage from "./pages/tasks";
+import Router from "./Router";
 
 function App() {
   return (
     <div className="app tw-min-h-screen">
-      <Layout>
-        <TasksPage />
-      </Layout>
+      <Router />
     </div>
   );
 }

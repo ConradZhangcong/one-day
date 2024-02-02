@@ -1,14 +1,15 @@
+import { Outlet } from "react-router-dom";
 import Header from "./Header";
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
+interface LayoutProps {}
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = () => {
   return (
     <>
       <Header />
-      <main className="od-content-container">{children}</main>
+      <main className="od-content-container">
+        <Outlet />
+      </main>
     </>
   );
 };
