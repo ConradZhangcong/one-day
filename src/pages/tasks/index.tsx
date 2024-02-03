@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,18 +7,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import useModal from "@/hooks/useModal";
+import AddBtn from "./AddBtn";
 
 const TasksPage = () => {
-  const [modal] = useModal();
-
-  const openAddModal = () => {
-    modal.open({
-      title: "标题",
-      content: <div>content</div>,
-    });
-  };
-
   return (
     <div className="tw-mt-6">
       <Card>
@@ -34,8 +24,7 @@ const TasksPage = () => {
           <p>Card Footer</p>
         </CardFooter>
       </Card>
-      {/* {modal.renderModal()} */}
-      <Button onClick={openAddModal}>新增事项</Button>
+      <AddBtn />
     </div>
   );
 };
