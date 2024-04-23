@@ -5,7 +5,7 @@ interface ErrorType {
   message: string;
 }
 
-const Errorpage = () => {
+const CommonErrorPage = () => {
   const error = useRouteError() as ErrorType;
   console.error(error);
 
@@ -22,4 +22,4 @@ const Errorpage = () => {
   );
 };
 
-export default Errorpage;
+export default CommonErrorPage;

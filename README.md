@@ -121,20 +121,6 @@ export default {
 
 ## 公共方法
 
-### hooks/useModal
-
-`api`如下
-
-```tsx
-// 弹框实例方法
-const [modal] = useModal()
-
-// 打开弹框
-modal.open({ title: '标题', content: <div>content</div>, {...otherProps} })
-
-// 关闭弹框
-modal.close()
-```
 
 ## React + TypeScript + Vite
 

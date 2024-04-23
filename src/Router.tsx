@@ -1,16 +1,33 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate,
+} from "react-router-dom";
 
-import Layout from "./pages/layout";
-import ErrorPage from "./pages/layout/Error";
+import HomeLayout from "./pages/layout/home";
+import OneDayLayout from "./pages/layout/one-day";
 
+import CommonErrorPage from "./pages/error/common";
+import HomePage from "./pages/home";
 import TasksPage from "./pages/tasks";
 import ToolboxPage from "./pages/toolbox";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />,
-    errorElement: <ErrorPage />,
+    errorElement: <CommonErrorPage />,
+    children: [{ index: true, element: <Navigate to="home" /> }],
+  },
+  {
+    path: "/home",
+    element: <HomeLayout />,
+    errorElement: <CommonErrorPage />,
+    children: [{ index: true, element: <HomePage /> }],
+  },
+  {
+    path: "/oneday",
+    element: <OneDayLayout />,
+    errorElement: <CommonErrorPage />,
     children: [
       { index: true, element: <TasksPage /> },
       { path: "tasks", element: <TasksPage /> },
