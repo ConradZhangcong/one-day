@@ -1,8 +1,4 @@
-import {
-  createBrowserRouter,
-  RouterProvider,
-  Navigate,
-} from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import HomeLayout from "./pages/layout/home";
 import OneDayLayout from "./pages/layout/one-day";
@@ -11,6 +7,7 @@ import CommonErrorPage from "./pages/error/common";
 import HomePage from "./pages/home";
 import TasksPage from "./pages/tasks";
 import ToolboxPage from "./pages/toolbox";
+import LoginPage from "./pages/login";
 
 const router = createBrowserRouter([
   {
@@ -25,6 +22,12 @@ const router = createBrowserRouter([
     children: [{ index: true, element: <HomePage /> }],
   },
   {
+    path: "/login",
+    element: <HomeLayout />,
+    errorElement: <CommonErrorPage />,
+    children: [{ index: true, element: <LoginPage /> }],
+  },
+  {
     path: "/oneday",
     element: <OneDayLayout />,
     errorElement: <CommonErrorPage />,
@@ -36,8 +39,4 @@ const router = createBrowserRouter([
   },
 ]);
 
-function Router() {
-  return <RouterProvider router={router} />;
-}
-
-export default Router;
+export default router;
