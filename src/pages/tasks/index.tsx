@@ -1,3 +1,5 @@
+import { useRequest } from "ahooks";
+
 import {
   Card,
   CardContent,
@@ -6,10 +8,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
+import { Skeleton } from "@/components/ui/skeleton";
 import AddBtn from "./AddBtn";
 
+import { fetchTaskList } from "./api";
+
 const TasksPage = () => {
+  const { data, error, loading } = useRequest(fetchTaskList);
+
+  console.log(data, error, loading);
+
+  if (error) {
+    return <div>请求失败, 请重试</div>;
+  }
+
+  if (loading) {
+    return <Skeleton className="h-[125px] w-[250px] rounded-xl" />;
+  }
+
   return (
     <div className="tw-mt-6">
       <Card>

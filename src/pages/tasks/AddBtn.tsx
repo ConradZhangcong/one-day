@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,9 +11,7 @@ import {
 const AddBtn = () => {
   return (
     <Dialog>
-      <DialogTrigger>
-        <Button>新增事项</Button>
-      </DialogTrigger>
+      <DialogTrigger>新增事项</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Are you absolutely sure?</DialogTitle>

@@ -1,7 +1,7 @@
 import { Link, NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
-const HeaderLayout = () => {
+const OneDayNavHeader = () => {
   const navList = [
     { id: "tasks", displayName: "事项", href: "tasks" },
     { id: "toolbox", displayName: "工具箱", href: "toolbox" },
@@ -34,4 +34,4 @@ const HeaderLayout = () => {
   );
 };
 
-export default HeaderLayout;
+export default OneDayNavHeader;

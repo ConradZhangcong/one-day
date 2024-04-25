@@ -1,15 +1,13 @@
 import { Outlet } from "react-router-dom";
-import Header from "./Header";
+import NavHeader from "./nav-header";
 
 interface OneDayLayoutProps {}
 
 const OneDayLayout: React.FC<OneDayLayoutProps> = () => {
   return (
-    <div className="app tw-min-h-screen">
-      <Header />
-      <main className="utp-content-container">
-        <Outlet />
-      </main>
+    <div className="utp-content-container tw-min-h-screen">
+      <NavHeader />
+      <Outlet />
     </div>
   );
 };
