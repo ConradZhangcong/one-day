@@ -38,7 +38,7 @@ const HomePage = () => {
       <div className="tw-mt-10">
         <a
           className="tw-flex tw-items-center tw-text-sky-500 hover:tw-text-sky-600 tw-cursor-pointer"
-          onClick={() => navigate("/oneday")}
+          onClick={() => navigate("/oneday", { state: { from: "xxxpage" } })}
         >
           <span>go to oneday</span>
           <svg

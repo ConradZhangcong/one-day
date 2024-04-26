@@ -1,7 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import HomeLayout from "./pages/layout/home";
-import EmptyLayout from "./pages/layout/empty";
+import AuthLayout from "./pages/layout/auth";
 import OneDayLayout from "./pages/layout/one-day";
 
 import CommonErrorPage from "./pages/error/common";
@@ -23,8 +23,8 @@ const router = createBrowserRouter([
     children: [{ index: true, element: <HomePage /> }],
   },
   {
-    path: "/login",
-    element: <EmptyLayout />,
+    path: "/auth",
+    element: <AuthLayout />,
     errorElement: <CommonErrorPage />,
     children: [{ index: true, element: <LoginPage /> }],
   },

@@ -6,5 +6,4 @@ export const fetchTaskList = () =>
     url: "/api/task",
     method: "GET",
     params: { status: "TODO" },
-    data: { test: "123" },
   });

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
 
 import routers from "./routers";
 
@@ -12,7 +13,12 @@ function App() {
     }
   }, []);
 
-  return <RouterProvider router={routers} />;
+  return (
+    <>
+      <RouterProvider router={routers} />
+      <Toaster />
+    </>
+  );
 }
 
 export default App;
