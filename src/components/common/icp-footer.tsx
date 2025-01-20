@@ -6,7 +6,7 @@ interface ICPFooterProps {
 }
 
 /**
- * ICP备案号 底部信息
+ * @desc ICP备案号 底部信息
  */
 const ICPFooter: React.FC<ICPFooterProps> = ({ className, bordered }) => {
   return (

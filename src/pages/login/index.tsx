@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import z from "zod";
 import { useRequest } from "ahooks";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -73,7 +73,9 @@ const LoginPage = () => {
   return (
     <div className="tw-container tw-h-screen md:tw-grid lg:tw-grid-cols-2 lg:tw-max-w-none lg:tw-px-0">
       <div className="tw-p-10 tw-bg-zinc-900 tw-text-white dark:tw-border-r">
-        <div className="tw-text-lg tw-font-semibold">One Day</div>
+        <Link className="tw-text-lg tw-font-semibold" to="/">
+          One Day
+        </Link>
       </div>
       <div className="tw-flex tw-flex-col tw-justify-between tw-pt-4">
         <div className="tw-px-8 tw-my-2 tw-text-right">
