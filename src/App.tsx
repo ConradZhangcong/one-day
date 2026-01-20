@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { useSettingsStore } from './stores/settingsStore';
 import Layout from './components/common/Layout';
@@ -10,10 +10,19 @@ import JournalPage from './pages/Journal';
 import SettingsPage from './pages/Settings';
 
 function App() {
-  const theme = useSettingsStore((state) => state.theme);
+  const appTheme = useSettingsStore((state) => state.theme);
 
   return (
-    <ConfigProvider locale={zhCN}>
+    <ConfigProvider
+      locale={zhCN}
+      theme={{
+        algorithm: appTheme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        token: {
+          colorPrimary: '#1890ff',
+          borderRadius: 6,
+        },
+      }}
+    >
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Layout />}>
