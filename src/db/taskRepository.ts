@@ -23,7 +23,6 @@ export class TaskRepository {
       startTime: dto.startTime || null,
       deadline: dto.deadline || null,
       endDate: dto.endDate || null,
-      isRecurring: dto.isRecurring || false,
       recurrenceRule: dto.recurrenceRule || null,
       recurrenceEndDate: dto.recurrenceEndDate || null,
       recurrenceCount: dto.recurrenceCount || null,

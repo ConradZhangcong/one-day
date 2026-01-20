@@ -59,7 +59,6 @@ export interface Task {
   startTime: string | null;
   deadline: Date | null;
   endDate: Date | null; // 长期任务的结束日期
-  isRecurring: boolean;
   recurrenceRule: RecurrenceRule | null;
   recurrenceEndDate: Date | null;
   recurrenceCount: number | null;
@@ -85,7 +84,6 @@ export interface CreateTaskDto {
   startTime?: string | null;
   deadline?: Date | null;
   endDate?: Date | null;
-  isRecurring?: boolean;
   recurrenceRule?: RecurrenceRule | null;
   recurrenceEndDate?: Date | null;
   recurrenceCount?: number | null;

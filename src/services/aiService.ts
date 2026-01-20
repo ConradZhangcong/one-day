@@ -16,7 +16,6 @@ export class AIService {
     endDate?: Date;
     tags?: string[];
     priority?: 'high' | 'medium' | 'low';
-    isRecurring?: boolean;
     recurrenceRule?: any;
   }> {
     // TODO: 实现AI分析逻辑
