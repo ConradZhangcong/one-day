@@ -5,7 +5,6 @@ import { useSettingsStore } from './stores/settingsStore';
 import Layout from './components/common/Layout';
 import TaskListPage from './pages/TaskList';
 import CalendarPage from './pages/Calendar';
-import ProjectPage from './pages/Project';
 import JournalPage from './pages/Journal';
 import SettingsPage from './pages/Settings';
 
@@ -29,7 +28,6 @@ function App() {
             <Route index element={<Navigate to="/tasks" replace />} />
             <Route path="tasks" element={<TaskListPage />} />
             <Route path="calendar" element={<CalendarPage />} />
-            <Route path="projects" element={<ProjectPage />} />
             <Route path="journal" element={<JournalPage />} />
             <Route path="journal/:date" element={<JournalPage />} />
             <Route path="settings" element={<SettingsPage />} />

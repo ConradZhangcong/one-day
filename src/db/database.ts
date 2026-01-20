@@ -1,6 +1,5 @@
 import Dexie, { type Table } from 'dexie';
 import type { Task } from '@/types/task';
-import type { Project } from '@/types/project';
 import type { Journal } from '@/types/journal';
 
 /**
@@ -28,7 +27,7 @@ export interface Setting {
  */
 export interface SyncLog {
   id: string;
-  entityType: 'task' | 'project' | 'journal';
+  entityType: 'task' | 'journal';
   entityId: string;
   operation: 'create' | 'update' | 'delete';
   timestamp: Date;
@@ -40,7 +39,6 @@ export interface SyncLog {
  */
 export class AppDatabase extends Dexie {
   tasks!: Table<Task>;
-  projects!: Table<Project>;
   journals!: Table<Journal>;
   tags!: Table<Tag>;
   settings!: Table<Setting>;
@@ -50,9 +48,10 @@ export class AppDatabase extends Dexie {
     super('OneDayDB');
 
     // 定义数据库表结构
-    this.version(1).stores({
-      tasks: 'id, status, startDate, deadline, projectId, tags, syncStatus',
-      projects: 'id, status, startDate, endDate, syncStatus',
+    // Version 1: 初始版本（包含projects表，已废弃）
+    // Version 2: 移除projects表，合并到tasks表，添加type、endDate、progress、parentTaskId字段
+    this.version(2).stores({
+      tasks: 'id, status, type, startDate, deadline, endDate, parentTaskId, tags, syncStatus',
       journals: 'id, date, tags, syncStatus',
       tags: 'id, name, category',
       settings: 'key',

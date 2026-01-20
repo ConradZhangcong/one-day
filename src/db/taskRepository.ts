@@ -14,6 +14,7 @@ export class TaskRepository {
       id: crypto.randomUUID(),
       title: dto.title,
       description: dto.description || '',
+      type: dto.type || 'single',
       status: 'pending',
       priority: dto.priority || null,
       tags: dto.tags || [],
@@ -21,12 +22,13 @@ export class TaskRepository {
       startDate: dto.startDate || null,
       startTime: dto.startTime || null,
       deadline: dto.deadline || null,
+      endDate: dto.endDate || null,
       isRecurring: dto.isRecurring || false,
       recurrenceRule: dto.recurrenceRule || null,
       recurrenceEndDate: dto.recurrenceEndDate || null,
       recurrenceCount: dto.recurrenceCount || null,
       parentTaskId: dto.parentTaskId || null,
-      projectId: dto.projectId || null,
+      progress: dto.progress || 0,
       completedAt: null,
       createdAt: now,
       updatedAt: now,
@@ -73,8 +75,9 @@ export class TaskRepository {
    * 删除任务
    */
   async delete(id: string): Promise<boolean> {
-    const count = await db.tasks.delete(id);
-    return count > 0;
+    await db.tasks.delete(id);
+    const task = await this.getById(id);
+    return task === undefined;
   }
 
   /**
@@ -95,10 +98,17 @@ export class TaskRepository {
   }
 
   /**
-   * 根据项目ID查询任务
+   * 根据父任务ID查询子任务
    */
-  async getByProjectId(projectId: string): Promise<Task[]> {
-    return db.tasks.where('projectId').equals(projectId).toArray();
+  async getByParentTaskId(parentTaskId: string): Promise<Task[]> {
+    return db.tasks.where('parentTaskId').equals(parentTaskId).toArray();
+  }
+
+  /**
+   * 根据任务类型查询任务
+   */
+  async getByType(type: Task['type']): Promise<Task[]> {
+    return db.tasks.where('type').equals(type).toArray();
   }
 }
 

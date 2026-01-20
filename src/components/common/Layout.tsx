@@ -3,7 +3,6 @@ import { Layout as AntLayout, Menu } from 'antd';
 import {
   CalendarOutlined,
   UnorderedListOutlined,
-  ProjectOutlined,
   BookOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
@@ -21,11 +20,6 @@ const menuItems = [
     key: '/calendar',
     icon: <CalendarOutlined />,
     label: <Link to="/calendar">日历</Link>,
-  },
-  {
-    key: '/projects',
-    icon: <ProjectOutlined />,
-    label: <Link to="/projects">计划</Link>,
   },
   {
     key: '/journal',

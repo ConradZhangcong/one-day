@@ -34,6 +34,11 @@ export interface RecurrenceRule {
 }
 
 /**
+ * 任务类型
+ */
+export type TaskType = 'single' | 'recurring' | 'long_term';
+
+/**
  * 同步状态
  */
 export type SyncStatus = 'synced' | 'pending' | 'conflict';
@@ -45,6 +50,7 @@ export interface Task {
   id: string;
   title: string;
   description: string;
+  type: TaskType; // 任务类型：单次、重复、长期
   status: TaskStatus;
   priority: TaskPriority | null;
   tags: string[];
@@ -52,12 +58,13 @@ export interface Task {
   startDate: Date | null;
   startTime: string | null;
   deadline: Date | null;
+  endDate: Date | null; // 长期任务的结束日期
   isRecurring: boolean;
   recurrenceRule: RecurrenceRule | null;
   recurrenceEndDate: Date | null;
   recurrenceCount: number | null;
-  parentTaskId: string | null; // 用于子任务
-  projectId: string | null; // 关联计划
+  parentTaskId: string | null; // 用于子任务，关联到长期任务
+  progress: number; // 0-100，用于长期任务
   completedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -70,18 +77,20 @@ export interface Task {
 export interface CreateTaskDto {
   title: string;
   description?: string;
+  type?: TaskType;
   priority?: TaskPriority;
   tags?: string[];
   category?: string | null;
   startDate?: Date | null;
   startTime?: string | null;
   deadline?: Date | null;
+  endDate?: Date | null;
   isRecurring?: boolean;
   recurrenceRule?: RecurrenceRule | null;
   recurrenceEndDate?: Date | null;
   recurrenceCount?: number | null;
   parentTaskId?: string | null;
-  projectId?: string | null;
+  progress?: number;
 }
 
 /**
