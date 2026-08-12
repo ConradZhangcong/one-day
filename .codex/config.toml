@@ -1,0 +1,10 @@
+project_doc_fallback_filenames = ["AGENTS.md"]
+
+[agents]
+max_depth = 1
+
+[shell_environment_policy]
+inherit = "core"
+
+[shell_environment_policy.set]
+CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "1"
