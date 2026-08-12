@@ -1,0 +1,4 @@
+{"file": ".trellis/tasks/08-12-todo-calendar-app/research/architecture.md", "reason": "第一版本地优先 PWA 架构、依赖边界与测试策略"}
+{"file": ".trellis/tasks/08-12-todo-calendar-app/research/time-recurrence.md", "reason": "计划/截止、时区、重复系列与提醒数据契约"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "跨层数据流与共享解码器检查清单"}
+{"file": ".trellis/tasks/08-12-todo-calendar-app/research/dependency-matrix.md", "reason": "核验后的稳定依赖版本、FullCalendar v7 包结构与本地 Node/pnpm 约束"}

@@ -1,0 +1,5 @@
+{"file": ".trellis/tasks/08-12-todo-calendar-app/research/prd-review.md", "reason": "需求一致性、范围和实施拆分审阅"}
+{"file": ".trellis/tasks/08-12-todo-calendar-app/research/time-recurrence.md", "reason": "复核时间、重复与提醒不变量"}
+{"file": ".trellis/tasks/08-12-todo-calendar-app/research/architecture.md", "reason": "复核架构边界、PWA 和质量策略"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "复核跨层契约、解码和投影一致性"}
+{"file": ".trellis/tasks/08-12-todo-calendar-app/research/dependency-matrix.md", "reason": "复核 package.json、lockfile 与 peer/engine 兼容性"}
