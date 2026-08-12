@@ -1,0 +1,12 @@
+node_modules
+.agents
+.claude
+.codex
+.pnpm-store
+.trellis
+dist
+coverage
+playwright-report
+test-results
+pnpm-lock.yaml
+.trellis/workspace
