@@ -5,9 +5,7 @@ export function FoundationPage() {
     <section className="foundation-page">
       <header className="hero-row">
         <div>
-          <Tag bordered={false} color="green">
-            第一版地基
-          </Tag>
+          <Tag bordered={false}>第一版地基</Tag>
           <Typography.Title>先把今天安排明白</Typography.Title>
           <Typography.Paragraph>
             待办、时间与日历将共享同一份本地数据。现在正在建立可靠的领域模型与离线能力。

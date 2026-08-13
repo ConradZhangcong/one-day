@@ -27,11 +27,13 @@ export function AppProviders({ children }: PropsWithChildren) {
       theme={{
         algorithm: prefersDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#17675d',
-          colorInfo: '#17675d',
-          colorWarning: '#c77728',
-          colorBgBase: '#f7f3eb',
-          borderRadius: 14,
+          colorPrimary: prefersDarkMode ? '#e5e5e5' : '#171717',
+          colorInfo: prefersDarkMode ? '#b5b5b5' : '#525252',
+          colorWarning: prefersDarkMode ? '#b5b5b5' : '#525252',
+          colorBgBase: prefersDarkMode ? '#0a0a0a' : '#ffffff',
+          colorTextBase: prefersDarkMode ? '#fafafa' : '#0a0a0a',
+          colorBorder: prefersDarkMode ? 'rgba(255, 255, 255, 0.1)' : '#e5e5e5',
+          borderRadius: 10,
           fontFamily: 'Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif',
         },
       }}
