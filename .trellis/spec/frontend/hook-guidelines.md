@@ -1,51 +1,23 @@
 # Hook Guidelines
 
-> How hooks are used in this project.
+## Current Pattern
 
----
+There is no general-purpose client store or remote-fetching layer. Hooks coordinate React state with browser capabilities and application services. Use built-in hooks until repeated stateful behavior justifies a custom hook.
 
-## Overview
+## Effects and Subscriptions
 
-<!--
-Document your project's hook conventions here.
+- Effects must return cleanup for every event, media-query, timer, or live-query subscription.
+- Wrap callbacks used as listener identities in `useCallback`.
+- Treat React Strict Mode as normal: startup operations must be idempotent and concurrent initialization must not overwrite data.
+- Browser capability failures must degrade to Chinese user feedback; they must not make the local task core unusable.
+- Visibility-dependent checks run only when `document.visibilityState === 'visible'`.
 
-Questions to answer:
-- What custom hooks do you have?
-- How do you handle data fetching?
-- What are the naming conventions?
-- How do you share stateful logic?
--->
+`AppProviders` uses `useSyncExternalStore` for the system color scheme. `TimeZoneChangePrompt` registers and removes focus, pageshow, and visibility listeners and delegates persistence to `TimeZoneSettingsService`.
 
-(To be filled by the team)
+## Data Access
 
----
+Future reactive IndexedDB reads should use a dedicated feature hook over `dexie-react-hooks`, returning decoded domain/view values. Writes always call an application command/use case; a hook must not expose raw table mutation.
 
-## Custom Hook Patterns
+## Naming and Testing
 
-<!-- How to create and structure custom hooks -->
-
-(To be filled by the team)
-
----
-
-## Data Fetching
-
-<!-- How data fetching is handled (React Query, SWR, etc.) -->
-
-(To be filled by the team)
-
----
-
-## Naming Conventions
-
-<!-- Hook naming rules (use*, etc.) -->
-
-(To be filled by the team)
-
----
-
-## Common Mistakes
-
-<!-- Hook-related mistakes your team has made -->
-
-(To be filled by the team)
+Custom hooks start with `use`. Test visible behavior and cleanup. Use fake timers only for clock-dependent behavior, and inject clocks/providers into application logic when possible.

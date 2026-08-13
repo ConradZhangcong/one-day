@@ -1,4 +1,11 @@
-import type { TaskList } from '../../domain';
+import {
+  recurrenceSeriesSchema,
+  singleTaskSchema,
+  taskListSchema,
+  DomainError,
+  DomainErrorCode,
+  type TaskList,
+} from '../../domain';
 import type { DeleteListResult } from '../../application/repositories';
 
 import type { OneDayDatabase } from './database';
@@ -10,6 +17,7 @@ import {
   toSingleTaskRecord,
 } from './projections';
 import { INBOX_LIST_ID } from './system-data';
+import { decodeInboxList } from './system-data';
 
 /**
  * Deletes a custom list and atomically re-homes every owning entity. The inbox
@@ -21,7 +29,10 @@ export async function deleteListAndMoveContentsToInbox(
   listId: TaskList['id'],
 ): Promise<DeleteListResult> {
   if (listId === INBOX_LIST_ID) {
-    throw new TypeError('The system inbox cannot be deleted.');
+    throw new DomainError(
+      DomainErrorCode.SYSTEM_LIST_IMMUTABLE,
+      'The system inbox cannot be deleted.',
+    );
   }
 
   return db.transaction(
@@ -34,33 +45,47 @@ export async function deleteListAndMoveContentsToInbox(
       ]);
 
       if (list === undefined) {
-        throw new TypeError(`List does not exist: ${listId}`);
+        throw new DomainError(
+          DomainErrorCode.LIST_NOT_FOUND,
+          `List does not exist: ${listId}`,
+        );
       }
 
       if (inbox === undefined) {
         throw new TypeError('The system inbox must exist before deleting a list.');
       }
+      decodeInboxList(fromListRecord(inbox));
 
       const [singleTaskRecords, seriesRecords] = await Promise.all([
-        db.singleTasks.where('listId').equals(listId).toArray(),
-        db.recurrenceSeries.where('listId').equals(listId).toArray(),
+        db.singleTasks.toArray(),
+        db.recurrenceSeries.toArray(),
       ]);
 
-      const singleTasks = singleTaskRecords.map((record) =>
-        toSingleTaskRecord({
-          ...fromSingleTaskRecord(record),
-          listId: INBOX_LIST_ID,
-        }),
+      const decodedTasks = singleTaskRecords.map((record) =>
+        singleTaskSchema.parse(fromSingleTaskRecord(record)),
       );
-      const recurrenceSeries = seriesRecords.map((record) =>
-        toRecurrenceSeriesRecord({
-          ...fromRecurrenceSeriesRecord(record),
-          template: {
-            ...record.template,
+      const decodedSeries = seriesRecords.map((record) =>
+        recurrenceSeriesSchema.parse(fromRecurrenceSeriesRecord(record)),
+      );
+      const singleTasks = decodedTasks
+        .filter((task) => task.listId === listId)
+        .map((task) => {
+          return toSingleTaskRecord({
+            ...task,
             listId: INBOX_LIST_ID,
-          },
-        }),
-      );
+          });
+        });
+      const recurrenceSeries = decodedSeries
+        .filter((series) => series.template.listId === listId)
+        .map((series) => {
+          return toRecurrenceSeriesRecord({
+            ...series,
+            template: {
+              ...series.template,
+              listId: INBOX_LIST_ID,
+            },
+          });
+        });
 
       if (singleTasks.length > 0) {
         await db.singleTasks.bulkPut(singleTasks);
@@ -69,7 +94,7 @@ export async function deleteListAndMoveContentsToInbox(
         await db.recurrenceSeries.bulkPut(recurrenceSeries);
       }
 
-      await db.lists.delete(fromListRecord(list).id);
+      await db.lists.delete(taskListSchema.parse(fromListRecord(list)).id);
 
       return {
         movedSingleTaskCount: singleTasks.length,

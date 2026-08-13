@@ -1,7 +1,5 @@
 export { OneDayDatabase, openOneDayDatabase } from './database';
-export {
-  deleteListAndMoveContentsToInbox,
-} from './list-transactions';
+export { deleteListAndMoveContentsToInbox } from './list-transactions';
 export {
   normalizeIndexedText,
   schedulePointLocalDate,

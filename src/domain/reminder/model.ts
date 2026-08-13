@@ -19,6 +19,8 @@ export const reminderSchema = z
     /** Non-negative minutes before the referenced plan or deadline. */
     offsetMinutes: z.number().int().nonnegative(),
     scheduleRevision: z.number().int().nonnegative(),
+    /** Changes on every snooze, even when the chosen instant is unchanged. */
+    snoozeRevision: z.number().int().nonnegative().default(0),
     lastDeliveryKey: z.string().min(1).optional(),
     snoozedUntil: instantSchema.optional(),
   })

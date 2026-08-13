@@ -30,9 +30,7 @@ export class OneDayDatabase extends Dexie {
 }
 
 /** Opens the current schema and establishes required system data. */
-export async function openOneDayDatabase(
-  name = DATABASE_NAME,
-): Promise<OneDayDatabase> {
+export async function openOneDayDatabase(name = DATABASE_NAME): Promise<OneDayDatabase> {
   const db = new OneDayDatabase(name);
 
   try {

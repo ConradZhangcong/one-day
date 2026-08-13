@@ -190,9 +190,7 @@ describe('recurrence series invariants', () => {
       anchor: 'planned',
       rule: { frequency: 'weekly', interval: 1, weekdays: [4] },
       status,
-      ...(status === 'active' || status === 'paused'
-        ? { activeOccurrenceKey: key }
-        : {}),
+      ...(status === 'active' || status === 'paused' ? { activeOccurrenceKey: key } : {}),
       revision: 1,
       createdAt: '2026-08-13T01:00:00Z',
       updatedAt: '2026-08-13T01:00:00Z',

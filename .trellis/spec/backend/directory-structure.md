@@ -1,54 +1,28 @@
-# Directory Structure
+# Domain and Persistence Directory Structure
 
-> How backend code is organized in this project.
+## Layout and Dependency Direction
 
----
-
-## Overview
-
-<!--
-Document your project's backend directory structure here.
-
-Questions to answer:
-- How are modules/packages organized?
-- Where does business logic live?
-- Where are API endpoints defined?
-- How are utilities and helpers organized?
--->
-
-(To be filled by the team)
-
----
-
-## Directory Layout
-
-```
-<!-- Replace with your actual structure -->
-src/
-├── ...
-└── ...
+```text
+src/domain/                  # Zod contracts, value objects, pure validation/projectors
+src/application/
+├── repositories/            # Technology-neutral persistence ports and UnitOfWork
+└── settings/                # Use cases coordinating ports
+src/infrastructure/db/       # Dexie database, records, codecs, repositories, transactions
+tests/domain/                # Pure domain tests
+tests/application/           # Use-case and transaction-boundary tests
+tests/infrastructure/db/     # fake-indexeddb, frozen migration fixtures
 ```
 
----
+Dependencies point inward: infrastructure imports application ports and domain contracts; application imports domain and ports; domain imports neither React nor Dexie. `src/app/application.ts` is the outer composition root.
 
-## Module Organization
+## Module Rules
 
-<!-- How should new features/modules be organized? -->
+- Domain capability barrels (`schedule/index.ts`, etc.) expose the public contract.
+- Repository interfaces use domain types and never expose Dexie `Table` or persisted record projections.
+- `records.ts` owns IndexedDB-only index fields; `projections.ts` is the single domain↔record codec location.
+- Cross-table commands live behind an application use case/port and run in a transaction.
+- Tests may access raw tables to seed persisted fixtures or verify rollback; production UI may not.
 
-(To be filled by the team)
+## Naming
 
----
-
-## Naming Conventions
-
-<!-- File and folder naming rules -->
-
-(To be filled by the team)
-
----
-
-## Examples
-
-<!-- Link to well-organized modules as examples -->
-
-(To be filled by the team)
+Use `*Schema`/`decode*` for boundaries, `*Repository` for ports, `Dexie*Repository` for adapters, `*Record` for persisted shapes, and `*Service` for application use cases.

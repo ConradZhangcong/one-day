@@ -7,4 +7,6 @@ export interface ReminderRepository extends EntityRepository<Reminder, Reminder[
     ownerKind: Reminder['ownerKind'],
     ownerId: Reminder['ownerId'],
   ): Promise<Reminder[]>;
+  /** Atomically marks a delivery identity if it has not already been claimed. */
+  claimDelivery(reminderId: Reminder['id'], deliveryKey: string): Promise<boolean>;
 }

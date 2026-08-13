@@ -44,15 +44,11 @@ describe('derived task status', () => {
     };
 
     expect(
-      deriveTaskStatus(task, decodeInstant('2026-08-13T01:00:00Z'), shanghai)
-        .missedPlan,
+      deriveTaskStatus(task, decodeInstant('2026-08-13T01:00:00Z'), shanghai).missedPlan,
     ).toBe(false);
     expect(
-      deriveTaskStatus(
-        task,
-        decodeInstant('2026-08-13T01:00:00.000000001Z'),
-        shanghai,
-      ).missedPlan,
+      deriveTaskStatus(task, decodeInstant('2026-08-13T01:00:00.000000001Z'), shanghai)
+        .missedPlan,
     ).toBe(true);
   });
 
@@ -116,15 +112,11 @@ describe('derived task status', () => {
 
     // compatible chooses the earlier 01:30 during the fall-back overlap.
     expect(
-      deriveTaskStatus(task, decodeInstant('2026-11-01T05:30:00Z'), newYork)
-        .missedPlan,
+      deriveTaskStatus(task, decodeInstant('2026-11-01T05:30:00Z'), newYork).missedPlan,
     ).toBe(false);
     expect(
-      deriveTaskStatus(
-        task,
-        decodeInstant('2026-11-01T05:30:00.000000001Z'),
-        newYork,
-      ).missedPlan,
+      deriveTaskStatus(task, decodeInstant('2026-11-01T05:30:00.000000001Z'), newYork)
+        .missedPlan,
     ).toBe(true);
   });
 });

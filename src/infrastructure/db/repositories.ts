@@ -53,9 +53,11 @@ import type {
 type RecordEncoder<TEntity, TRecord> = (entity: TEntity) => TRecord;
 type RecordDecoder<TRecord, TEntity> = (record: TRecord) => TEntity;
 
-class DexieEntityRepository<TEntity, TKey extends string, TRecord>
-  implements EntityRepository<TEntity, TKey>
-{
+class DexieEntityRepository<
+  TEntity,
+  TKey extends string,
+  TRecord,
+> implements EntityRepository<TEntity, TKey> {
   constructor(
     protected readonly table: Table<TRecord, string>,
     private readonly encode: RecordEncoder<TEntity, TRecord>,
@@ -103,7 +105,7 @@ class DexieSingleTaskRepository
   }
 
   async findByListId(listId: SingleTask['listId']): Promise<SingleTask[]> {
-    return this.decodeMany(await this.table.where('listId').equals(listId).toArray());
+    return (await this.getAll()).filter((task) => task.listId === listId);
   }
 
   async findByState(state: SingleTask['state']): Promise<SingleTask[]> {
@@ -128,12 +130,10 @@ class DexieRecurrenceSeriesRepository
   async findByListId(
     listId: RecurrenceSeries['template']['listId'],
   ): Promise<RecurrenceSeries[]> {
-    return this.decodeMany(await this.table.where('listId').equals(listId).toArray());
+    return (await this.getAll()).filter((series) => series.template.listId === listId);
   }
 
-  async findByStatus(
-    status: RecurrenceSeries['status'],
-  ): Promise<RecurrenceSeries[]> {
+  async findByStatus(status: RecurrenceSeries['status']): Promise<RecurrenceSeries[]> {
     return this.decodeMany(await this.table.where('status').equals(status).toArray());
   }
 }
@@ -155,9 +155,7 @@ class DexieOccurrenceRecordRepository
   async findBySeriesId(
     seriesId: OccurrenceRecord['seriesId'],
   ): Promise<OccurrenceRecord[]> {
-    return this.decodeMany(
-      await this.table.where('seriesId').equals(seriesId).toArray(),
-    );
+    return this.decodeMany(await this.table.where('seriesId').equals(seriesId).toArray());
   }
 
   async findBySeriesAndState(
@@ -184,9 +182,7 @@ class DexieListRepository
     return deleteListAndMoveContentsToInbox(this.db, listId);
   }
 
-  async listInDisplayOrder(options?: {
-    includeArchived?: boolean;
-  }): Promise<TaskList[]> {
+  async listInDisplayOrder(options?: { includeArchived?: boolean }): Promise<TaskList[]> {
     const records = options?.includeArchived
       ? await this.table.orderBy('order').toArray()
       : await this.table.where('archivedValue').equals(0).sortBy('order');
@@ -218,7 +214,11 @@ class DexieReminderRepository
   implements ReminderRepository
 {
   constructor(table: Table<Reminder, string>) {
-    super(table, (reminder) => reminder, (record) => reminderSchema.parse(record));
+    super(
+      table,
+      (reminder) => reminder,
+      (record) => reminderSchema.parse(record),
+    );
   }
 
   async findByOwner(
@@ -232,12 +232,23 @@ class DexieReminderRepository
         .toArray(),
     );
   }
+
+  async claimDelivery(reminderId: Reminder['id'], deliveryKey: string): Promise<boolean> {
+    const record = await this.table.get(reminderId);
+    if (record === undefined) return false;
+    const reminder = reminderSchema.parse(record);
+    if (reminder.lastDeliveryKey === deliveryKey) return false;
+    await this.table.put(
+      reminderSchema.parse({ ...reminder, lastDeliveryKey: deliveryKey }),
+    );
+    return true;
+  }
 }
 
 class DexieKeyValueRepository implements KeyValueRepository {
   constructor(private readonly table: Table<KeyValueEntry, string>) {}
 
-  async get(key: string): Promise<unknown | undefined> {
+  async get(key: string): Promise<unknown> {
     const entry = await this.table.get(key);
     return entry?.value;
   }

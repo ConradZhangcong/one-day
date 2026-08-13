@@ -31,12 +31,19 @@ export function toSingleTaskRecord(task: SingleTask): SingleTaskRecord {
 }
 
 export function fromSingleTaskRecord(record: SingleTaskRecord): SingleTask {
-  const {
-    deadlineLocalDate: _deadlineLocalDate,
-    normalizedTitle: _normalizedTitle,
-    plannedLocalDate: _plannedLocalDate,
-    ...task
-  } = record;
+  const expectedPlanned = schedulePointLocalDate(record.plannedAt);
+  const expectedDeadline = schedulePointLocalDate(record.deadlineAt);
+  if (
+    record.plannedLocalDate !== expectedPlanned ||
+    record.deadlineLocalDate !== expectedDeadline ||
+    record.normalizedTitle !== normalizeIndexedText(record.title)
+  ) {
+    throw new TypeError('Single-task index projection is inconsistent.');
+  }
+  const { deadlineLocalDate, normalizedTitle, plannedLocalDate, ...task } = record;
+  void deadlineLocalDate;
+  void normalizedTitle;
+  void plannedLocalDate;
 
   return task;
 }
@@ -45,9 +52,7 @@ export function toRecurrenceSeriesRecord(
   series: RecurrenceSeries,
 ): RecurrenceSeriesRecord {
   const anchorPoint =
-    series.anchor === 'planned'
-      ? series.template.plannedAt
-      : series.template.deadlineAt;
+    series.anchor === 'planned' ? series.template.plannedAt : series.template.deadlineAt;
   const anchorLocalDate = schedulePointLocalDate(anchorPoint);
 
   if (anchorLocalDate === undefined) {
@@ -65,12 +70,20 @@ export function toRecurrenceSeriesRecord(
 export function fromRecurrenceSeriesRecord(
   record: RecurrenceSeriesRecord,
 ): RecurrenceSeries {
-  const {
-    anchorLocalDate: _anchorLocalDate,
-    listId: _listId,
-    tagIds: _tagIds,
-    ...series
-  } = record;
+  const anchorPoint =
+    record.anchor === 'planned' ? record.template.plannedAt : record.template.deadlineAt;
+  if (
+    record.listId !== record.template.listId ||
+    record.anchorLocalDate !== schedulePointLocalDate(anchorPoint) ||
+    record.tagIds.length !== record.template.tagIds.length ||
+    record.tagIds.some((id, index) => id !== record.template.tagIds[index])
+  ) {
+    throw new TypeError('Recurrence-series index projection is inconsistent.');
+  }
+  const { anchorLocalDate, listId, tagIds, ...series } = record;
+  void anchorLocalDate;
+  void listId;
+  void tagIds;
 
   return series;
 }
@@ -90,7 +103,11 @@ export function toOccurrenceRecordRecord(
 export function fromOccurrenceRecordRecord(
   record: OccurrenceRecordRecord,
 ): OccurrenceRecord {
-  const { originalLocalDate: _originalLocalDate, ...occurrence } = record;
+  if (record.originalLocalDate !== schedulePointLocalDate(record.originalAnchor)) {
+    throw new TypeError('Occurrence-record index projection is inconsistent.');
+  }
+  const { originalLocalDate, ...occurrence } = record;
+  void originalLocalDate;
   return occurrence;
 }
 
@@ -99,7 +116,11 @@ export function toListRecord(list: TaskList): ListRecord {
 }
 
 export function fromListRecord(record: ListRecord): TaskList {
-  const { archivedValue: _archivedValue, ...list } = record;
+  if (record.archivedValue !== (record.archived ? 1 : 0)) {
+    throw new TypeError('List index projection is inconsistent.');
+  }
+  const { archivedValue, ...list } = record;
+  void archivedValue;
   return list;
 }
 
@@ -108,6 +129,10 @@ export function toTagRecord(tag: Tag): TagRecord {
 }
 
 export function fromTagRecord(record: TagRecord): Tag {
-  const { normalizedName: _normalizedName, ...tag } = record;
+  if (record.normalizedName !== normalizeIndexedText(record.name)) {
+    throw new TypeError('Tag index projection is inconsistent.');
+  }
+  const { normalizedName, ...tag } = record;
+  void normalizedName;
   return tag;
 }

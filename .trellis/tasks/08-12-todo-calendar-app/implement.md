@@ -23,68 +23,68 @@
 
 ## Phase 0 — 实施前门禁
 
-- [ ] 用户已明确批准最新最终规划摘要，而不只是批准单项决策。
-- [ ] 使用 `task.py start` 激活实施任务，状态从 planning 进入 in_progress。
-- [ ] 创建 `codex/todo-calendar-mvp` 或对应子任务分支，并记录 base branch。
-- [ ] 重新核验 React、Vite、Ant Design、FullCalendar、Dexie、Temporal polyfill、Zod、PWA 插件的最新稳定兼容矩阵并锁定版本。
-- [ ] 确认 Node/pnpm 版本并写入 engines/packageManager。
-- [ ] 检查现有工作树，保护所有用户改动。
-- [ ] 由于 `.trellis/spec/frontend` 和 `backend` 当前是占位模板，地基阶段形成真实代码模式后立即运行规范补全流程；在大规模并行开发前完成 `00-bootstrap-guidelines`。
+- [x] 用户已明确批准最新最终规划摘要，而不只是批准单项决策。
+- [x] 使用 `task.py start` 激活实施任务，状态从 planning 进入 in_progress。
+- [x] 创建 `codex/todo-calendar-mvp` 或对应子任务分支，并记录 base branch。
+- [x] 重新核验 React、Vite、Ant Design、FullCalendar、Dexie、Temporal polyfill、Zod、PWA 插件的最新稳定兼容矩阵并锁定版本。
+- [x] 确认 Node/pnpm 版本并写入 engines/packageManager。
+- [x] 检查现有工作树，保护所有用户改动。
+- [x] 由于 `.trellis/spec/frontend` 和 `backend` 当前是占位模板，地基阶段形成真实代码模式后立即运行规范补全流程；在大规模并行开发前完成 `00-bootstrap-guidelines`。
 
 ## Phase 1 — 工程与领域地基
 
 ### 工程
 
-- [ ] 使用 React + TypeScript + Vite 建立全新项目，不恢复历史源码。
-- [ ] 配置 pnpm、严格 TypeScript、ESLint、Prettier、路径别名和环境类型。
-- [ ] 配置 Vitest、React Testing Library、fake-indexeddb 和 Playwright。
-- [ ] 建立应用路由、响应式 shell、中文 locale、设计令牌、浅色/深色主题。
-- [ ] 配置 PWA manifest、图标、Workbox 应用外壳和显式更新提示。
+- [x] 使用 React + TypeScript + Vite 建立全新项目，不恢复历史源码。
+- [x] 配置 pnpm、严格 TypeScript、ESLint、Prettier、路径别名和环境类型。
+- [x] 配置 Vitest、React Testing Library、fake-indexeddb 和 Playwright。
+- [x] 建立应用路由、响应式 shell、中文 locale、设计令牌、浅色/深色主题。
+- [x] 配置 PWA manifest、图标、Workbox 应用外壳和显式更新提示。
 
 ### 领域
 
-- [ ] 建立 SchedulePoint、LocalDate、LocalDateTime、Instant、TimeZoneId 及解码 schema。
-- [ ] 首次启动保存检测到的 IANA 时区；后续设备时区变化只提示，显式确认后才修改应用时区。
-- [ ] 实现计划/截止组合校验和 derived status projector。
-- [ ] 建立单次任务、清单、标签、优先级、提醒和重复系列类型。
-- [ ] 建立稳定 occurrence key、固定规则和领域错误 code。
-- [ ] 为所有时间/状态不变量先写单元测试。
+- [x] 建立 SchedulePoint、LocalDate、LocalDateTime、Instant、TimeZoneId 及解码 schema。
+- [x] 首次启动保存检测到的 IANA 时区；后续设备时区变化只提示，显式确认后才修改应用时区。
+- [x] 实现计划/截止组合校验和 derived status projector。
+- [x] 建立单次任务、清单、标签、优先级、提醒和重复系列类型。
+- [x] 建立稳定 occurrence key、固定规则和领域错误 code。
+- [x] 为所有时间/状态不变量先写单元测试。
 
 ### 持久化
 
-- [ ] 建立 Dexie v1 schema、repository 接口和实现。
-- [ ] 所有写操作通过应用用例和事务，不允许组件直接写表。
-- [ ] 建立测试数据库工厂、数据库清理和迁移夹具。
-- [ ] 形成真实目录/组件/状态/数据库/错误模式后更新 Trellis specs，并完成 bootstrap 任务。
+- [x] 建立 Dexie v1 schema、repository 接口和实现。
+- [x] 所有写操作通过应用用例和事务，不允许组件直接写表。
+- [x] 建立测试数据库工厂、数据库清理和迁移夹具。
+- [x] 形成真实目录/组件/状态/数据库/错误模式后更新 Trellis specs，并完成 bootstrap 任务。
 
 验证点：空应用可安装、可离线重新打开；领域与数据库测试通过；规范不再是占位文本。
 
 ## Phase 2 — 基础待办闭环
 
-- [ ] 实现系统收件箱和一级自定义清单的创建、重命名、排序、归档、删除确认。
-- [ ] 删除清单时在事务中把单次任务和重复系列模板都移动到收件箱。
-- [ ] 实现快速新增：标题 + 常用计划/截止入口。
-- [ ] 实现任务详情：纯文本备注、清单、多标签、四档优先级、计划、截止。
-- [ ] 实现编辑、完成、跳过和明确删除；撤销完成只适用于普通单次任务。
-- [ ] 实现收件箱、今天、即将到来、已完成列表。
-- [ ] 实现文本搜索和日期/清单/标签/优先级/状态筛选，筛选写入 URL。
-- [ ] 使用 live query 确保跨列表即时一致。
-- [ ] 完成核心键盘流和空状态/错误状态。
+- [x] 实现系统收件箱和一级自定义清单的创建、重命名、排序、归档、删除确认。
+- [x] 删除清单时在事务中把单次任务和重复系列模板都移动到收件箱。
+- [x] 实现快速新增：标题 + 常用计划/截止入口。
+- [x] 实现任务详情：纯文本备注、清单、多标签、四档优先级、计划、截止。
+- [x] 实现编辑、完成、跳过和明确删除；撤销完成只适用于普通单次任务。
+- [x] 实现收件箱、今天、即将到来、已完成列表。
+- [x] 实现文本搜索和日期/清单/标签/优先级/状态筛选，筛选写入 URL。
+- [x] 使用 live query 确保跨列表即时一致。
+- [x] 完成核心键盘流和空状态/错误状态。
 
 验证点：AC1、AC2 的非重复部分、AC8 的列表侧、AC18。
 
 ## Phase 3 — 时间、恢复与运行期提醒
 
-- [ ] 完成全天/精确计划和全天/精确截止的所有组合输入与校验。
-- [ ] 实现 today/missedPlan/overdue 投影，overdue 对重复归组具有优先级。
-- [ ] 实现错过计划和已逾期互斥恢复页，保留原时间，支持完成/跳过/改期。
-- [ ] 实现只读日/周回顾：已完成、已跳过、错过计划、仍逾期数量及列表。
-- [ ] 实现提醒引用 planned/deadline、提前偏移、全天默认提醒和 snooze。
-- [ ] 实现前台/浏览器允许执行时的调度器，在启动/focus/visibility/休眠恢复/时区设置变化后 reconciliation。
-- [ ] 实现 60 秒可见页面交付容差、15 分钟恢复补发窗口和持久 delivery key 去重，并用伪时钟覆盖 focus/reload/时钟跳变。
-- [ ] 仅在用户动作后请求通知权限；拒绝/不支持时保留应用内提醒并说明状态。
-- [ ] 设置中明确说明受限后台、挂起和 PWA 关闭后的提醒限制。
-- [ ] 覆盖 Asia/Shanghai 与 DST 时区测试。
+- [x] 完成全天/精确计划和全天/精确截止的所有组合输入与校验。
+- [x] 实现 today/missedPlan/overdue 投影，overdue 对重复归组具有优先级。
+- [x] 实现错过计划和已逾期互斥恢复页，保留原时间，支持完成/跳过/改期。
+- [x] 实现只读日/周回顾：已完成、已跳过、错过计划、仍逾期数量及列表。
+- [x] 实现提醒引用 planned/deadline、提前偏移、全天默认提醒和 snooze。
+- [x] 实现前台/浏览器允许执行时的调度器，在启动/focus/visibility/休眠恢复/时区设置变化后 reconciliation。
+- [x] 实现 60 秒可见页面交付容差、15 分钟恢复补发窗口和持久 delivery key 去重，并用伪时钟覆盖 focus/reload/时钟跳变。
+- [x] 仅在用户动作后请求通知权限；拒绝/不支持时保留应用内提醒并说明状态。
+- [x] 设置中明确说明受限后台、挂起和 PWA 关闭后的提醒限制。
+- [x] 覆盖 Asia/Shanghai 与 DST 时区测试。
 
 验证点：AC2、AC3、AC9、AC17。
 

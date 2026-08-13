@@ -32,8 +32,7 @@ export function AppProviders({ children }: PropsWithChildren) {
           colorWarning: '#c77728',
           colorBgBase: '#f7f3eb',
           borderRadius: 14,
-          fontFamily:
-            'Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif',
+          fontFamily: 'Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif',
         },
       }}
     >

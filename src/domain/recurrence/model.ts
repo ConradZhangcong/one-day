@@ -91,9 +91,7 @@ export const recurrenceSeriesStatusSchema = z.enum([
   'ended',
   'archived',
 ]);
-export type RecurrenceSeriesStatus = z.infer<
-  typeof recurrenceSeriesStatusSchema
->;
+export type RecurrenceSeriesStatus = z.infer<typeof recurrenceSeriesStatusSchema>;
 
 export const recurrenceSeriesSchema = z
   .object({
@@ -135,11 +133,7 @@ export const recurrenceSeriesSchema = z
 
     if (series.activeOccurrenceKey !== undefined) {
       const identity = tryParseOccurrenceKey(series.activeOccurrenceKey);
-      if (
-        identity === undefined ||
-        identity.seriesId !== series.id ||
-        identity.revision !== series.revision
-      ) {
+      if (identity?.seriesId !== series.id || identity?.revision !== series.revision) {
         context.addIssue({
           code: 'custom',
           message: 'The active occurrence key must belong to this series revision.',
@@ -196,9 +190,13 @@ const skippedOccurrenceSchema = z
   .strict();
 
 function sameAnchor(
-  left: z.infer<typeof scheduledPointSchema>,
+  left: z.infer<typeof scheduledPointSchema> | undefined,
   right: z.infer<typeof scheduledPointSchema>,
 ): boolean {
+  if (left === undefined) {
+    return false;
+  }
+
   if (left.kind !== right.kind) {
     return false;
   }
@@ -207,9 +205,7 @@ function sameAnchor(
     return right.kind === 'allDay' && left.date === right.date;
   }
 
-  return (
-    right.kind === 'timed' && left.localDateTime === right.localDateTime
-  );
+  return right.kind === 'timed' && left.localDateTime === right.localDateTime;
 }
 
 export const occurrenceRecordSchema = z
@@ -221,9 +217,8 @@ export const occurrenceRecordSchema = z
   .superRefine((record, context) => {
     const identity = tryParseOccurrenceKey(record.occurrenceKey);
     if (
-      identity === undefined ||
-      identity.seriesId !== record.seriesId ||
-      !sameAnchor(identity.originalAnchor, record.originalAnchor)
+      identity?.seriesId !== record.seriesId ||
+      !sameAnchor(identity?.originalAnchor, record.originalAnchor)
     ) {
       context.addIssue({
         code: 'custom',

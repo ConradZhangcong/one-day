@@ -21,6 +21,27 @@ const taskOrganizationShape = {
   deadlineAt: schedulePointSchema,
 } as const;
 
+export const taskDraftSchema = z
+  .object({
+    title: taskOrganizationShape.title,
+    notes: taskOrganizationShape.notes,
+    listId: taskOrganizationShape.listId,
+    tagNames: z.array(z.string().trim().min(1)),
+    priority: taskOrganizationShape.priority,
+    plannedAt: taskOrganizationShape.plannedAt,
+    deadlineAt: taskOrganizationShape.deadlineAt,
+  })
+  .strict();
+
+type ParsedTaskDraft = z.infer<typeof taskDraftSchema>;
+export type TaskDraft = Omit<ParsedTaskDraft, 'tagNames'> & {
+  readonly tagNames: readonly string[];
+};
+
+export function decodeTaskDraft(input: unknown): TaskDraft {
+  return taskDraftSchema.parse(input);
+}
+
 export const taskDetailsSchema = z.object(taskOrganizationShape).strict();
 export type TaskDetails = z.infer<typeof taskDetailsSchema>;
 

@@ -4,7 +4,7 @@ export interface KeyValueEntry<TValue = unknown> {
 }
 
 export interface KeyValueRepository {
-  get(key: string): Promise<unknown | undefined>;
+  get(key: string): Promise<unknown>;
   getAll(): Promise<KeyValueEntry[]>;
   set(key: string, value: unknown): Promise<void>;
   remove(key: string): Promise<void>;

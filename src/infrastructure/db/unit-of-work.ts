@@ -1,7 +1,4 @@
-import type {
-  OneDayRepositories,
-  UnitOfWork,
-} from '../../application/repositories';
+import type { OneDayRepositories, UnitOfWork } from '../../application/repositories';
 
 import type { OneDayDatabase } from './database';
 import { createDexieRepositories } from './repositories';
@@ -16,8 +13,6 @@ export class DexieUnitOfWork implements UnitOfWork {
   write<TResult>(
     operation: (repositories: OneDayRepositories) => Promise<TResult> | TResult,
   ): Promise<TResult> {
-    return this.db.transaction('rw', this.db.tables, () =>
-      operation(this.repositories),
-    );
+    return this.db.transaction('rw', this.db.tables, () => operation(this.repositories));
   }
 }

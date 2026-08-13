@@ -1,59 +1,32 @@
 # Component Guidelines
 
-> How components are built in this project.
+## Component Shape
 
----
+Components are named function exports. Keep domain operations outside render code and call an application service from event/effect boundaries. Use Ant Design primitives for dialogs, alerts, messages, buttons, and typography rather than recreating focus and keyboard behavior.
 
-## Overview
+`TimeZoneChangePrompt` is the reference for a browser-driven confirmation: detection is asynchronous, the modal is controlled by React state, cancellation does not mutate persistence, and confirmation awaits the application command.
 
-<!--
-Document your project's component conventions here.
+## Props and Composition
 
-Questions to answer:
-- What component patterns do you use?
-- How are props defined?
-- How do you handle composition?
-- What accessibility standards apply?
--->
+- Define an explicit interface when a component has non-trivial props; use `PropsWithChildren` for providers.
+- Pass domain values or view models, not Dexie records.
+- Keep infrastructure construction in `src/app/application.ts`.
+- Do not mirror mutable domain records into component state. State may hold a form draft or a read-only inspection result.
 
-(To be filled by the team)
+## Styling
 
----
-
-## Component Structure
-
-<!-- Standard structure of a component file -->
-
-(To be filled by the team)
-
----
-
-## Props Conventions
-
-<!-- How props should be defined and typed -->
-
-(To be filled by the team)
-
----
-
-## Styling Patterns
-
-<!-- How styles are applied (CSS modules, styled-components, Tailwind, etc.) -->
-
-(To be filled by the team)
-
----
+Global shell and design-token overrides live in `src/app/styles.css` and `AppProviders.tsx`. Prefer Ant Design theme tokens and semantic class names. Support the existing system light/dark preference and responsive breakpoints; avoid hard-coded color as the only status signal.
 
 ## Accessibility
 
-<!-- A11y requirements and patterns -->
+- Use semantic landmarks (`aside`, `nav`, `main`) and visible Chinese labels.
+- Every icon-only affordance needs an accessible name; decorative marks use `aria-hidden`.
+- Status requires text, icon, or shape in addition to color.
+- Preserve Ant Design focus behavior and test workflows through roles/labels rather than class names.
 
-(To be filled by the team)
+## Forbidden Patterns
 
----
-
-## Common Mistakes
-
-<!-- Component-related mistakes your team has made -->
-
-(To be filled by the team)
+- Importing `OneDayDatabase`, a Dexie table, or `createDexieRepositories` in a leaf component.
+- Mutating FullCalendar event objects as application truth.
+- Calling a persistence write during render.
+- Silently applying device time-zone changes.

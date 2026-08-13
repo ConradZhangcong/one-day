@@ -15,6 +15,7 @@ export default tseslint.config(
       '.trellis/**',
       'coverage/**',
       'dist/**',
+      'eslint.config.js',
       'playwright-report/**',
       'public/**',
       'test-results/**',

@@ -10,11 +10,7 @@ import {
   toSingleTaskRecord,
 } from '../../../src/infrastructure/db';
 
-import {
-  createSeries,
-  createSingleTask,
-  createTaskList,
-} from './fixtures';
+import { createSeries, createSingleTask, createTaskList } from './fixtures';
 import { createTestDatabase, type TestDatabaseContext } from './test-database';
 
 const contexts: TestDatabaseContext[] = [];
@@ -64,9 +60,7 @@ describe('Dexie cross-table transactions', () => {
       },
     );
 
-    await expect(
-      deleteListAndMoveContentsToInbox(context.db, list.id),
-    ).resolves.toEqual({
+    await expect(deleteListAndMoveContentsToInbox(context.db, list.id)).resolves.toEqual({
       movedSingleTaskCount: 1,
       movedRecurrenceSeriesCount: 1,
     });
@@ -76,9 +70,8 @@ describe('Dexie cross-table transactions', () => {
     await expect(repositories.singleTasks.get(task.id)).resolves.toMatchObject({
       listId: INBOX_LIST_ID,
     });
-    await expect(repositories.recurrenceSeries.get(series.id)).resolves.toMatchObject({
-      template: expect.objectContaining({ listId: INBOX_LIST_ID }),
-    });
+    const migratedSeries = await repositories.recurrenceSeries.get(series.id);
+    expect(migratedSeries?.template.listId).toBe(INBOX_LIST_ID);
     await expect(
       repositories.occurrenceRecords.get(occurrence.occurrenceKey),
     ).resolves.toEqual(occurrence);
@@ -92,13 +85,70 @@ describe('Dexie cross-table transactions', () => {
     await context.db.lists.add({ ...list, archivedValue: 0 });
     await context.db.singleTasks.add(toSingleTaskRecord(task));
 
-    await expect(
-      deleteListAndMoveContentsToInbox(context.db, list.id),
-    ).rejects.toThrow('system inbox');
+    await expect(deleteListAndMoveContentsToInbox(context.db, list.id)).rejects.toThrow(
+      'system inbox',
+    );
 
     await expect(context.db.lists.get(list.id)).resolves.toBeDefined();
     await expect(context.db.singleTasks.get(task.id)).resolves.toMatchObject({
       listId: list.id,
     });
+  });
+
+  it('decodes stored entities before list migration and rolls back corrupt data', async () => {
+    const context = await createTestDatabase();
+    contexts.push(context);
+    const list = createTaskList();
+    const corruptTask = {
+      ...toSingleTaskRecord(createSingleTask({ listId: list.id })),
+      title: '',
+    };
+    await context.db.lists.add({ ...list, archivedValue: 0 });
+    await context.db.singleTasks.add(corruptTask);
+
+    await expect(deleteListAndMoveContentsToInbox(context.db, list.id)).rejects.toThrow();
+    await expect(context.db.lists.get(list.id)).resolves.toBeDefined();
+    await expect(context.db.singleTasks.get(corruptTask.id)).resolves.toMatchObject({
+      listId: list.id,
+      title: '',
+    });
+  });
+
+  it('rejects stale recurrence list projections instead of orphaning a series', async () => {
+    const context = await createTestDatabase();
+    contexts.push(context);
+    const list = createTaskList();
+    const { series } = createSeries({ listId: list.id });
+    const staleSeries = {
+      ...toRecurrenceSeriesRecord(series),
+      listId: INBOX_LIST_ID,
+    };
+    await context.db.lists.add({ ...list, archivedValue: 0 });
+    await context.db.recurrenceSeries.add(staleSeries);
+
+    await expect(deleteListAndMoveContentsToInbox(context.db, list.id)).rejects.toThrow(
+      'projection is inconsistent',
+    );
+    await expect(context.db.lists.get(list.id)).resolves.toBeDefined();
+    await expect(context.db.recurrenceSeries.get(series.id)).resolves.toEqual(
+      staleSeries,
+    );
+  });
+
+  it('rejects a noncanonical persisted inbox before list deletion', async () => {
+    const context = await createTestDatabase();
+    contexts.push(context);
+    const list = createTaskList();
+    await context.db.lists.add({ ...list, archivedValue: 0 });
+    await context.db.lists.update(INBOX_LIST_ID, {
+      isSystem: false,
+      archived: true,
+      archivedValue: 1,
+    });
+
+    await expect(deleteListAndMoveContentsToInbox(context.db, list.id)).rejects.toThrow(
+      'not canonical',
+    );
+    await expect(context.db.lists.get(list.id)).resolves.toBeDefined();
   });
 });

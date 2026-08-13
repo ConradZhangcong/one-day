@@ -1,38 +1,25 @@
-# Backend Development Guidelines
+# Persistence and Domain Guidelines
 
-> Best practices for backend development in this project.
+> This local-first application has no server backend. “Backend” here means the framework-free domain, application use cases, and Dexie persistence adapter.
 
----
+## Pre-Development Checklist
 
-## Overview
+Before changing domain or persistence code, read:
 
-This directory contains guidelines for backend development. Fill in each file with your project's specific conventions.
-
----
+1. [Directory Structure](./directory-structure.md)
+2. [Database Guidelines](./database-guidelines.md)
+3. [Error Handling](./error-handling.md)
+4. [Quality Guidelines](./quality-guidelines.md)
+5. [Logging Guidelines](./logging-guidelines.md) when adding diagnostics
+6. [Cross-Layer Thinking Guide](../guides/cross-layer-thinking-guide.md)
+7. The task's time/recurrence research for calendar semantics
 
 ## Guidelines Index
 
 | Guide | Description | Status |
-|-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Database Guidelines](./database-guidelines.md) | ORM patterns, queries, migrations | To fill |
-| [Error Handling](./error-handling.md) | Error types, handling strategies | To fill |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Logging Guidelines](./logging-guidelines.md) | Structured logging, log levels | To fill |
-
----
-
-## How to Fill These Guidelines
-
-For each guideline file:
-
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
-
-The goal is to help AI assistants and new team members understand how YOUR project works.
-
----
-
-**Language**: All documentation should be written in **English**.
+|---|---|---|
+| [Directory Structure](./directory-structure.md) | Domain/application/infrastructure boundaries | Active |
+| [Database Guidelines](./database-guidelines.md) | Dexie schema, records, transactions, migrations | Active |
+| [Error Handling](./error-handling.md) | Domain codes and persistence failure behavior | Active |
+| [Quality Guidelines](./quality-guidelines.md) | Invariants and test gates | Active |
+| [Logging Guidelines](./logging-guidelines.md) | Local-only diagnostic policy | Active |

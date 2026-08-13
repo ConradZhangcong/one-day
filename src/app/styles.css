@@ -1,7 +1,7 @@
 :root {
   color: #183c37;
   background: #f7f3eb;
-  font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-family: Inter, 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -15,8 +15,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 86% 6%, rgb(246 198 91 / 26%), transparent 28rem),
-    #f7f3eb;
+    radial-gradient(circle at 86% 6%, rgb(246 198 91 / 26%), transparent 28rem), #f7f3eb;
 }
 
 button,
@@ -105,6 +104,274 @@ a {
 .main-panel {
   min-width: 0;
   padding: clamp(1.5rem, 5vw, 5rem);
+}
+
+.todo-page {
+  width: min(76rem, 100%);
+  margin: 0 auto;
+}
+
+.feature-page {
+  width: min(76rem, 100%);
+  margin: 0 auto;
+}
+
+.feature-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.recovery-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.recovery-tabs a {
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
+  color: inherit;
+  text-decoration: none;
+  background: color-mix(in srgb, var(--surface, #fff) 88%, #17675d 12%);
+}
+
+.recovery-tabs a.active {
+  color: #fff;
+  background: #17675d;
+}
+
+.recovery-list,
+.settings-grid,
+.review-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.recovery-card,
+.review-bucket {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid rgb(23 103 93 / 16%);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 72%);
+}
+
+.recovery-card-copy,
+.reschedule-form,
+.settings-grid .ant-space {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.review-grid,
+.settings-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.review-bucket {
+  display: block;
+}
+
+.review-items {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0;
+  list-style: none;
+}
+
+.review-items li {
+  display: flex;
+  gap: 0.65rem;
+}
+
+.review-items small {
+  display: block;
+  color: rgb(0 0 0 / 58%);
+}
+
+.review-controls,
+.review-date-control,
+.task-reminder-editor {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.task-reminder-editor {
+  align-items: flex-start;
+  padding: 1rem;
+  border-radius: 0.9rem;
+  background: rgb(23 103 93 / 7%);
+}
+
+.schedule-warning {
+  color: #a34f00;
+  font-size: 0.82rem;
+}
+
+.feature-loading {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem;
+}
+
+.app-error-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.app-error-page .ant-alert {
+  width: min(48rem, 100%);
+}
+
+.todo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.todo-header h1.ant-typography {
+  margin: 0 0 0.25rem;
+  color: #153f39;
+}
+
+.quick-add {
+  margin: 2rem 0 1rem;
+  padding: 1rem;
+  border: 1px solid rgb(21 63 57 / 12%);
+  border-radius: 1.1rem;
+  background: rgb(255 255 255 / 68%);
+  box-shadow: 0 1rem 2.5rem rgb(21 63 57 / 7%);
+}
+
+.quick-schedule {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  color: rgb(21 63 57 / 68%);
+  font-size: 0.86rem;
+}
+
+input[type='date'],
+input[type='datetime-local'],
+.schedule-field select {
+  min-height: 2rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid #d9d9d9;
+  border-radius: 0.5rem;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}
+
+.filter-bar {
+  display: grid;
+  grid-template-columns: minmax(12rem, 2fr) repeat(5, minmax(8rem, 1fr));
+  gap: 0.65rem;
+  margin: 1rem 0;
+}
+
+.filter-bar > * {
+  min-width: 0;
+}
+
+.task-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgb(21 63 57 / 10%);
+  border-left: 0.3rem solid #f6c65b;
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 58%);
+}
+
+.task-row.state-completed {
+  border-left-color: #4d8f74;
+}
+
+.task-row.state-skipped {
+  border-left-color: #8b8b84;
+}
+
+.task-main {
+  min-width: 0;
+  display: grid;
+  justify-items: start;
+  gap: 0.25rem;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.task-main:focus-visible {
+  outline: 3px solid #1677ff;
+  outline-offset: 0.35rem;
+  border-radius: 0.3rem;
+}
+
+.task-main strong {
+  font-size: 1rem;
+}
+
+.task-main small,
+.task-state {
+  color: rgb(21 63 57 / 65%);
+}
+
+.task-state {
+  font-size: 0.78rem;
+}
+
+.task-meta {
+  margin-top: 0.25rem;
+}
+
+.detail-form,
+.schedule-field {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.detail-form {
+  gap: 1.25rem;
+}
+
+.detail-form > label {
+  display: grid;
+  gap: 0.45rem;
+  font-weight: 600;
+}
+
+.schedule-field {
+  grid-template-columns: 4rem 9rem minmax(10rem, 1fr);
+  align-items: center;
+}
+
+.inline-create {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
 }
 
 .foundation-page {
@@ -212,8 +479,7 @@ a {
     width: auto;
     height: auto;
     padding: 0.55rem max(0.8rem, env(safe-area-inset-right))
-      calc(0.55rem + env(safe-area-inset-bottom))
-      max(0.8rem, env(safe-area-inset-left));
+      calc(0.55rem + env(safe-area-inset-bottom)) max(0.8rem, env(safe-area-inset-left));
     display: block;
   }
 
@@ -224,12 +490,13 @@ a {
   }
 
   .nav-list {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    overflow-x: auto;
     margin: 0;
   }
 
   .nav-list a {
+    flex: 0 0 4.5rem;
     justify-content: center;
     flex-direction: column;
     gap: 0.2rem;
@@ -253,6 +520,41 @@ a {
   .principle-grid {
     grid-template-columns: 1fr;
   }
+
+  .nav-list .custom-list-link {
+    display: none;
+  }
+
+  .todo-header,
+  .task-row {
+    align-items: stretch;
+  }
+
+  .task-row {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-bar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .recovery-card,
+  .review-grid,
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recovery-card {
+    display: grid;
+  }
+
+  .filter-bar > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .schedule-field {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -264,17 +566,19 @@ a {
 
   body {
     background:
-      radial-gradient(circle at 86% 6%, rgb(246 198 91 / 14%), transparent 28rem),
-      #102d29;
+      radial-gradient(circle at 86% 6%, rgb(246 198 91 / 14%), transparent 28rem), #102d29;
   }
 
   .hero-row h1.ant-typography,
+  .todo-header h1.ant-typography,
   .focus-card h3.ant-typography,
   .date-orbit {
     color: #f4f1e8;
   }
 
   .focus-card,
+  .quick-add,
+  .task-row,
   .principle-grid article,
   .date-orbit {
     border-color: rgb(255 255 255 / 10%);
@@ -286,6 +590,12 @@ a {
   }
 
   .principle-grid span {
+    color: rgb(233 240 234 / 68%);
+  }
+
+  .task-main small,
+  .task-state,
+  .quick-schedule {
     color: rgb(233 240 234 / 68%);
   }
 }

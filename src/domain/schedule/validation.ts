@@ -21,8 +21,7 @@ export const schedulePairSchema = z
 export type SchedulePair = z.infer<typeof schedulePairSchema>;
 
 export type ScheduleValidationResult =
-  | { readonly ok: true }
-  | { readonly ok: false; readonly error: DomainError };
+  { readonly ok: true } | { readonly ok: false; readonly error: DomainError };
 
 /**
  * Validate the business ordering of independent plan and deadline values.
@@ -89,21 +88,14 @@ export function assertValidScheduleOrder(
   }
 }
 
-export function assertValidSchedulePair(
-  pair: SchedulePair,
-  timeZone: TimeZoneId,
-): void {
+export function assertValidSchedulePair(pair: SchedulePair, timeZone: TimeZoneId): void {
   assertValidScheduleOrder(pair.plannedAt, pair.deadlineAt, timeZone);
 }
 
 /** Build a Zod boundary decoder when the user time zone is known. */
 export function createSchedulePairSchema(timeZone: TimeZoneId) {
   return schedulePairSchema.superRefine((pair, context) => {
-    const result = validateScheduleOrder(
-      pair.plannedAt,
-      pair.deadlineAt,
-      timeZone,
-    );
+    const result = validateScheduleOrder(pair.plannedAt, pair.deadlineAt, timeZone);
 
     if (!result.ok) {
       context.addIssue({

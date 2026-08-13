@@ -41,10 +41,7 @@ export function isSchedulePointPast(
       return compareLocalDates(instantToLocalDate(now, timeZone), point.date) > 0;
     case 'timed':
       return (
-        compareInstants(
-          localDateTimeToInstant(point.localDateTime, timeZone),
-          now,
-        ) < 0
+        compareInstants(localDateTimeToInstant(point.localDateTime, timeZone), now) < 0
       );
   }
 }

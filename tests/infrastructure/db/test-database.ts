@@ -1,10 +1,7 @@
 import Dexie from 'dexie';
 
 import { instantSchema, type Instant } from '../../../src/domain';
-import {
-  OneDayDatabase,
-  ensureInbox,
-} from '../../../src/infrastructure/db';
+import { OneDayDatabase, ensureInbox } from '../../../src/infrastructure/db';
 
 export interface TestDatabaseContext {
   db: OneDayDatabase;

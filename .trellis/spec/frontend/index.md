@@ -1,39 +1,32 @@
 # Frontend Development Guidelines
 
-> Best practices for frontend development in this project.
-
----
+> Project-specific conventions for the React/Vite PWA.
 
 ## Overview
 
-This directory contains guidelines for frontend development. Fill in each file with your project's specific conventions.
+The UI is a React 19 client application. Ant Design provides accessible interaction primitives, React Router owns navigation, and IndexedDB is the local source of truth. Components call application services; they never write Dexie tables.
 
----
+## Pre-Development Checklist
+
+Before changing frontend code, read:
+
+1. [Directory Structure](./directory-structure.md)
+2. [Component Guidelines](./component-guidelines.md)
+3. [State Management](./state-management.md)
+4. [Type Safety](./type-safety.md)
+5. [Quality Guidelines](./quality-guidelines.md)
+6. [Hook Guidelines](./hook-guidelines.md) when adding effects or subscriptions
+7. [Cross-Layer Thinking Guide](../guides/cross-layer-thinking-guide.md) for persisted data flows
 
 ## Guidelines Index
 
 | Guide | Description | Status |
-|-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Component Guidelines](./component-guidelines.md) | Component patterns, props, composition | To fill |
-| [Hook Guidelines](./hook-guidelines.md) | Custom hooks, data fetching patterns | To fill |
-| [State Management](./state-management.md) | Local state, global state, server state | To fill |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Type Safety](./type-safety.md) | Type patterns, validation | To fill |
+|---|---|---|
+| [Directory Structure](./directory-structure.md) | App composition and feature placement | Active |
+| [Component Guidelines](./component-guidelines.md) | Components, Ant Design, styling, accessibility | Active |
+| [Hook Guidelines](./hook-guidelines.md) | Effects and browser subscriptions | Active |
+| [State Management](./state-management.md) | Local, URL, and IndexedDB-backed state | Active |
+| [Quality Guidelines](./quality-guidelines.md) | Required checks and forbidden shortcuts | Active |
+| [Type Safety](./type-safety.md) | Strict TypeScript and Zod boundaries | Active |
 
----
-
-## How to Fill These Guidelines
-
-For each guideline file:
-
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
-
-The goal is to help AI assistants and new team members understand how YOUR project works.
-
----
-
-**Language**: All documentation should be written in **English**.
+**Language**: Project specs are written in English; product UI copy is Simplified Chinese.

@@ -15,9 +15,7 @@ import { INBOX_LIST_ID } from '../../../src/infrastructure/db';
 
 export const FIXTURE_INSTANT = instantSchema.parse('2026-08-13T01:00:00Z');
 
-export function createTaskList(
-  overrides: Partial<TaskList> = {},
-): TaskList {
+export function createTaskList(overrides: Partial<TaskList> = {}): TaskList {
   return taskListSchema.parse({
     id: 'list:work',
     name: '工作',
@@ -28,9 +26,7 @@ export function createTaskList(
   });
 }
 
-export function createSingleTask(
-  overrides: Partial<SingleTask> = {},
-): SingleTask {
+export function createSingleTask(overrides: Partial<SingleTask> = {}): SingleTask {
   return singleTaskSchema.parse({
     id: 'task:one',
     title: '准备周会',
@@ -53,10 +49,10 @@ export function createSingleTask(
   });
 }
 
-export function createSeries(options?: {
-  id?: string;
-  listId?: string;
-}): { series: RecurrenceSeries; occurrence: OccurrenceRecord } {
+export function createSeries(options?: { id?: string; listId?: string }): {
+  series: RecurrenceSeries;
+  occurrence: OccurrenceRecord;
+} {
   const id = options?.id ?? 'series:weekly-review';
   const originalAnchor = {
     kind: 'allDay' as const,

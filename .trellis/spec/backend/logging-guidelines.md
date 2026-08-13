@@ -1,51 +1,16 @@
 # Logging Guidelines
 
-> How logging is done in this project.
+## Current Policy
 
----
+The MVP has no analytics, remote error reporting, or logging dependency. User data stays on-device. Expected failures are returned/thrown to the UI, which shows concise Chinese feedback; tests assert errors directly.
 
-## Overview
+## If Diagnostics Are Added
 
-<!--
-Document your project's logging conventions here.
+- Keep diagnostics local and structured with an event name, safe error code, schema/app version, and timestamp.
+- Log lifecycle facts such as migration start/failure or service-worker update state, not task titles, notes, tags, backup contents, or exact user schedule.
+- Use `warn` for recoverable capability limitations and `error` for failed operations; do not emit routine domain decisions as errors.
+- Any future remote reporting is a product/privacy scope change and requires explicit disclosure and user choice.
 
-Questions to answer:
-- What logging library do you use?
-- What are the log levels and when to use each?
-- What should be logged?
-- What should NOT be logged (PII, secrets)?
--->
+## Forbidden Data
 
-(To be filled by the team)
-
----
-
-## Log Levels
-
-<!-- When to use each level: debug, info, warn, error -->
-
-(To be filled by the team)
-
----
-
-## Structured Logging
-
-<!-- Log format, required fields -->
-
-(To be filled by the team)
-
----
-
-## What to Log
-
-<!-- Important events to log -->
-
-(To be filled by the team)
-
----
-
-## What NOT to Log
-
-<!-- Sensitive data, PII, secrets -->
-
-(To be filled by the team)
+Never log task content, notes, tag names, complete backups, IndexedDB rows, notification text, or identifiers that can reconstruct a user's schedule.

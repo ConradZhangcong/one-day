@@ -112,9 +112,9 @@ describe('organization and reminder schemas', () => {
   });
 
   it('requires tag identity, name, and color', () => {
-    expect(tagSchema.safeParse({ id: 'tag-1', name: '工作', color: '#1677ff' }).success).toBe(
-      true,
-    );
+    expect(
+      tagSchema.safeParse({ id: 'tag-1', name: '工作', color: '#1677ff' }).success,
+    ).toBe(true);
     expect(tagSchema.safeParse({ id: 'tag-1', name: '', color: '#1677ff' }).success).toBe(
       false,
     );
@@ -133,9 +133,9 @@ describe('organization and reminder schemas', () => {
 
     expect(reminder).not.toHaveProperty('deadlineAt');
     expect(reminder).not.toHaveProperty('plannedAt');
-    expect(
-      reminderSchema.safeParse({ ...reminder, offsetMinutes: -1 }).success,
-    ).toBe(false);
+    expect(reminderSchema.safeParse({ ...reminder, offsetMinutes: -1 }).success).toBe(
+      false,
+    );
   });
 
   it('rejects occurrence states with contradictory timestamps', () => {

@@ -1,51 +1,34 @@
-# Quality Guidelines
+# Frontend Quality Guidelines
 
-> Code quality standards for frontend development.
+## Required Checks
 
----
+Run from the repository root:
 
-## Overview
+```sh
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test:run
+pnpm build
+```
 
-<!--
-Document your project's quality standards here.
+Use `pnpm install --frozen-lockfile` for reproducible installs. E2E is configured in Playwright for Chromium, Firefox, WebKit, and mobile profiles; run it when a user workflow exists or PWA behavior changes.
 
-Questions to answer:
-- What patterns are forbidden?
-- What linting rules do you enforce?
-- What are your testing requirements?
-- What code review standards apply?
--->
+## Testing
 
-(To be filled by the team)
+- Domain invariants get table-driven unit tests, including DST-aware zones.
+- Application commands get tests against fake IndexedDB when transactions/settings matter.
+- Components are tested through visible roles, labels, and user events.
+- PWA install/offline claims require a production build and browser verification; a generated manifest alone is not evidence of offline restart.
 
----
+## Review Checklist
+
+- No component writes or decodes Dexie records.
+- Async UI has loading, failure, and cancellation behavior.
+- Browser subscriptions clean up and tolerate Strict Mode.
+- State meaning is not color-only and Chinese copy explains destructive/temporal effects.
+- Deferred Phase 2+ product behavior has not leaked into the foundation.
 
 ## Forbidden Patterns
 
-<!-- Patterns that should never be used and why -->
-
-(To be filled by the team)
-
----
-
-## Required Patterns
-
-<!-- Patterns that must always be used -->
-
-(To be filled by the team)
-
----
-
-## Testing Requirements
-
-<!-- What level of testing is expected -->
-
-(To be filled by the team)
-
----
-
-## Code Review Checklist
-
-<!-- What reviewers should check -->
-
-(To be filled by the team)
+Disabling lint/type rules without a scoped explanation, snapshotting implementation markup instead of behavior, swallowing errors, or claiming browser/PWA behavior without running it.

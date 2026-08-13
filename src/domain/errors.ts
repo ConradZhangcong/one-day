@@ -13,10 +13,18 @@ export const DomainErrorCode = {
   RECURRENCE_ANCHOR_MISSING: 'RECURRENCE_ANCHOR_MISSING',
   INVALID_OCCURRENCE: 'INVALID_OCCURRENCE',
   INVALID_OCCURRENCE_KEY: 'INVALID_OCCURRENCE_KEY',
+  LIST_NOT_FOUND: 'LIST_NOT_FOUND',
+  SYSTEM_LIST_IMMUTABLE: 'SYSTEM_LIST_IMMUTABLE',
+  TASK_NOT_FOUND: 'TASK_NOT_FOUND',
+  TASK_ALREADY_HANDLED: 'TASK_ALREADY_HANDLED',
+  INVALID_REVIEW_RANGE: 'INVALID_REVIEW_RANGE',
+  REMINDER_NOT_FOUND: 'REMINDER_NOT_FOUND',
+  REMINDER_TARGET_MISSING: 'REMINDER_TARGET_MISSING',
+  REMINDER_OWNER_NOT_FOUND: 'REMINDER_OWNER_NOT_FOUND',
+  ARCHIVED_LIST: 'ARCHIVED_LIST',
 } as const;
 
-export type DomainErrorCode =
-  (typeof DomainErrorCode)[keyof typeof DomainErrorCode];
+export type DomainErrorCode = (typeof DomainErrorCode)[keyof typeof DomainErrorCode];
 
 /** Upper-case alias for consumers that prefer constants over enum-like names. */
 export const DOMAIN_ERROR_CODES = DomainErrorCode;

@@ -1,10 +1,7 @@
 import { z } from 'zod';
 
 import { DomainError, DomainErrorCode } from '../errors';
-import {
-  scheduledPointSchema,
-  type ScheduledPoint,
-} from '../schedule/time';
+import { scheduledPointSchema, type ScheduledPoint } from '../schedule/time';
 
 const PREFIX = 'occ:v1';
 const KEY_PATTERN = /^occ:v1:([^:]+):([1-9]\d*):([dt]):([^:]+)$/;
@@ -130,9 +127,7 @@ export function createOccurrenceKey(
   return occurrenceKeySchema.parse(canonicalKey(identity));
 }
 
-export function tryParseOccurrenceKey(
-  input: unknown,
-): OccurrenceIdentity | undefined {
+export function tryParseOccurrenceKey(input: unknown): OccurrenceIdentity | undefined {
   if (typeof input !== 'string') {
     return undefined;
   }

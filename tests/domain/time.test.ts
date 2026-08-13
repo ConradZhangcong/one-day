@@ -15,12 +15,8 @@ import {
 describe('time boundary decoders', () => {
   it('accepts exact JSON persistence formats', () => {
     expect(decodeLocalDate('2028-02-29')).toBe('2028-02-29');
-    expect(decodeLocalDateTime('2026-08-13T09:05')).toBe(
-      '2026-08-13T09:05',
-    );
-    expect(decodeInstant('2026-08-13T01:05:00Z')).toBe(
-      '2026-08-13T01:05:00Z',
-    );
+    expect(decodeLocalDateTime('2026-08-13T09:05')).toBe('2026-08-13T09:05');
+    expect(decodeInstant('2026-08-13T01:05:00Z')).toBe('2026-08-13T01:05:00Z');
     expect(decodeTimeZoneId('Asia/Shanghai')).toBe('Asia/Shanghai');
   });
 
@@ -128,9 +124,7 @@ describe('plan/deadline order', () => {
     const newYork = decodeTimeZoneId('America/New_York');
     const skippedWallTime = decodeLocalDateTime('2026-03-08T02:30');
 
-    expect(localDateTimeToInstant(skippedWallTime, newYork)).toBe(
-      '2026-03-08T07:30:00Z',
-    );
+    expect(localDateTimeToInstant(skippedWallTime, newYork)).toBe('2026-03-08T07:30:00Z');
 
     const result = validateScheduleOrder(
       { kind: 'timed', localDateTime: skippedWallTime },

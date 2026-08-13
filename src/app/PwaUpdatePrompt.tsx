@@ -32,7 +32,7 @@ export function PwaUpdatePrompt() {
     });
 
     return () => notification.destroy(key);
-  }, [needRefresh, setNeedRefresh, updateServiceWorker]);
+  }, [needRefresh, notification, setNeedRefresh, updateServiceWorker]);
 
   return null;
 }
