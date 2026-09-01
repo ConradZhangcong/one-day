@@ -27,3 +27,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 2: Shadcn 原型界面、长期目标与日历
+
+**Date**: 2026-09-01
+**Task**: Shadcn 原型界面、长期目标与日历
+**Branch**: `codex/todo-calendar-mvp`
+
+### Summary
+
+按原型将组件库完整迁移到 shadcn，重构响应式应用外壳和现有页面；新增长期目标、普通任务关联和自动进度；新增议程/日/周/月真实数据日历、Dexie v2 迁移及回归测试。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e86f8ea` | (see git log) |
+
+### Status
+
+[OK] **Completed**
