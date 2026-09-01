@@ -1,0 +1,28 @@
+{
+  "id": "fixed-recurrence",
+  "name": "fixed-recurrence",
+  "title": "实现固定重复事项",
+  "description": "",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "cong",
+  "assignee": "cong",
+  "createdAt": "2026-09-01",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "description": "实现固定日历重复、单活跃实例、统一 occurrence 投影与 shadcn 创建管理界面"
+  }
+}
