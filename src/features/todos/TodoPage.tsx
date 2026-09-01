@@ -1,30 +1,36 @@
-import {
-  CheckOutlined,
-  DeleteOutlined,
-  EditOutlined,
-  ForwardOutlined,
-  PlusOutlined,
-  RollbackOutlined,
-  SettingOutlined,
-} from '@ant-design/icons';
+import { Check, Forward, ListTodo, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { Temporal } from 'temporal-polyfill';
-import {
-  Alert,
-  App,
-  Button,
-  Empty,
-  Input,
-  Select,
-  Skeleton,
-  Space,
-  Tag,
-  Typography,
-} from 'antd';
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
+import { toast } from 'sonner';
 
 import { getApplicationServices } from '@/app/application';
-import { decodeSchedulePoint, type SchedulePoint, type SingleTask } from '@/domain';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  ClearableInput,
+  EmptyState,
+  SimpleSelect,
+  TagBadge,
+} from '@/components/ui/compat';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  decodeSchedulePoint,
+  type LongTermGoal,
+  type SchedulePoint,
+  type SingleTask,
+} from '@/domain';
 
 import { ListManager } from './ListManager';
 import { TaskDetailsDrawer } from './TaskDetailsDrawer';
@@ -49,19 +55,21 @@ const VIEW_COPY: Record<TodoViewKind, { title: string; subtitle: string }> = {
 function QuickAdd({
   defaultListId,
   today,
+  goals,
 }: {
   readonly defaultListId: string;
   readonly today: string;
+  readonly goals: readonly LongTermGoal[];
 }) {
-  const { message } = App.useApp();
   const [title, setTitle] = useState('');
   const [plannedAt, setPlannedAt] = useState<SchedulePoint>({ kind: 'none' });
   const [deadlineAt, setDeadlineAt] = useState<SchedulePoint>({ kind: 'none' });
   const [saving, setSaving] = useState(false);
+  const [goalId, setGoalId] = useState('');
 
   const create = async () => {
     if (!title.trim()) {
-      void message.warning('请输入任务标题');
+      toast.warning('请输入任务标题');
       return;
     }
     setSaving(true);
@@ -75,14 +83,16 @@ function QuickAdd({
         priority: 'none',
         plannedAt,
         deadlineAt,
+        ...(goalId ? { goalId } : {}),
       });
       setTitle('');
       setPlannedAt({ kind: 'none' });
       setDeadlineAt({ kind: 'none' });
-      void message.success('任务已加入');
+      setGoalId('');
+      toast.success('任务已加入');
     } catch (error) {
       const code = error instanceof Error && 'code' in error ? String(error.code) : '';
-      void message.error(
+      toast.error(
         code === 'DEADLINE_BEFORE_PLAN'
           ? '截止时间不能早于计划时间。'
           : '创建失败，输入内容仍为你保留。',
@@ -101,15 +111,18 @@ function QuickAdd({
         void create();
       }}
     >
-      <Input
-        autoFocus
-        aria-label="任务标题"
-        size="large"
-        value={title}
-        onChange={(event) => setTitle(event.target.value)}
-        placeholder="添加一件待办，按 Enter 保存"
-        prefix={<PlusOutlined />}
-      />
+      <div className="relative">
+        <Plus className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          autoFocus
+          id="quick-add-title"
+          aria-label="任务标题"
+          className="h-11 pl-9"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="添加一件待办，按 Enter 保存"
+        />
+      </div>
       <div className="quick-schedule">
         <span>计划</span>
         <input
@@ -125,7 +138,9 @@ function QuickAdd({
           }
         />
         <Button
-          size="small"
+          type="button"
+          variant="outline"
+          size="sm"
           onClick={() =>
             setPlannedAt(decodeSchedulePoint({ kind: 'allDay', date: today }))
           }
@@ -133,7 +148,9 @@ function QuickAdd({
           今天
         </Button>
         <Button
-          size="small"
+          type="button"
+          variant="outline"
+          size="sm"
           onClick={() =>
             setPlannedAt(decodeSchedulePoint({ kind: 'allDay', date: tomorrow }))
           }
@@ -153,8 +170,18 @@ function QuickAdd({
             )
           }
         />
-        <Button htmlType="submit" type="primary" loading={saving}>
-          添加
+        <SimpleSelect
+          allowClear
+          ariaLabel="关联长期目标"
+          placeholder="关联目标"
+          value={goalId || undefined}
+          options={goals
+            .filter((goal) => goal.status !== 'archived')
+            .map((goal) => ({ value: goal.id, label: goal.title }))}
+          onChange={(value) => setGoalId(typeof value === 'string' ? value : '')}
+        />
+        <Button type="submit" disabled={saving}>
+          {saving ? '正在添加…' : '添加'}
         </Button>
       </div>
     </form>
@@ -163,13 +190,14 @@ function QuickAdd({
 
 export function TodoPage() {
   const snapshot = useTodoSnapshot();
-  const { message, modal } = App.useApp();
   const location = useLocation();
   const navigate = useNavigate();
   const { listId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [editingId, setEditingId] = useState<string>();
   const [managingLists, setManagingLists] = useState(false);
+  const [removing, setRemoving] = useState<SingleTask>();
+  const [removingBusy, setRemovingBusy] = useState(false);
   const view = getTodoView(location.pathname);
   const today = useCurrentLocalDate(snapshot?.timeZone);
 
@@ -193,23 +221,26 @@ export function TodoPage() {
 
   if (snapshot === undefined || today === undefined)
     return (
-      <section className="todo-page">
-        <Skeleton active />
+      <section className="todo-page grid gap-3">
+        <Skeleton className="h-16 w-72" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-20 w-full" />
       </section>
     );
+
   const currentList = snapshot.lists.find((item) => item.id === listId);
   const editing = snapshot.tasks.find((task) => task.id === editingId);
   if (view === 'list' && currentList === undefined)
     return (
-      <section className="todo-page">
-        <Alert
-          type="error"
-          showIcon
-          message="清单不存在"
-          action={<Button onClick={() => navigate('/inbox')}>返回收件箱</Button>}
-        />
+      <section className="todo-page rounded-xl border bg-card p-6">
+        <h1 className="text-xl font-semibold">清单不存在</h1>
+        <p className="mt-2 text-sm text-muted-foreground">这个清单可能已被删除。</p>
+        <Button className="mt-4" onClick={() => navigate('/inbox')}>
+          返回收件箱
+        </Button>
       </section>
     );
+
   const copy =
     view === 'list'
       ? {
@@ -227,42 +258,43 @@ export function TodoPage() {
   const run = async (operation: () => Promise<unknown>, success: string) => {
     try {
       await operation();
-      void message.success(success);
+      toast.success(success);
     } catch {
-      void message.error('操作失败，请重试。');
+      toast.error('操作失败，请重试。');
     }
   };
-  const removeTask = (task: SingleTask) =>
-    modal.confirm({
-      title: `永久删除“${task.title}”？`,
-      content: '此任务会从本设备明确删除，无法撤销。',
-      okText: '删除任务',
-      cancelText: '取消',
-      okButtonProps: { danger: true },
-      onOk: () =>
-        run(
-          async () => (await getApplicationServices()).todos.deleteTask(task.id),
-          '任务已删除',
-        ),
-    });
+
+  const removeTask = async () => {
+    if (removing === undefined) return;
+    setRemovingBusy(true);
+    try {
+      await (await getApplicationServices()).todos.deleteTask(removing.id);
+      toast.success('任务已删除');
+      setRemoving(undefined);
+    } catch {
+      toast.error('删除失败，任务仍保留。');
+    } finally {
+      setRemovingBusy(false);
+    }
+  };
 
   return (
     <section className="todo-page">
       <header className="todo-header">
         <div>
-          <Typography.Title>{copy.title}</Typography.Title>
-          <Typography.Text type="secondary">{copy.subtitle}</Typography.Text>
+          <p className="page-eyebrow">任务浏览</p>
+          <h1>{copy.title}</h1>
+          <p className="text-muted-foreground">{copy.subtitle}</p>
         </div>
-        <Button icon={<SettingOutlined />} onClick={() => setManagingLists(true)}>
-          管理清单
+        <Button variant="outline" onClick={() => setManagingLists(true)}>
+          <ListTodo data-icon="inline-start" /> 管理清单
         </Button>
       </header>
       {view !== 'completed' ? (
-        <QuickAdd defaultListId={defaultListId} today={today} />
+        <QuickAdd defaultListId={defaultListId} today={today} goals={snapshot.goals} />
       ) : null}
       <div className="filter-bar" aria-label="任务筛选">
-        <Input
-          allowClear
+        <ClearableInput
           value={searchParams.get('q') ?? ''}
           onChange={(event) => setFilter('q', event.target.value)}
           placeholder="搜索标题或备注"
@@ -274,26 +306,28 @@ export function TodoPage() {
           value={searchParams.get('date') ?? ''}
           onChange={(event) => setFilter('date', event.target.value)}
         />
-        <Select
+        <SimpleSelect
           allowClear
-          aria-label="按清单筛选"
+          ariaLabel="按清单筛选"
           placeholder="全部清单"
           value={searchParams.get('list') ?? undefined}
           options={snapshot.lists.map((item) => ({ value: item.id, label: item.name }))}
-          onChange={(value?: string) => setFilter('list', value)}
+          onChange={(value) =>
+            setFilter('list', typeof value === 'string' ? value : undefined)
+          }
         />
-        <Select
-          mode="multiple"
-          allowClear
-          aria-label="按标签筛选"
-          placeholder="全部标签"
+        <SimpleSelect
+          multiple
+          ariaLabel="按标签筛选"
           value={(searchParams.get('tags') ?? '').split(',').filter(Boolean)}
           options={snapshot.tags.map((item) => ({ value: item.id, label: item.name }))}
-          onChange={(values: string[]) => setFilter('tags', values.join(','))}
+          onChange={(value) =>
+            setFilter('tags', Array.isArray(value) ? value.join(',') : undefined)
+          }
         />
-        <Select
+        <SimpleSelect
           allowClear
-          aria-label="按优先级筛选"
+          ariaLabel="按优先级筛选"
           placeholder="全部优先级"
           value={searchParams.get('priority') ?? undefined}
           options={[
@@ -302,11 +336,13 @@ export function TodoPage() {
             { value: 'medium', label: '中' },
             { value: 'high', label: '高' },
           ]}
-          onChange={(value?: string) => setFilter('priority', value)}
+          onChange={(value) =>
+            setFilter('priority', typeof value === 'string' ? value : undefined)
+          }
         />
-        <Select
+        <SimpleSelect
           allowClear
-          aria-label="按状态筛选"
+          ariaLabel="按状态筛选"
           placeholder="全部状态"
           value={searchParams.get('state') ?? undefined}
           options={[
@@ -314,12 +350,14 @@ export function TodoPage() {
             { value: 'completed', label: '已完成' },
             { value: 'skipped', label: '已跳过' },
           ]}
-          onChange={(value?: string) => setFilter('state', value)}
+          onChange={(value) =>
+            setFilter('state', typeof value === 'string' ? value : undefined)
+          }
         />
       </div>
       <div className="task-list" aria-live="polite">
         {filteredTasks.length === 0 ? (
-          <Empty
+          <EmptyState
             description={
               searchParams.size > 0
                 ? '没有符合筛选条件的任务'
@@ -346,32 +384,32 @@ export function TodoPage() {
                 <strong>{task.title}</strong>
                 <small>{formatSchedule(task)}</small>
                 <span className="task-meta">
-                  <Tag>
+                  <Badge variant="secondary">
                     {snapshot.lists.find((item) => item.id === task.listId)?.name ??
                       '未知清单'}
-                  </Tag>
+                  </Badge>
                   {task.priority !== 'none' ? (
-                    <Tag>
+                    <Badge variant="outline">
                       {({ low: '低', medium: '中', high: '高' } as const)[task.priority]}
                       优先级
-                    </Tag>
+                    </Badge>
                   ) : null}
                   {task.tagIds.map((id) => {
                     const tag = snapshot.tags.find((item) => item.id === id);
                     return tag ? (
-                      <Tag key={id} color={tag.color}>
+                      <TagBadge key={id} color={tag.color}>
                         {tag.name}
-                      </Tag>
+                      </TagBadge>
                     ) : null;
                   })}
                 </span>
               </button>
-              <Space wrap>
+              <div className="flex flex-wrap gap-2">
                 {task.state === 'pending' ? (
                   <>
                     <Button
+                      variant="outline"
                       aria-label={`完成${task.title}`}
-                      icon={<CheckOutlined />}
                       onClick={() =>
                         void run(
                           async () =>
@@ -383,11 +421,11 @@ export function TodoPage() {
                         )
                       }
                     >
-                      完成
+                      <Check data-icon="inline-start" /> 完成
                     </Button>
                     <Button
+                      variant="outline"
                       aria-label={`跳过${task.title}`}
-                      icon={<ForwardOutlined />}
                       onClick={() =>
                         void run(
                           async () =>
@@ -399,13 +437,13 @@ export function TodoPage() {
                         )
                       }
                     >
-                      跳过
+                      <Forward data-icon="inline-start" /> 跳过
                     </Button>
                   </>
                 ) : null}
                 {task.state === 'completed' ? (
                   <Button
-                    icon={<RollbackOutlined />}
+                    variant="outline"
                     onClick={() =>
                       void run(
                         async () =>
@@ -416,21 +454,26 @@ export function TodoPage() {
                       )
                     }
                   >
-                    撤销完成
+                    <RotateCcw data-icon="inline-start" /> 撤销完成
                   </Button>
                 ) : null}
                 <Button
+                  variant="ghost"
+                  size="icon"
                   aria-label={`编辑${task.title}`}
-                  icon={<EditOutlined />}
                   onClick={() => setEditingId(task.id)}
-                />
+                >
+                  <Pencil />
+                </Button>
                 <Button
-                  danger
+                  variant="destructive"
+                  size="icon"
                   aria-label={`删除${task.title}`}
-                  icon={<DeleteOutlined />}
-                  onClick={() => removeTask(task)}
-                />
-              </Space>
+                  onClick={() => setRemoving(task)}
+                >
+                  <Trash2 />
+                </Button>
+              </div>
             </article>
           ))
         )}
@@ -448,6 +491,32 @@ export function TodoPage() {
         lists={snapshot.lists}
         onClose={() => setManagingLists(false)}
       />
+      <AlertDialog
+        open={removing !== undefined}
+        onOpenChange={(value) => !value && setRemoving(undefined)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>永久删除“{removing?.title}”？</AlertDialogTitle>
+            <AlertDialogDescription>
+              此任务会从本设备明确删除，无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removingBusy}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={removingBusy}
+              onClick={(event) => {
+                event.preventDefault();
+                void removeTask();
+              }}
+            >
+              {removingBusy ? '正在删除…' : '删除任务'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

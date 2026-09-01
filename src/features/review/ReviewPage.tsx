@@ -1,56 +1,40 @@
-import {
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  ForwardOutlined,
-  WarningOutlined,
-} from '@ant-design/icons';
+import { CheckCircle2, Clock3, Forward, TriangleAlert } from 'lucide-react';
 import { Temporal } from 'temporal-polyfill';
-import { Empty, Spin, Statistic, Typography } from 'antd';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link, useSearchParams } from 'react-router';
 
 import { getApplicationServices, type ApplicationServices } from '@/app/application';
+import { EmptyState, LoadingState } from '@/components/ui/compat';
+import { Input } from '@/components/ui/input';
 import { localDateSchema, type Instant, type TimeZoneId } from '@/domain';
-import { formatSchedule } from '@/features/todos/task-view';
 import { useClockTick } from '@/features/recovery/useClockTick';
+import { formatSchedule } from '@/features/todos/task-view';
 
 type ReviewPeriod = 'day' | 'week';
 type ReviewSnapshot = Awaited<ReturnType<ApplicationServices['recovery']['review']>>;
 type ReviewBucket = ReviewSnapshot['completed'];
 
-interface BucketConfig {
-  readonly key: 'completed' | 'skipped' | 'missedPlan' | 'overdue';
-  readonly title: string;
-  readonly empty: string;
-  readonly icon: React.ReactNode;
-}
-
-const BUCKETS: readonly BucketConfig[] = [
+const BUCKETS = [
   {
     key: 'completed',
     title: '已完成',
     empty: '这个范围内没有完成记录',
-    icon: <CheckCircleOutlined />,
+    icon: CheckCircle2,
   },
-  {
-    key: 'skipped',
-    title: '已跳过',
-    empty: '这个范围内没有跳过记录',
-    icon: <ForwardOutlined />,
-  },
+  { key: 'skipped', title: '已跳过', empty: '这个范围内没有跳过记录', icon: Forward },
   {
     key: 'missedPlan',
     title: '错过计划',
     empty: '这个范围内没有错过计划的任务',
-    icon: <ClockCircleOutlined />,
+    icon: Clock3,
   },
   {
     key: 'overdue',
     title: '仍逾期',
     empty: '这个范围内没有仍逾期的任务',
-    icon: <WarningOutlined />,
+    icon: TriangleAlert,
   },
-];
+] as const;
 
 function formatLocalActionTime(
   instant: Instant | undefined,
@@ -66,7 +50,7 @@ function formatLocalActionTime(
 
 function itemDetail(
   item: ReviewBucket['items'][number],
-  key: BucketConfig['key'],
+  key: (typeof BUCKETS)[number]['key'],
   timeZone: TimeZoneId,
 ): string {
   if (key === 'completed') {
@@ -86,25 +70,29 @@ function ReviewBucketCard({
   timeZone,
 }: {
   readonly bucket: ReviewBucket;
-  readonly config: BucketConfig;
+  readonly config: (typeof BUCKETS)[number];
   readonly timeZone: TimeZoneId;
 }) {
+  const Icon = config.icon;
   return (
     <article className={`review-bucket review-${config.key}`}>
-      <Statistic
-        title={config.title}
-        value={bucket.count}
-        prefix={config.icon}
-        aria-label={`${config.title} ${bucket.count} 项`}
-      />
+      <div className="review-stat" aria-label={`${config.title} ${bucket.count} 项`}>
+        <span className="review-stat-icon">
+          <Icon />
+        </span>
+        <span>
+          <strong>{bucket.count}</strong>
+          <small>{config.title}</small>
+        </span>
+      </div>
       {bucket.items.length === 0 ? (
-        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={config.empty} />
+        <EmptyState description={config.empty} />
       ) : (
         <ul className="review-items">
           {bucket.items.map((item) => (
             <li key={item.task.id}>
               <span className="review-item-status" aria-hidden="true">
-                {config.icon}
+                <Icon />
               </span>
               <span>
                 <strong>{item.task.title}</strong>
@@ -144,18 +132,17 @@ export function ReviewPage() {
       ? ''
       : snapshot.period === 'day'
         ? snapshot.startDate
-        : `${snapshot.startDate} 至 ${Temporal.PlainDate.from(snapshot.endDateExclusive)
-            .subtract({ days: 1 })
-            .toString()}（周一开周）`;
+        : `${snapshot.startDate} 至 ${Temporal.PlainDate.from(snapshot.endDateExclusive).subtract({ days: 1 }).toString()}（周一开周）`;
 
   return (
     <section className="feature-page review-page">
       <header className="feature-header">
         <div>
-          <Typography.Title>回顾</Typography.Title>
-          <Typography.Text type="secondary">
+          <p className="page-eyebrow">完成记录</p>
+          <h1>回顾</h1>
+          <p className="text-muted-foreground">
             只读查看完成、跳过和仍需恢复的事项，不会修改任务。
-          </Typography.Text>
+          </p>
         </div>
       </header>
       <div className="review-controls">
@@ -177,7 +164,7 @@ export function ReviewPage() {
         </nav>
         <label className="review-date-control">
           选择日期
-          <input
+          <Input
             aria-label="回顾日期"
             type="date"
             value={anchorDate ?? ''}
@@ -187,9 +174,7 @@ export function ReviewPage() {
       </div>
       {rangeCopy ? <p className="review-range">回顾范围：{rangeCopy}</p> : null}
       {snapshot === undefined ? (
-        <div className="feature-loading" role="status">
-          <Spin /> 正在整理回顾…
-        </div>
+        <LoadingState label="正在整理回顾…" />
       ) : (
         <div className="review-grid" aria-live="polite">
           {BUCKETS.map((config) => (

@@ -1,16 +1,23 @@
-import {
-  CheckOutlined,
-  ClockCircleOutlined,
-  ForwardOutlined,
-  WarningOutlined,
-} from '@ant-design/icons';
-import { Alert, App, Button, Empty, Modal, Space, Spin, Tag, Typography } from 'antd';
+import { Check, Clock3, Forward, Info, TriangleAlert } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
+import { toast } from 'sonner';
 
 import { getApplicationServices } from '@/app/application';
 import type { RecoverySnapshot, RecoveryTaskView } from '@/application';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { EmptyState, LoadingState } from '@/components/ui/compat';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   schedulePointLocalDate,
   validateScheduleOrder,
@@ -40,7 +47,6 @@ function sameLocalDate(left: SchedulePoint, right: SchedulePoint): boolean {
 }
 
 function RescheduleDialog({ item, onCancel, onSaved, snapshot }: RescheduleDialogProps) {
-  const { message } = App.useApp();
   const [plannedAt, setPlannedAt] = useState<SchedulePoint>(item.task.plannedAt);
   const [deadlineAt, setDeadlineAt] = useState<SchedulePoint>(item.task.deadlineAt);
   const [saving, setSaving] = useState(false);
@@ -61,12 +67,11 @@ function RescheduleDialog({ item, onCancel, onSaved, snapshot }: RescheduleDialo
       setSaveError('截止时间不能早于计划时间。原时间仍然保留。');
       return;
     }
-
     setSaving(true);
     try {
       const services = await getApplicationServices();
       await services.recovery.rescheduleTask(item.task.id, { plannedAt, deadlineAt });
-      void message.success('已按新时间重新安排');
+      toast.success('已按新时间重新安排');
       onSaved();
     } catch (error) {
       setSaveError(
@@ -80,71 +85,75 @@ function RescheduleDialog({ item, onCancel, onSaved, snapshot }: RescheduleDialo
   };
 
   return (
-    <Modal
-      open
-      title={`重新安排“${item.task.title}”`}
-      okText="保存新时间"
-      cancelText="取消"
-      confirmLoading={saving}
-      closable={!saving}
-      keyboard={!saving}
-      maskClosable={!saving}
-      onCancel={onCancel}
-      onOk={() => void save()}
-    >
-      <div className="reschedule-form">
-        <Alert
-          type="info"
-          showIcon
-          message="原时间不会被静默移到今天"
-          description={`当前安排：${formatSchedule(item.task)}。只有保存后才会修改。`}
-        />
-        <ScheduleFields
-          label="计划"
-          value={plannedAt}
-          defaultDate={snapshot.today}
-          timeZone={snapshot.timeZone}
-          onChange={(value) => {
-            setSaveError(undefined);
-            setPlannedAt(value);
-          }}
-        />
-        <ScheduleFields
-          label="截止"
-          value={deadlineAt}
-          defaultDate={snapshot.today}
-          timeZone={snapshot.timeZone}
-          onChange={(value) => {
-            setSaveError(undefined);
-            setDeadlineAt(value);
-          }}
-        />
-        {mixedSameDay ? (
-          <Alert
-            type="info"
-            showIcon
-            message="同一天的全天与具体时间可以同时保存"
-            description={
-              plannedAt.kind === 'allDay'
-                ? '全天计划表示当天准备执行，具体截止时间表示当天最晚完成时刻。'
-                : '具体计划时间表示当天开始执行，全天截止表示当天结束前完成。'
-            }
+    <Dialog open onOpenChange={(value) => !value && !saving && onCancel()}>
+      <DialogContent showCloseButton={!saving} className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>重新安排“{item.task.title}”</DialogTitle>
+          <DialogDescription>只有保存后才会修改原任务时间。</DialogDescription>
+        </DialogHeader>
+        <div className="reschedule-form">
+          <Alert>
+            <Info />
+            <AlertTitle>原时间不会被静默移到今天</AlertTitle>
+            <AlertDescription>当前安排：{formatSchedule(item.task)}。</AlertDescription>
+          </Alert>
+          <ScheduleFields
+            label="计划"
+            value={plannedAt}
+            defaultDate={snapshot.today}
+            timeZone={snapshot.timeZone}
+            onChange={(value) => {
+              setSaveError(undefined);
+              setPlannedAt(value);
+            }}
           />
-        ) : null}
-        {!validation.ok || saveError !== undefined ? (
-          <Alert
-            role="alert"
-            type="error"
-            showIcon
-            message={saveError ?? '截止时间不能早于计划时间。'}
+          <ScheduleFields
+            label="截止"
+            value={deadlineAt}
+            defaultDate={snapshot.today}
+            timeZone={snapshot.timeZone}
+            onChange={(value) => {
+              setSaveError(undefined);
+              setDeadlineAt(value);
+            }}
           />
-        ) : null}
-      </div>
-    </Modal>
+          {mixedSameDay ? (
+            <Alert>
+              <Info />
+              <AlertTitle>同一天的全天与具体时间可以同时保存</AlertTitle>
+              <AlertDescription>
+                {plannedAt.kind === 'allDay'
+                  ? '全天计划表示当天准备执行，具体截止时间表示当天最晚完成时刻。'
+                  : '具体计划时间表示当天开始执行，全天截止表示当天结束前完成。'}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          {!validation.ok || saveError !== undefined ? (
+            <Alert variant="destructive">
+              <TriangleAlert />
+              <AlertTitle>{saveError ?? '截止时间不能早于计划时间。'}</AlertTitle>
+            </Alert>
+          ) : null}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" disabled={saving} onClick={onCancel}>
+            取消
+          </Button>
+          <Button disabled={saving} onClick={() => void save()}>
+            {saving ? '正在保存…' : '保存新时间'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-interface RecoveryTaskCardProps {
+function RecoveryTaskCard({
+  busy,
+  item,
+  kind,
+  onAction,
+}: {
   readonly item: RecoveryTaskView;
   readonly kind: RecoveryKind;
   readonly busy: boolean;
@@ -152,61 +161,61 @@ interface RecoveryTaskCardProps {
     item: RecoveryTaskView,
     action: 'complete' | 'skip' | 'reschedule',
   ) => void;
-}
-
-function RecoveryTaskCard({ busy, item, kind, onAction }: RecoveryTaskCardProps) {
+}) {
   return (
     <article className={`recovery-card recovery-${kind}`}>
       <div className="recovery-card-copy">
         <span className="task-state">
           {kind === 'overdue' ? '⚠ 已逾期' : '◷ 计划已错过'}
         </span>
-        <Typography.Title level={3}>{item.task.title}</Typography.Title>
-        <Typography.Text>{formatSchedule(item.task)}</Typography.Text>
-        <Space wrap className="recovery-flags">
+        <h3>{item.task.title}</h3>
+        <p>{formatSchedule(item.task)}</p>
+        <div className="recovery-flags flex flex-wrap gap-2">
           {kind === 'overdue' ? (
-            <Tag icon={<WarningOutlined />}>保留原截止时间</Tag>
+            <Badge variant="outline">
+              <TriangleAlert /> 保留原截止时间
+            </Badge>
           ) : null}
           {kind === 'missed' ? (
-            <Tag icon={<ClockCircleOutlined />}>保留原计划时间</Tag>
+            <Badge variant="outline">
+              <Clock3 /> 保留原计划时间
+            </Badge>
           ) : null}
           {kind === 'overdue' && item.status.missedPlan ? (
-            <Tag color="warning">计划也已错过</Tag>
+            <Badge variant="secondary">计划也已错过</Badge>
           ) : null}
-        </Space>
+        </div>
       </div>
-      <Space wrap className="recovery-actions">
+      <div className="recovery-actions flex flex-wrap gap-2">
         <Button
-          icon={<CheckOutlined />}
+          variant="outline"
           disabled={busy}
           aria-label={`完成${item.task.title}`}
           onClick={() => onAction(item, 'complete')}
         >
-          完成
+          <Check data-icon="inline-start" /> 完成
         </Button>
         <Button
-          icon={<ForwardOutlined />}
+          variant="outline"
           disabled={busy}
           aria-label={`跳过${item.task.title}`}
           onClick={() => onAction(item, 'skip')}
         >
-          跳过
+          <Forward data-icon="inline-start" /> 跳过
         </Button>
         <Button
-          type="primary"
           disabled={busy}
           aria-label={`重新安排${item.task.title}`}
           onClick={() => onAction(item, 'reschedule')}
         >
           重新安排
         </Button>
-      </Space>
+      </div>
     </article>
   );
 }
 
 export function RecoveryPage() {
-  const { message } = App.useApp();
   const [searchParams] = useSearchParams();
   const kind: RecoveryKind =
     searchParams.get('kind') === 'overdue' ? 'overdue' : 'missed';
@@ -231,9 +240,9 @@ export function RecoveryPage() {
       const services = await getApplicationServices();
       if (action === 'complete') await services.recovery.completeTask(item.task.id);
       else await services.recovery.skipTask(item.task.id);
-      void message.success(action === 'complete' ? '任务已完成' : '任务已跳过');
+      toast.success(action === 'complete' ? '任务已完成' : '任务已跳过');
     } catch {
-      void message.error('操作失败，任务仍保留在原位置，请重试。');
+      toast.error('操作失败，任务仍保留在原位置，请重试。');
     } finally {
       setBusyTaskId(undefined);
     }
@@ -250,10 +259,11 @@ export function RecoveryPage() {
     <section className="feature-page recovery-page">
       <header className="feature-header">
         <div>
-          <Typography.Title>恢复</Typography.Title>
-          <Typography.Text type="secondary">
+          <p className="page-eyebrow">恢复节奏</p>
+          <h1>恢复</h1>
+          <p className="text-muted-foreground">
             时间会保留原样；由你决定完成、跳过或重新安排。
-          </Typography.Text>
+          </p>
         </div>
       </header>
       <nav className="recovery-tabs" aria-label="恢复分组">
@@ -273,11 +283,9 @@ export function RecoveryPage() {
         </Link>
       </nav>
       {snapshot === undefined ? (
-        <div className="feature-loading" role="status">
-          <Spin /> 正在加载恢复任务…
-        </div>
+        <LoadingState label="正在加载恢复任务…" />
       ) : items.length === 0 ? (
-        <Empty
+        <EmptyState
           description={kind === 'overdue' ? '没有仍逾期的任务' : '没有错过计划的任务'}
         />
       ) : (
@@ -299,9 +307,7 @@ export function RecoveryPage() {
           item={rescheduling}
           snapshot={snapshot}
           onCancel={() => setRescheduling(undefined)}
-          onSaved={() => {
-            setRescheduling(undefined);
-          }}
+          onSaved={() => setRescheduling(undefined)}
         />
       ) : null}
     </section>

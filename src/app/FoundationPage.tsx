@@ -1,30 +1,32 @@
-import { Button, Space, Tag, Typography } from 'antd';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 export function FoundationPage() {
   return (
     <section className="foundation-page">
       <header className="hero-row">
         <div>
-          <Tag bordered={false}>第一版地基</Tag>
-          <Typography.Title>先把今天安排明白</Typography.Title>
-          <Typography.Paragraph>
+          <Badge variant="secondary">第一版地基</Badge>
+          <h1>先把今天安排明白</h1>
+          <p className="text-muted-foreground">
             待办、时间与日历将共享同一份本地数据。现在正在建立可靠的领域模型与离线能力。
-          </Typography.Paragraph>
+          </p>
         </div>
         <div className="date-orbit" aria-label="今日进度示意">
           <span>13</span>
           <small>八月</small>
         </div>
       </header>
-      <div className="focus-card">
-        <Space direction="vertical" size="large">
-          <Typography.Text type="secondary">快速记录</Typography.Text>
-          <Typography.Title level={3}>脑中有事，就先放进收件箱。</Typography.Title>
-          <Button type="primary" size="large" disabled>
+      <Card className="focus-card">
+        <CardContent className="grid gap-5">
+          <span className="text-sm text-muted-foreground">快速记录</span>
+          <h3 className="text-xl font-semibold">脑中有事，就先放进收件箱。</h3>
+          <Button size="lg" disabled>
             基础待办闭环即将接入
           </Button>
-        </Space>
-      </div>
+        </CardContent>
+      </Card>
       <div className="principle-grid">
         <article>
           <strong>计划 ≠ 截止</strong>

@@ -2,11 +2,12 @@ import { createBrowserRouter, Navigate } from 'react-router';
 
 import { AppShell } from './AppShell';
 import { AppErrorPage } from './AppErrorPage';
-import { FoundationPage } from './FoundationPage';
 import { TodoPage } from '@/features/todos/TodoPage';
 import { RecoveryPage } from '@/features/recovery/RecoveryPage';
 import { ReviewPage } from '@/features/review/ReviewPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
+import { GoalsPage } from '@/features/goals/GoalsPage';
+import { CalendarPage } from '@/features/calendar/CalendarPage';
 
 export const router = createBrowserRouter([
   {
@@ -23,7 +24,8 @@ export const router = createBrowserRouter([
       { path: 'review', element: <ReviewPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'lists/:listId', element: <TodoPage /> },
-      { path: 'calendar/:view', element: <FoundationPage /> },
+      { path: 'calendar/:view', element: <CalendarPage /> },
+      { path: 'goals', element: <GoalsPage /> },
       { path: '*', element: <AppErrorPage notFound /> },
     ],
   },

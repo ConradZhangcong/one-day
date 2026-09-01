@@ -5,6 +5,7 @@ import type {
   SingleTask,
   Tag,
   TaskList,
+  LongTermGoal,
 } from '../../domain';
 
 import type { KeyValueEntry } from '../../application/repositories';
@@ -41,3 +42,4 @@ export type ReminderRecord = Reminder;
 
 export type SettingRecord = KeyValueEntry;
 export type MetaRecord = KeyValueEntry;
+export type LongTermGoalRecord = LongTermGoal;

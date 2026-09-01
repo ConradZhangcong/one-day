@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" fill="none">
+  <title>Concentric Ring — Light and Dark Preview</title>
+  <desc>Application preview showing the master concentric-ring logo on light and dark surfaces.</desc>
+  <defs>
+    <linearGradient id="metalLight" x1="128" y1="110" x2="398" y2="410" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#080808"/><stop offset="0.18" stop-color="#858585"/><stop offset="0.34" stop-color="#252525"/><stop offset="0.62" stop-color="#050505"/><stop offset="0.82" stop-color="#626262"/><stop offset="1" stop-color="#111111"/>
+    </linearGradient>
+    <linearGradient id="metalDark" x1="746" y1="110" x2="1010" y2="410" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4F4F4"/><stop offset="0.2" stop-color="#777777"/><stop offset="0.42" stop-color="#E5E5E5"/><stop offset="0.68" stop-color="#5A5A5A"/><stop offset="0.86" stop-color="#D8D8D8"/><stop offset="1" stop-color="#888888"/>
+    </linearGradient>
+    <linearGradient id="innerLight" x1="178" y1="152" x2="344" y2="370" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#555555"/><stop offset="0.38" stop-color="#111111"/><stop offset="0.72" stop-color="#3D3D3D"/><stop offset="1" stop-color="#090909"/>
+    </linearGradient>
+    <linearGradient id="innerDark" x1="790" y1="152" x2="956" y2="370" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BDBDBD"/><stop offset="0.42" stop-color="#666666"/><stop offset="0.76" stop-color="#D5D5D5"/><stop offset="1" stop-color="#858585"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" rx="36" fill="#EDEBE5"/>
+  <rect x="52" y="52" width="536" height="596" rx="28" fill="#FAFAF8"/>
+  <rect x="612" y="52" width="536" height="596" rx="28" fill="#151515"/>
+
+  <g transform="translate(64 76)">
+    <circle cx="256" cy="256" r="155" stroke="#111111" stroke-opacity="0.18" stroke-width="1.5"/>
+    <circle cx="256" cy="256" r="140" stroke="url(#metalLight)" stroke-width="19"/>
+    <circle cx="256" cy="256" r="140" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="2"/>
+    <circle cx="256" cy="256" r="124" stroke="url(#innerLight)" stroke-width="4"/>
+    <circle cx="256" cy="256" r="113" stroke="#111111" stroke-opacity="0.22" stroke-width="1.5"/>
+  </g>
+  <text x="92" y="604" fill="#111111" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="600" letter-spacing="1.6">LIGHT SURFACE</text>
+
+  <g transform="translate(676 76)">
+    <circle cx="256" cy="256" r="155" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="1.5"/>
+    <circle cx="256" cy="256" r="140" stroke="url(#metalDark)" stroke-width="19"/>
+    <circle cx="256" cy="256" r="140" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="2"/>
+    <circle cx="256" cy="256" r="124" stroke="url(#innerDark)" stroke-width="4"/>
+    <circle cx="256" cy="256" r="113" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="1.5"/>
+  </g>
+  <text x="704" y="604" fill="#F4F1E9" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="600" letter-spacing="1.6">DARK SURFACE</text>
+</svg>

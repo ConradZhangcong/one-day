@@ -21,6 +21,10 @@ const taskOrganizationShape = {
   deadlineAt: schedulePointSchema,
 } as const;
 
+const singleTaskGoalShape = {
+  goalId: nonEmptyIdSchema.optional(),
+} as const;
+
 export const taskDraftSchema = z
   .object({
     title: taskOrganizationShape.title,
@@ -30,6 +34,7 @@ export const taskDraftSchema = z
     priority: taskOrganizationShape.priority,
     plannedAt: taskOrganizationShape.plannedAt,
     deadlineAt: taskOrganizationShape.deadlineAt,
+    goalId: singleTaskGoalShape.goalId,
   })
   .strict();
 
@@ -54,6 +59,7 @@ const pendingTaskSchema = z
   .object({
     id: nonEmptyIdSchema,
     ...taskOrganizationShape,
+    ...singleTaskGoalShape,
     state: z.literal('pending'),
     completedAt: z.never().optional(),
     skippedAt: z.never().optional(),
@@ -65,6 +71,7 @@ const completedTaskSchema = z
   .object({
     id: nonEmptyIdSchema,
     ...taskOrganizationShape,
+    ...singleTaskGoalShape,
     state: z.literal('completed'),
     completedAt: instantSchema,
     skippedAt: z.never().optional(),
@@ -76,6 +83,7 @@ const skippedTaskSchema = z
   .object({
     id: nonEmptyIdSchema,
     ...taskOrganizationShape,
+    ...singleTaskGoalShape,
     state: z.literal('skipped'),
     completedAt: z.never().optional(),
     skippedAt: instantSchema,

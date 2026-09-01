@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <title>Concentric Ring — Vermilion Edition</title>
+  <desc>Warm vermilion-and-gold edition expressing energy, confidence, ceremony, and premium warmth. Transparent background.</desc>
+  <defs>
+    <linearGradient id="main" x1="126" y1="112" x2="390" y2="402" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4A120C"/><stop offset="0.18" stop-color="#FFB56E"/><stop offset="0.36" stop-color="#D84D2D"/><stop offset="0.64" stop-color="#32100B"/><stop offset="0.84" stop-color="#F07A45"/><stop offset="1" stop-color="#6E2115"/>
+    </linearGradient>
+    <linearGradient id="inner" x1="174" y1="148" x2="340" y2="366" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6A15E"/><stop offset="0.4" stop-color="#A73322"/><stop offset="0.76" stop-color="#DE6238"/><stop offset="1" stop-color="#4A120C"/>
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="256" r="155" stroke="#D84D2D" stroke-opacity="0.25" stroke-width="1.5"/>
+  <circle cx="256" cy="256" r="140" stroke="url(#main)" stroke-width="19"/>
+  <circle cx="256" cy="256" r="140" stroke="#FFE8D5" stroke-opacity="0.32" stroke-width="2"/>
+  <circle cx="256" cy="256" r="124" stroke="url(#inner)" stroke-width="4"/>
+  <circle cx="256" cy="256" r="113" stroke="#D84D2D" stroke-opacity="0.3" stroke-width="1.5"/>
+</svg>

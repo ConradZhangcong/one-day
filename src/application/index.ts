@@ -3,3 +3,5 @@ export * from './recovery';
 export * from './reminders';
 export * from './settings';
 export * from './todos';
+export * from './goals';
+export * from './calendar';

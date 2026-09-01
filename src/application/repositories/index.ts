@@ -6,4 +6,5 @@ export type { RecurrenceSeriesRepository } from './recurrence-series-repository'
 export type { ReminderRepository } from './reminder-repository';
 export type { SingleTaskRepository } from './single-task-repository';
 export type { TagRepository } from './tag-repository';
+export type { LongTermGoalRepository } from './long-term-goal-repository';
 export type { OneDayRepositories, UnitOfWork } from './unit-of-work';

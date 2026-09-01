@@ -4,6 +4,8 @@ import {
   ReminderService,
   TimeZoneSettingsService,
   TodoService,
+  GoalService,
+  CalendarService,
 } from '@/application';
 import { DexieUnitOfWork, openOneDayDatabase } from '@/infrastructure/db';
 import { deliverBrowserReminder } from '@/infrastructure/notifications';
@@ -14,6 +16,8 @@ export interface ApplicationServices {
   readonly recovery: RecoveryService;
   readonly reminders: ReminderService;
   readonly reminderRuntime: ReminderRuntime;
+  readonly goals: GoalService;
+  readonly calendar: CalendarService;
 }
 
 let servicesPromise: Promise<ApplicationServices> | undefined;
@@ -34,6 +38,8 @@ export function getApplicationServices(): Promise<ApplicationServices> {
       recovery: new RecoveryService(unitOfWork, todos),
       reminders: new ReminderService(unitOfWork),
       reminderRuntime,
+      goals: new GoalService(unitOfWork),
+      calendar: new CalendarService(unitOfWork),
     };
   });
 

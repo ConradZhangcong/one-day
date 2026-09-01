@@ -13,6 +13,8 @@ import {
   type SingleTask,
   type Tag,
   type TaskList,
+  type LongTermGoal,
+  longTermGoalSchema,
 } from '../../domain';
 import type {
   EntityRepository,
@@ -25,6 +27,7 @@ import type {
   ReminderRepository,
   SingleTaskRepository,
   TagRepository,
+  LongTermGoalRepository,
 } from '../../application/repositories';
 
 import type { OneDayDatabase } from './database';
@@ -48,6 +51,7 @@ import type {
   RecurrenceSeriesRecord,
   SingleTaskRecord,
   TagRecord,
+  LongTermGoalRecord,
 } from './records';
 
 type RecordEncoder<TEntity, TRecord> = (entity: TEntity) => TRecord;
@@ -91,6 +95,23 @@ class DexieEntityRepository<
 
   protected decodeMany(records: readonly TRecord[]): TEntity[] {
     return records.map((record) => this.decode(record));
+  }
+}
+
+class DexieLongTermGoalRepository
+  extends DexieEntityRepository<LongTermGoal, LongTermGoal['id'], LongTermGoalRecord>
+  implements LongTermGoalRepository
+{
+  constructor(table: Table<LongTermGoalRecord, string>) {
+    super(
+      table,
+      (goal) => goal,
+      (record) => longTermGoalSchema.parse(record),
+    );
+  }
+
+  async findByStatus(status: LongTermGoal['status']): Promise<LongTermGoal[]> {
+    return this.decodeMany(await this.table.where('status').equals(status).toArray());
   }
 }
 
@@ -276,5 +297,6 @@ export function createDexieRepositories(db: OneDayDatabase): OneDayRepositories 
     reminders: new DexieReminderRepository(db.reminders),
     settings: new DexieKeyValueRepository(db.settings),
     meta: new DexieKeyValueRepository(db.meta),
+    longTermGoals: new DexieLongTermGoalRepository(db.longTermGoals),
   };
 }

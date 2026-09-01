@@ -1,9 +1,8 @@
-import { App, Button } from 'antd';
 import { useEffect } from 'react';
+import { toast } from 'sonner';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
 export function PwaUpdatePrompt() {
-  const { notification } = App.useApp();
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
@@ -12,27 +11,21 @@ export function PwaUpdatePrompt() {
   useEffect(() => {
     if (!needRefresh) return;
 
-    const key = 'pwa-update';
-    notification.info({
-      key,
-      message: 'One Day 有新版本',
+    const id = toast.info('One Day 有新版本', {
+      id: 'pwa-update',
       description: '保存好当前编辑后即可更新，不会在操作中强制刷新。',
-      duration: 0,
-      btn: (
-        <Button
-          type="primary"
-          onClick={() => {
-            void updateServiceWorker(true);
-          }}
-        >
-          更新并重新加载
-        </Button>
-      ),
-      onClose: () => setNeedRefresh(false),
+      duration: Number.POSITIVE_INFINITY,
+      action: {
+        label: '更新并重新加载',
+        onClick: () => void updateServiceWorker(true),
+      },
+      onDismiss: () => setNeedRefresh(false),
     });
 
-    return () => notification.destroy(key);
-  }, [needRefresh, notification, setNeedRefresh, updateServiceWorker]);
+    return () => {
+      toast.dismiss(id);
+    };
+  }, [needRefresh, setNeedRefresh, updateServiceWorker]);
 
   return null;
 }

@@ -19,6 +19,7 @@ import {
   type TaskDraft as DomainTaskDraft,
   type TaskList,
   type TimeZoneId,
+  type LongTermGoal,
 } from '../../domain';
 import type { DeleteListResult, UnitOfWork } from '../repositories';
 import { APPLICATION_TIME_ZONE_KEY } from '../settings';
@@ -28,6 +29,7 @@ export interface TodoSnapshot {
   readonly lists: TaskList[];
   readonly tags: Tag[];
   readonly timeZone: TimeZoneId;
+  readonly goals: LongTermGoal[];
 }
 
 export type TaskDraft = DomainTaskDraft;
@@ -79,18 +81,21 @@ export class TodoService {
   }
 
   async snapshot(): Promise<TodoSnapshot> {
-    const { lists, settings, singleTasks, tags } = this.unitOfWork.repositories;
-    const [tasks, allLists, allTags, storedTimeZone] = await Promise.all([
+    const { lists, settings, singleTasks, tags, longTermGoals } =
+      this.unitOfWork.repositories;
+    const [tasks, allLists, allTags, storedTimeZone, goals] = await Promise.all([
       singleTasks.getAll(),
       lists.listInDisplayOrder({ includeArchived: true }),
       tags.getAll(),
       settings.get(APPLICATION_TIME_ZONE_KEY),
+      longTermGoals.getAll(),
     ]);
     return {
       tasks,
       lists: allLists,
       tags: allTags,
       timeZone: decodeTimeZoneId(storedTimeZone ?? this.detectTimeZone()),
+      goals,
     };
   }
 
@@ -151,14 +156,18 @@ export class TodoService {
   createTask(draft: TaskDraft): Promise<SingleTask> {
     return this.unitOfWork.write(async (repositories) => {
       const decoded = decodeTaskDraft(draft);
-      const [storedTimeZone, list, existingTags] = await Promise.all([
+      const [storedTimeZone, list, existingTags, goal] = await Promise.all([
         repositories.settings.get(APPLICATION_TIME_ZONE_KEY),
         repositories.lists.get(decoded.listId),
         repositories.tags.getAll(),
+        decoded.goalId === undefined
+          ? undefined
+          : repositories.longTermGoals.get(decoded.goalId),
       ]);
       const timeZone = this.resolveTimeZone(storedTimeZone);
       assertValidSchedulePair(decoded, timeZone);
       this.assertListCanOwnTask(list);
+      this.assertGoalCanOwnTask(goal, decoded.goalId);
       const instant = decodeInstant(this.now());
       const { tagNames: _tagNames, ...details } = decoded;
       void _tagNames;
@@ -183,21 +192,27 @@ export class TodoService {
   async updateTask(taskId: string, draft: TaskDraft): Promise<SingleTask> {
     const result = await this.unitOfWork.write(async (repositories) => {
       const decoded = decodeTaskDraft(draft);
-      const [existing, storedTimeZone, list, existingTags] = await Promise.all([
+      const [existing, storedTimeZone, list, existingTags, goal] = await Promise.all([
         repositories.singleTasks.get(taskId),
         repositories.settings.get(APPLICATION_TIME_ZONE_KEY),
         repositories.lists.get(decoded.listId),
         repositories.tags.getAll(),
+        decoded.goalId === undefined
+          ? undefined
+          : repositories.longTermGoals.get(decoded.goalId),
       ]);
       if (existing === undefined)
         throw new DomainError(DomainErrorCode.TASK_NOT_FOUND, 'Task does not exist.');
       const timeZone = this.resolveTimeZone(storedTimeZone);
       assertValidSchedulePair(decoded, timeZone);
       this.assertListCanOwnTask(list, existing.listId);
+      this.assertGoalCanOwnTask(goal, decoded.goalId, existing.goalId);
       const { tagNames: _tagNames, ...details } = decoded;
       void _tagNames;
+      const { goalId: _existingGoalId, ...existingWithoutGoal } = existing;
+      void _existingGoalId;
       const baseTask = singleTaskSchema.parse({
-        ...existing,
+        ...existingWithoutGoal,
         ...details,
         tagIds: [],
         updatedAt: decodeInstant(this.now()),
@@ -361,6 +376,23 @@ export class TodoService {
       throw new DomainError(
         DomainErrorCode.ARCHIVED_LIST,
         'An archived list cannot receive a task.',
+      );
+    }
+  }
+
+  private assertGoalCanOwnTask(
+    goal: LongTermGoal | undefined,
+    goalId: string | undefined,
+    currentGoalId?: string,
+  ): void {
+    if (goalId === undefined) return;
+    if (goal === undefined) {
+      throw new DomainError(DomainErrorCode.GOAL_NOT_FOUND, 'Goal does not exist.');
+    }
+    if (goal.status === 'archived' && goal.id !== currentGoalId) {
+      throw new DomainError(
+        DomainErrorCode.ARCHIVED_GOAL,
+        'An archived goal cannot receive a task.',
       );
     }
   }

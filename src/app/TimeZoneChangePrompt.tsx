@@ -1,12 +1,22 @@
-import { Alert, App, Modal, Typography } from 'antd';
+import { TriangleAlert } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import { detectDeviceTimeZone, type TimeZoneInspection } from '@/application';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 import { getApplicationServices } from './application';
 
 export function TimeZoneChangePrompt() {
-  const { message } = App.useApp();
   const [inspection, setInspection] = useState<TimeZoneInspection>();
   const [saving, setSaving] = useState(false);
   const dismissedDeviceTimeZone = useRef<string | undefined>(undefined);
@@ -27,9 +37,9 @@ export function TimeZoneChangePrompt() {
         setInspection(result);
       }
     } catch {
-      void message.error('无法读取应用时区设置，请重新加载后再试。');
+      toast.error('无法读取应用时区设置，请重新加载后再试。');
     }
-  }, [message]);
+  }, []);
 
   useEffect(() => {
     const inspectFromEvent = () => {
@@ -63,45 +73,52 @@ export function TimeZoneChangePrompt() {
       await services.reminderRuntime.applicationTimeZoneChanged();
       dismissedDeviceTimeZone.current = undefined;
       setInspection(undefined);
-      void message.success('应用时区已更新，后续提醒将按新时区重新计算。');
+      toast.success('应用时区已更新，后续提醒将按新时区重新计算。');
     } catch {
-      void message.error('应用时区更新失败，原设置保持不变。');
+      toast.error('应用时区更新失败，原设置保持不变。');
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal
-      open={inspection !== undefined}
-      title="检测到设备时区变化"
-      okText="确认修改应用时区"
-      cancelText="保持原时区"
-      confirmLoading={saving}
-      closable={!saving}
-      maskClosable={false}
-      onOk={() => void confirmChange()}
-      onCancel={() => {
-        if (inspection !== undefined) {
-          dismissedDeviceTimeZone.current = inspection.deviceTimeZone;
-        }
-        setInspection(undefined);
-      }}
-    >
-      {inspection === undefined ? null : (
-        <Alert
-          type="warning"
-          showIcon
-          message="计划时间不会自动随设备变化"
-          description={
-            <Typography.Text>
+    <Dialog open={inspection !== undefined}>
+      <DialogContent showCloseButton={false} className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>检测到设备时区变化</DialogTitle>
+          <DialogDescription>
+            One Day 不会因为设备时区变化而静默移动你的计划。
+          </DialogDescription>
+        </DialogHeader>
+        {inspection === undefined ? null : (
+          <Alert>
+            <TriangleAlert />
+            <AlertTitle>计划时间不会自动随设备变化</AlertTitle>
+            <AlertDescription>
               当前应用时区为 {inspection.applicationTimeZone}，设备时区为{' '}
               {inspection.deviceTimeZone}
               。只有确认后才会修改应用时区；全天计划日期保持不变。
-            </Typography.Text>
-          }
-        />
-      )}
-    </Modal>
+            </AlertDescription>
+          </Alert>
+        )}
+        <DialogFooter>
+          <Button
+            variant="outline"
+            disabled={saving}
+            onClick={() => {
+              if (inspection !== undefined) {
+                dismissedDeviceTimeZone.current = inspection.deviceTimeZone;
+              }
+              setInspection(undefined);
+            }}
+          >
+            保持原时区
+          </Button>
+          <Button disabled={saving} onClick={() => void confirmChange()}>
+            {saving ? '正在更新…' : '确认修改应用时区'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

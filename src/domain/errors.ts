@@ -22,6 +22,8 @@ export const DomainErrorCode = {
   REMINDER_TARGET_MISSING: 'REMINDER_TARGET_MISSING',
   REMINDER_OWNER_NOT_FOUND: 'REMINDER_OWNER_NOT_FOUND',
   ARCHIVED_LIST: 'ARCHIVED_LIST',
+  GOAL_NOT_FOUND: 'GOAL_NOT_FOUND',
+  ARCHIVED_GOAL: 'ARCHIVED_GOAL',
 } as const;
 
 export type DomainErrorCode = (typeof DomainErrorCode)[keyof typeof DomainErrorCode];

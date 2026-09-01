@@ -1,5 +1,5 @@
 export const DATABASE_NAME = 'one-day';
-export const DATABASE_VERSION = 1;
+export const DATABASE_VERSION = 2;
 
 /**
  * Every indexed property is either a domain scalar or a rebuildable projection
@@ -18,4 +18,11 @@ export const V1_STORES = {
   reminders: 'id, ownerId, target, [ownerKind+ownerId], [ownerId+target]',
   settings: 'key',
   meta: 'key',
+} as const;
+
+export const V2_STORES = {
+  ...V1_STORES,
+  singleTasks:
+    'id, state, listId, plannedLocalDate, deadlineLocalDate, *tagIds, updatedAt',
+  longTermGoals: 'id, status, updatedAt',
 } as const;

@@ -9,8 +9,9 @@ import type {
   SettingRecord,
   SingleTaskRecord,
   TagRecord,
+  LongTermGoalRecord,
 } from './records';
-import { DATABASE_NAME, DATABASE_VERSION, V1_STORES } from './schema';
+import { DATABASE_NAME, DATABASE_VERSION, V1_STORES, V2_STORES } from './schema';
 import { ensureInbox } from './system-data';
 
 export class OneDayDatabase extends Dexie {
@@ -22,10 +23,12 @@ export class OneDayDatabase extends Dexie {
   reminders!: Table<ReminderRecord, string>;
   settings!: Table<SettingRecord, string>;
   meta!: Table<MetaRecord, string>;
+  longTermGoals!: Table<LongTermGoalRecord, string>;
 
   constructor(name = DATABASE_NAME, options?: DexieOptions) {
     super(name, options);
-    this.version(DATABASE_VERSION).stores(V1_STORES);
+    this.version(1).stores(V1_STORES);
+    this.version(DATABASE_VERSION).stores(V2_STORES);
   }
 }
 
