@@ -48,3 +48,25 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 3: 固定重复事项与统一 occurrence 投影
+
+**Date**: 2026-09-02
+**Task**: 固定重复事项与统一 occurrence 投影
+**Branch**: `codex/todo-calendar-mvp`
+
+### Summary
+
+实现固定日历重复 projector、系列生命周期事务、统一 occurrence 查询、Todo/Recovery/Calendar 与 shadcn 管理界面；补 goalId v3 迁移、提交后跨标签页实时刷新、97 项测试、生产构建及桌面/移动浏览器验收。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d613c01` | (see git log) |
+| `8cb928e` | (see git log) |
+
+### Status
+
+[OK] **Completed**

@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 2
-- **Last Active**: 2026-09-01
+- **Total Sessions**: 3
+- **Last Active**: 2026-09-02
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~50 | Active |
+| `journal-1.md` | ~72 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 3 | 2026-09-02 | 固定重复事项与统一 occurrence 投影 | `d613c01`, `8cb928e` | `codex/todo-calendar-mvp` |
 | 2 | 2026-09-01 | Shadcn 原型界面、长期目标与日历 | `e86f8ea` | `codex/todo-calendar-mvp` |
 | 1 | 2026-09-01 | 完成待办日历基础阶段与主题探索 | `af432db`, `08e906d` | `codex/todo-calendar-mvp` |
 <!-- @@@/auto:session-history -->
