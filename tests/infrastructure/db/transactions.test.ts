@@ -20,6 +20,26 @@ afterEach(async () => {
 });
 
 describe('Dexie cross-table transactions', () => {
+  it('publishes one invalidation only after a transaction commits', async () => {
+    const context = await createTestDatabase();
+    contexts.push(context);
+    let committed = 0;
+    const unitOfWork = new DexieUnitOfWork(context.db, () => {
+      committed += 1;
+    });
+
+    await unitOfWork.write(({ settings }) => settings.set('committed', true));
+    expect(committed).toBe(1);
+
+    await expect(
+      unitOfWork.write(async ({ settings }) => {
+        await settings.set('rolled-back', true);
+        throw new Error('abort');
+      }),
+    ).rejects.toThrow('abort');
+    expect(committed).toBe(1);
+  });
+
   it('rolls every write back when an operation fails', async () => {
     const context = await createTestDatabase();
     contexts.push(context);

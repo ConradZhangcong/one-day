@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { Link, useSearchParams } from 'react-router';
 
 import { getApplicationServices, type ApplicationServices } from '@/app/application';
+import { useApplicationRevision } from '@/app/application-change';
 import { EmptyState, LoadingState } from '@/components/ui/compat';
 import { Input } from '@/components/ui/input';
 import { localDateSchema, type Instant, type TimeZoneId } from '@/domain';
@@ -110,6 +111,7 @@ function ReviewBucketCard({
 }
 
 export function ReviewPage() {
+  const applicationRevision = useApplicationRevision();
   const [searchParams, setSearchParams] = useSearchParams();
   const period: ReviewPeriod = searchParams.get('period') === 'week' ? 'week' : 'day';
   const parsedAnchor = localDateSchema.safeParse(searchParams.get('date'));
@@ -119,7 +121,7 @@ export function ReviewPage() {
     const services = await getApplicationServices();
     const input = anchorDate === undefined ? { period } : { period, anchorDate };
     return services.recovery.review(input);
-  }, [anchorDate, clockTick, period]);
+  }, [anchorDate, applicationRevision, clockTick, period]);
 
   const updateDate = (value: string) => {
     const next = new URLSearchParams(searchParams);

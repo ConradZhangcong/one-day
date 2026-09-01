@@ -11,7 +11,13 @@ import type {
   TagRecord,
   LongTermGoalRecord,
 } from './records';
-import { DATABASE_NAME, DATABASE_VERSION, V1_STORES, V2_STORES } from './schema';
+import {
+  DATABASE_NAME,
+  DATABASE_VERSION,
+  V1_STORES,
+  V2_STORES,
+  V3_STORES,
+} from './schema';
 import { ensureInbox } from './system-data';
 
 export class OneDayDatabase extends Dexie {
@@ -28,7 +34,8 @@ export class OneDayDatabase extends Dexie {
   constructor(name = DATABASE_NAME, options?: DexieOptions) {
     super(name, options);
     this.version(1).stores(V1_STORES);
-    this.version(DATABASE_VERSION).stores(V2_STORES);
+    this.version(2).stores(V2_STORES);
+    this.version(DATABASE_VERSION).stores(V3_STORES);
   }
 }
 

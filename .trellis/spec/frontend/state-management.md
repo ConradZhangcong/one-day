@@ -82,3 +82,56 @@ await Notification.requestPermission();
 const permission = Notification.requestPermission();
 await permission;
 ```
+
+## Scenario: Transaction commits invalidate service-backed live queries
+
+### 1. Scope / Trigger
+
+Apply whenever React reads IndexedDB through an asynchronous application service rather than calling a Dexie table directly. Indirect service boundaries are not sufficient evidence that `useLiveQuery` will retain every dependency across initialization and nested query services.
+
+### 2. Signatures
+
+```ts
+new DexieUnitOfWork(database, onCommitted?: () => void)
+notifyApplicationChanged(): void
+useApplicationRevision(): number
+```
+
+### 3. Contracts
+
+- `DexieUnitOfWork.write` invokes `onCommitted` exactly once after a successful transaction and never after rollback.
+- The application change signal increments a local revision and broadcasts a content-free commit message to other tabs.
+- Service-backed `useLiveQuery` hooks include the application revision in their dependency arrays.
+- The signal contains no task payload; IndexedDB remains the source of truth and every subscriber re-reads decoded view models.
+- Clock ticks remain a separate dependency because time can change a projection without a database commit.
+
+### 4. Validation & Error Matrix
+
+- Transaction rejects -> propagate the original error, do not publish an invalidation.
+- BroadcastChannel unavailable -> local listeners still refresh; persistence remains usable.
+- Cross-tab commit message -> increment the receiving tab's revision once; never replay a write.
+- Query/decoder failure after invalidation -> route error boundary handles it; do not preserve a stale successful snapshot as truth.
+
+### 5. Good/Base/Bad Cases
+
+- Good: creating a recurrence commits series + active occurrence, then Todo, Recovery, and Calendar re-read and show the same active key without reload.
+- Base: a normal task edit publishes one revision and all mounted service-backed queries settle on the new snapshot.
+- Bad: rely only on an indirect `useLiveQuery(() => services.snapshot())`; the write succeeds but the screen can remain stale until navigation or reload.
+
+### 6. Tests Required
+
+- Unit-of-work test asserts one notification after commit and zero after rollback.
+- Component/browser flow creates a task or series and asserts it appears without reload.
+- Cross-tab/manual check verifies a content-free broadcast causes a re-read, not payload merging.
+- Clean page load must have no hook-order or subscription errors in the console.
+
+### 7. Wrong vs Correct
+
+```ts
+// Wrong: indirect Dexie reads may not provide a stable invalidation boundary.
+const snapshot = useLiveQuery(() => services.todos.snapshot(), []);
+
+// Correct: every committed UnitOfWork write advances the explicit dependency.
+const revision = useApplicationRevision();
+const snapshot = useLiveQuery(() => services.todos.snapshot(), [revision]);
+```

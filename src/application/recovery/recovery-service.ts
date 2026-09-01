@@ -10,7 +10,7 @@ import {
   instantToLocalDate,
   localDateSchema,
   occurrenceKeySchema,
-  projectOccurrenceSchedule,
+  projectOccurrenceRecordSchedule,
   schedulePointLocalDate,
   singleTaskSchema,
   tryParseOccurrenceKey,
@@ -259,14 +259,7 @@ export class RecoveryService {
           owner.activeOccurrenceKey !== occurrence.occurrenceKey)
       )
         return [];
-      const schedule = projectOccurrenceSchedule(owner, occurrence.originalAnchor, {
-        ...(occurrence.overridePlannedAt !== undefined
-          ? { plannedAt: occurrence.overridePlannedAt }
-          : {}),
-        ...(occurrence.overrideDeadlineAt !== undefined
-          ? { deadlineAt: occurrence.overrideDeadlineAt }
-          : {}),
-      });
+      const schedule = projectOccurrenceRecordSchedule(owner, occurrence);
       const template = occurrence.templateSnapshot ?? owner.template;
       return [
         singleTaskSchema.parse({

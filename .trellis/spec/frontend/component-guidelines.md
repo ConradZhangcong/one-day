@@ -2,7 +2,7 @@
 
 ## Component Shape
 
-Components are named function exports. Keep domain operations outside render code and call an application service from event/effect boundaries. Use Ant Design primitives for dialogs, alerts, messages, buttons, and typography rather than recreating focus and keyboard behavior.
+Components are named function exports. Keep domain operations outside render code and call an application service from event/effect boundaries. Use the project-local shadcn/Base UI primitives under `src/components/ui/` for dialogs, alerts, buttons, sheets, selects, and typography rather than recreating focus and keyboard behavior.
 
 `TimeZoneChangePrompt` is the reference for a browser-driven confirmation: detection is asynchronous, the modal is controlled by React state, cancellation does not mutate persistence, and confirmation awaits the application command.
 
@@ -15,14 +15,14 @@ Components are named function exports. Keep domain operations outside render cod
 
 ## Styling
 
-Global shell and design-token overrides live in `src/app/styles.css` and `AppProviders.tsx`. Prefer Ant Design theme tokens and semantic class names. Support the existing system light/dark preference and responsive breakpoints; avoid hard-coded color as the only status signal.
+Global shell and design-token overrides live in `src/app/styles.css`. Prefer Tailwind design tokens and semantic utility/class names. Support the existing system light/dark preference and responsive breakpoints; avoid hard-coded color as the only status signal.
 
 ## Accessibility
 
 - Use semantic landmarks (`aside`, `nav`, `main`) and visible Chinese labels.
 - Every icon-only affordance needs an accessible name; decorative marks use `aria-hidden`.
 - Status requires text, icon, or shape in addition to color.
-- Preserve Ant Design focus behavior and test workflows through roles/labels rather than class names.
+- Preserve the focus behavior of shadcn/Base UI primitives and test workflows through roles/labels rather than class names.
 
 ## Forbidden Patterns
 

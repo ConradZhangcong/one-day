@@ -1,10 +1,11 @@
-import { Check, Clock3, Forward, Info, TriangleAlert } from 'lucide-react';
+import { Check, Clock3, Forward, Info, Repeat2, TriangleAlert } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 
 import { getApplicationServices } from '@/app/application';
+import { useApplicationRevision } from '@/app/application-change';
 import type { RecoverySnapshot, RecoveryTaskView } from '@/application';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   schedulePointLocalDate,
+  tryParseOccurrenceKey,
   validateScheduleOrder,
   type SchedulePoint,
 } from '@/domain';
@@ -47,6 +49,7 @@ function sameLocalDate(left: SchedulePoint, right: SchedulePoint): boolean {
 }
 
 function RescheduleDialog({ item, onCancel, onSaved, snapshot }: RescheduleDialogProps) {
+  const recurring = tryParseOccurrenceKey(item.task.id) !== undefined;
   const [plannedAt, setPlannedAt] = useState<SchedulePoint>(item.task.plannedAt);
   const [deadlineAt, setDeadlineAt] = useState<SchedulePoint>(item.task.deadlineAt);
   const [saving, setSaving] = useState(false);
@@ -88,8 +91,14 @@ function RescheduleDialog({ item, onCancel, onSaved, snapshot }: RescheduleDialo
     <Dialog open onOpenChange={(value) => !value && !saving && onCancel()}>
       <DialogContent showCloseButton={!saving} className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>重新安排“{item.task.title}”</DialogTitle>
-          <DialogDescription>只有保存后才会修改原任务时间。</DialogDescription>
+          <DialogTitle>
+            {recurring ? '仅本次改期' : '重新安排'}“{item.task.title}”
+          </DialogTitle>
+          <DialogDescription>
+            {recurring
+              ? '只修改当前活跃实例，不改变整个系列的后续规则相位。'
+              : '只有保存后才会修改原任务时间。'}
+          </DialogDescription>
         </DialogHeader>
         <div className="reschedule-form">
           <Alert>
@@ -162,6 +171,7 @@ function RecoveryTaskCard({
     action: 'complete' | 'skip' | 'reschedule',
   ) => void;
 }) {
+  const recurring = tryParseOccurrenceKey(item.task.id) !== undefined;
   return (
     <article className={`recovery-card recovery-${kind}`}>
       <div className="recovery-card-copy">
@@ -184,31 +194,36 @@ function RecoveryTaskCard({
           {kind === 'overdue' && item.status.missedPlan ? (
             <Badge variant="secondary">计划也已错过</Badge>
           ) : null}
+          {recurring ? (
+            <Badge variant="secondary">
+              <Repeat2 /> 当前重复实例 · 仅本次
+            </Badge>
+          ) : null}
         </div>
       </div>
       <div className="recovery-actions flex flex-wrap gap-2">
         <Button
           variant="outline"
           disabled={busy}
-          aria-label={`完成${item.task.title}`}
+          aria-label={`${recurring ? '完成本次' : '完成'}${item.task.title}`}
           onClick={() => onAction(item, 'complete')}
         >
-          <Check data-icon="inline-start" /> 完成
+          <Check data-icon="inline-start" /> {recurring ? '完成本次' : '完成'}
         </Button>
         <Button
           variant="outline"
           disabled={busy}
-          aria-label={`跳过${item.task.title}`}
+          aria-label={`${recurring ? '跳过本次' : '跳过'}${item.task.title}`}
           onClick={() => onAction(item, 'skip')}
         >
-          <Forward data-icon="inline-start" /> 跳过
+          <Forward data-icon="inline-start" /> {recurring ? '跳过本次' : '跳过'}
         </Button>
         <Button
           disabled={busy}
-          aria-label={`重新安排${item.task.title}`}
+          aria-label={`${recurring ? '仅本次改期' : '重新安排'}${item.task.title}`}
           onClick={() => onAction(item, 'reschedule')}
         >
-          重新安排
+          {recurring ? '仅本次改期' : '重新安排'}
         </Button>
       </div>
     </article>
@@ -216,6 +231,7 @@ function RecoveryTaskCard({
 }
 
 export function RecoveryPage() {
+  const applicationRevision = useApplicationRevision();
   const [searchParams] = useSearchParams();
   const kind: RecoveryKind =
     searchParams.get('kind') === 'overdue' ? 'overdue' : 'missed';
@@ -225,7 +241,7 @@ export function RecoveryPage() {
   const snapshot = useLiveQuery(async () => {
     const services = await getApplicationServices();
     return services.recovery.snapshot();
-  }, [clockTick]);
+  }, [applicationRevision, clockTick]);
 
   const runAction = async (
     item: RecoveryTaskView,

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { RecurrenceService } from '../../src/application';
-import { occurrenceKeySchema } from '../../src/domain';
+import { OccurrenceQueryService, RecurrenceService } from '../../src/application';
+import { decodeLocalDate, occurrenceKeySchema } from '../../src/domain';
 import { DexieUnitOfWork } from '../../src/infrastructure/db';
 import {
   createTestDatabase,
@@ -60,6 +60,39 @@ describe('RecurrenceService', () => {
     expect(updated?.activeOccurrenceKey).toBe(pending[0]?.occurrenceKey);
   });
 
+  it('persists a validated long-term goal link in the series template and query view', async () => {
+    const context = await createTestDatabase();
+    contexts.push(context);
+    const uow = new DexieUnitOfWork(context.db);
+    await uow.repositories.longTermGoals.save({
+      id: 'goal:recurrence',
+      title: '保持健康',
+      description: '',
+      status: 'active',
+      createdAt: context.now,
+      updatedAt: context.now,
+    });
+    const service = new RecurrenceService(uow, {
+      createId: () => 'goal-linked',
+      now: () => '2026-08-13T01:00:00Z',
+      detectTimeZone: () => 'Asia/Shanghai',
+    });
+
+    const series = await service.createSeries(
+      draft({
+        goalId: 'goal:recurrence',
+        plannedAt: { kind: 'allDay', date: '2026-08-13' },
+      }),
+    );
+    expect(series.template.goalId).toBe('goal:recurrence');
+
+    const view = await new OccurrenceQueryService(uow, () => 'Asia/Shanghai').query({
+      rangeStart: decodeLocalDate('2026-08-13'),
+      rangeEnd: decodeLocalDate('2026-08-14'),
+    });
+    expect(view.items[0]).toMatchObject({ goalId: 'goal:recurrence' });
+  });
+
   it('preserves history through pause, resume, revision update, and stop', async () => {
     const context = await createTestDatabase();
     contexts.push(context);
@@ -90,6 +123,18 @@ describe('RecurrenceService', () => {
     expect(
       await uow.repositories.occurrenceRecords.findBySeriesAndState(series.id, 'skipped'),
     ).toHaveLength(1);
+    const history = await new OccurrenceQueryService(uow, () => 'Asia/Shanghai').query({
+      rangeStart: decodeLocalDate('2026-08-10'),
+      rangeEnd: decodeLocalDate('2026-08-11'),
+      includeHistory: true,
+    });
+    expect(history.items).toMatchObject([
+      {
+        key: series.activeOccurrenceKey,
+        state: 'skipped',
+        plannedAt: { kind: 'allDay', date: '2026-08-10' },
+      },
+    ]);
     const stopped = await service.stopSeries(series.id);
     expect(stopped.status).toBe('archived');
     expect(

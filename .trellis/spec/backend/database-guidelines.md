@@ -93,3 +93,54 @@ const claimed = await unitOfWork.write(({ reminders }) =>
 );
 if (claimed) await notify();
 ```
+
+## Scenario: Optional recurrence-template goal linkage
+
+### 1. Scope / Trigger
+
+Apply when a recurrence series is linked to a long-term goal or when the persisted `TaskTemplate` shape changes without adding an IndexedDB index.
+
+### 2. Signatures
+
+```ts
+TaskTemplate.goalId?: string
+TaskOccurrenceView.goalId?: string
+DATABASE_VERSION = 3
+V3_STORES = V2_STORES
+```
+
+### 3. Contracts
+
+- `goalId` belongs to the series template and is projected to active, virtual, and historical occurrence views through the matching template or snapshot.
+- Create/update commands validate that the goal exists and is not archived before commit.
+- Older v2 rows omit `goalId` and remain valid after upgrade; the migration must not invent a relationship.
+- No new index is added because goal filtering is not a v3 query requirement.
+
+### 4. Validation & Error Matrix
+
+- Missing referenced goal -> `GOAL_NOT_FOUND` and full rollback.
+- Archived new goal -> `ARCHIVED_GOAL` and full rollback.
+- Absent `goalId` -> valid unlinked series.
+- Frozen v2 row without `goalId` -> decode unchanged after v3 open.
+
+### 5. Good/Base/Bad Cases
+
+- Good: create a linked series; its active occurrence query returns the same `goalId`.
+- Base: upgrade an unlinked v2 series; it remains unlinked.
+- Bad: accept `goalId` in a draft, validate it, then destructure it away before persisting the template.
+
+### 6. Tests Required
+
+- Application test covers linked create and occurrence projection.
+- Migration test opens a frozen v2 recurrence row under v3 and asserts no `goalId` is invented.
+- Typecheck locks optional-property behavior under `exactOptionalPropertyTypes`.
+
+### 7. Wrong vs Correct
+
+```ts
+// Wrong: validated input is silently dropped.
+const { goalId: _goalId, ...template } = draft;
+
+// Correct: optional linkage survives in the persisted template.
+const { rule: _rule, tagNames: _tagNames, ...template } = draft;
+```

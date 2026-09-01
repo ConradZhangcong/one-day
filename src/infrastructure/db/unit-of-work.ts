@@ -6,13 +6,20 @@ import { createDexieRepositories } from './repositories';
 export class DexieUnitOfWork implements UnitOfWork {
   readonly repositories: OneDayRepositories;
 
-  constructor(private readonly db: OneDayDatabase) {
+  constructor(
+    private readonly db: OneDayDatabase,
+    private readonly onCommitted: () => void = () => undefined,
+  ) {
     this.repositories = createDexieRepositories(db);
   }
 
-  write<TResult>(
+  async write<TResult>(
     operation: (repositories: OneDayRepositories) => Promise<TResult> | TResult,
   ): Promise<TResult> {
-    return this.db.transaction('rw', this.db.tables, () => operation(this.repositories));
+    const result = await this.db.transaction('rw', this.db.tables, () =>
+      operation(this.repositories),
+    );
+    this.onCommitted();
+    return result;
   }
 }

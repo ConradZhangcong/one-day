@@ -12,6 +12,8 @@ import {
 import { DexieUnitOfWork, openOneDayDatabase } from '@/infrastructure/db';
 import { deliverBrowserReminder } from '@/infrastructure/notifications';
 
+import { notifyApplicationChanged } from './application-change';
+
 export interface ApplicationServices {
   readonly timeZoneSettings: TimeZoneSettingsService;
   readonly todos: TodoService;
@@ -29,7 +31,7 @@ let servicesPromise: Promise<ApplicationServices> | undefined;
 /** Composition root shared by the React tree for the lifetime of the page. */
 export function getApplicationServices(): Promise<ApplicationServices> {
   servicesPromise ??= openOneDayDatabase().then((database) => {
-    const unitOfWork = new DexieUnitOfWork(database);
+    const unitOfWork = new DexieUnitOfWork(database, notifyApplicationChanged);
     const reminderRuntime = new ReminderRuntime(unitOfWork, {
       deliver: deliverBrowserReminder,
     });

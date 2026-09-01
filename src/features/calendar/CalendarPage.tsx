@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { getApplicationServices } from '@/app/application';
+import { useApplicationRevision } from '@/app/application-change';
 import type { CalendarItemView } from '@/application';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -88,6 +89,7 @@ function datesBetween(start: Temporal.PlainDate, end: Temporal.PlainDate) {
 }
 
 export function CalendarPage() {
+  const applicationRevision = useApplicationRevision();
   const { view: routeView } = useParams();
   const view = parseView(routeView);
   const navigate = useNavigate();
@@ -125,9 +127,10 @@ export function CalendarPage() {
         ...(priority ? { priority } : {}),
         ...(state ? { state } : {}),
       }),
-    [rangeStart, rangeEnd, listId, priority, state],
+    [applicationRevision, rangeStart, rangeEnd, listId, priority, state],
   );
   const [opened, setOpened] = useState<CalendarItemView>();
+  const openedSeries = todoSnapshot?.series.find((item) => item.id === opened?.seriesId);
   const days = datesBetween(range.start, range.end);
 
   const setQuery = (key: string, value?: string) => {
@@ -357,7 +360,12 @@ export function CalendarPage() {
           })()
         : null}
       {opened?.ownerKind === 'occurrence' ? (
-        <OccurrenceDetailsDrawer item={opened} onClose={() => setOpened(undefined)} />
+        <OccurrenceDetailsDrawer
+          item={opened}
+          {...(openedSeries !== undefined ? { series: openedSeries } : {})}
+          {...(todoSnapshot !== undefined ? { snapshot: todoSnapshot } : {})}
+          onClose={() => setOpened(undefined)}
+        />
       ) : null}
     </section>
   );

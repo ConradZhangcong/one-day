@@ -582,10 +582,9 @@ export class RecurrenceService {
   }
 
   private taskDetails(draft: RecurrenceDraft) {
-    const { rule: _rule, tagNames: _tagNames, goalId: _goalId, ...details } = draft;
+    const { rule: _rule, tagNames: _tagNames, ...details } = draft;
     void _rule;
     void _tagNames;
-    void _goalId;
     return details;
   }
 

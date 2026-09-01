@@ -47,6 +47,7 @@ import {
 import { ListManager } from './ListManager';
 import { RecurrenceFields } from './RecurrenceFields';
 import { OccurrenceDetailsDrawer } from './OccurrenceDetailsDrawer';
+import { SeriesManager } from './SeriesManager';
 import { TaskDetailsDrawer } from './TaskDetailsDrawer';
 import {
   formatSchedule,
@@ -86,7 +87,7 @@ function toCalendarItem(item: TaskOccurrenceView): CalendarItemView | undefined 
   };
 }
 
-function QuickAdd({
+export function QuickAdd({
   defaultListId,
   today,
   goals,
@@ -265,6 +266,7 @@ export function TodoPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [editingId, setEditingId] = useState<string>();
   const [managingLists, setManagingLists] = useState(false);
+  const [managingSeries, setManagingSeries] = useState(false);
   const [removing, setRemoving] = useState<SingleTask>();
   const [removingBusy, setRemovingBusy] = useState(false);
   const [openedOccurrence, setOpenedOccurrence] = useState<TaskOccurrenceView>();
@@ -361,6 +363,9 @@ export function TodoPage() {
       : 'system:inbox';
   const openedCalendarItem =
     openedOccurrence === undefined ? undefined : toCalendarItem(openedOccurrence);
+  const openedSeries = snapshot.series.find(
+    (item) => item.id === openedCalendarItem?.seriesId,
+  );
 
   const run = async (operation: () => Promise<unknown>, success: string) => {
     try {
@@ -393,9 +398,14 @@ export function TodoPage() {
           <h1>{copy.title}</h1>
           <p className="text-muted-foreground">{copy.subtitle}</p>
         </div>
-        <Button variant="outline" onClick={() => setManagingLists(true)}>
-          <ListTodo data-icon="inline-start" /> 管理清单
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setManagingSeries(true)}>
+            <Repeat2 data-icon="inline-start" /> 管理重复系列
+          </Button>
+          <Button variant="outline" onClick={() => setManagingLists(true)}>
+            <ListTodo data-icon="inline-start" /> 管理清单
+          </Button>
+        </div>
       </header>
       {view !== 'completed' ? (
         <QuickAdd defaultListId={defaultListId} today={today} goals={snapshot.goals} />
@@ -631,9 +641,16 @@ export function TodoPage() {
       {openedCalendarItem ? (
         <OccurrenceDetailsDrawer
           item={openedCalendarItem}
+          {...(openedSeries !== undefined ? { series: openedSeries } : {})}
+          snapshot={snapshot}
           onClose={() => setOpenedOccurrence(undefined)}
         />
       ) : null}
+      <SeriesManager
+        open={managingSeries}
+        snapshot={snapshot}
+        onClose={() => setManagingSeries(false)}
+      />
       <ListManager
         open={managingLists}
         lists={snapshot.lists}

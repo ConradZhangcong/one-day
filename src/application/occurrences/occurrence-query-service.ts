@@ -6,7 +6,7 @@ import {
   localDateSchema,
   localDateTimeSchema,
   projectOccurrenceRange,
-  projectOccurrenceSchedule,
+  projectOccurrenceRecordSchedule,
   schedulePointLocalDate,
   type Instant,
   type LocalDate,
@@ -37,6 +37,7 @@ export interface TaskOccurrenceView {
   readonly virtual: boolean;
   readonly listId: string;
   readonly tagIds: readonly string[];
+  readonly goalId?: string;
   readonly priority: Priority;
   readonly updatedAt?: Instant;
 }
@@ -79,14 +80,7 @@ function occurrenceView(
   occurrence: OccurrenceRecord,
   virtual: boolean,
 ): TaskOccurrenceView {
-  const schedule = projectOccurrenceSchedule(series, occurrence.originalAnchor, {
-    ...(occurrence.overridePlannedAt !== undefined
-      ? { plannedAt: occurrence.overridePlannedAt }
-      : {}),
-    ...(occurrence.overrideDeadlineAt !== undefined
-      ? { deadlineAt: occurrence.overrideDeadlineAt }
-      : {}),
-  });
+  const schedule = projectOccurrenceRecordSchedule(series, occurrence);
   const template = occurrence.templateSnapshot ?? series.template;
   return {
     key: occurrence.occurrenceKey,
@@ -102,6 +96,7 @@ function occurrenceView(
     virtual,
     listId: template.listId,
     tagIds: template.tagIds,
+    ...(template.goalId === undefined ? {} : { goalId: template.goalId }),
     priority: template.priority,
     updatedAt: series.updatedAt,
   };
@@ -148,6 +143,7 @@ export class OccurrenceQueryService {
         virtual: false,
         listId: task.listId,
         tagIds: task.tagIds,
+        ...(task.goalId === undefined ? {} : { goalId: task.goalId }),
         priority: task.priority,
         updatedAt: task.updatedAt,
       }))

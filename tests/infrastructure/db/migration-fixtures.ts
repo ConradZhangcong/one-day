@@ -37,6 +37,32 @@ interface V1SingleTaskRecord {
   readonly normalizedTitle: string;
 }
 
+interface V2RecurrenceSeriesRecord {
+  readonly id: string;
+  readonly template: {
+    readonly title: string;
+    readonly notes: string;
+    readonly listId: string;
+    readonly tagIds: readonly string[];
+    readonly priority: 'none' | 'low' | 'medium' | 'high';
+    readonly plannedAt: { readonly kind: 'allDay'; readonly date: string };
+    readonly deadlineAt: { readonly kind: 'none' };
+  };
+  readonly anchor: 'planned';
+  readonly rule: {
+    readonly frequency: 'daily';
+    readonly interval: 1;
+    readonly end: { readonly kind: 'count'; readonly count: 1 };
+  };
+  readonly status: 'ended';
+  readonly revision: 1;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly listId: string;
+  readonly tagIds: readonly string[];
+  readonly anchorLocalDate: string;
+}
+
 const fixtureDate = decodeLocalDate('2026-08-13');
 const fixtureInstant = decodeInstant('2026-08-12T16:00:00Z');
 
@@ -74,4 +100,35 @@ export const V1_MIGRATION_FIXTURE = {
       normalizedTitle: '旧版本任务',
     },
   ] satisfies readonly V1SingleTaskRecord[],
+} as const;
+
+/** Frozen v2 recurrence row from before optional template goal linkage existed. */
+export const V2_MIGRATION_FIXTURE = {
+  recurrenceSeries: [
+    {
+      id: 'series:v2-fixture',
+      template: {
+        title: '旧版本重复事项',
+        notes: '',
+        listId: 'system:inbox',
+        tagIds: [],
+        priority: 'none',
+        plannedAt: { kind: 'allDay', date: fixtureDate },
+        deadlineAt: { kind: 'none' },
+      },
+      anchor: 'planned',
+      rule: {
+        frequency: 'daily',
+        interval: 1,
+        end: { kind: 'count', count: 1 },
+      },
+      status: 'ended',
+      revision: 1,
+      createdAt: fixtureInstant,
+      updatedAt: fixtureInstant,
+      listId: 'system:inbox',
+      tagIds: [],
+      anchorLocalDate: fixtureDate,
+    },
+  ] satisfies readonly V2RecurrenceSeriesRecord[],
 } as const;

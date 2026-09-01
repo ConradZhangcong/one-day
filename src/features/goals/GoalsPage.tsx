@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { getApplicationServices } from '@/app/application';
+import { useApplicationRevision } from '@/app/application-change';
 import type { GoalDraft, GoalProgress as GoalProgressItem } from '@/application';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -128,9 +129,10 @@ function GoalEditor({
 }
 
 export function GoalsPage() {
+  const applicationRevision = useApplicationRevision();
   const goals = useLiveQuery(
     async () => (await getApplicationServices()).goals.snapshot(),
-    [],
+    [applicationRevision],
   );
   const todoSnapshot = useTodoSnapshot();
   const [editing, setEditing] = useState<GoalProgressItem | 'new'>();

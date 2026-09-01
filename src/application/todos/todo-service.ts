@@ -16,6 +16,7 @@ import {
   taskListSchema,
   type SingleTask,
   type Reminder,
+  type RecurrenceSeries,
   type SchedulePoint,
   type Tag,
   type TaskDraft as DomainTaskDraft,
@@ -35,6 +36,7 @@ export interface TodoSnapshot {
   readonly goals: LongTermGoal[];
   readonly occurrences: TaskOccurrenceView[];
   readonly occurrenceWindowEnd: string;
+  readonly series: RecurrenceSeries[];
 }
 
 export type TaskDraft = DomainTaskDraft;
@@ -86,14 +88,15 @@ export class TodoService {
   }
 
   async snapshot(): Promise<TodoSnapshot> {
-    const { lists, settings, singleTasks, tags, longTermGoals } =
+    const { lists, settings, singleTasks, tags, longTermGoals, recurrenceSeries } =
       this.unitOfWork.repositories;
-    const [tasks, allLists, allTags, storedTimeZone, goals] = await Promise.all([
+    const [tasks, allLists, allTags, storedTimeZone, goals, series] = await Promise.all([
       singleTasks.getAll(),
       lists.listInDisplayOrder({ includeArchived: true }),
       tags.getAll(),
       settings.get(APPLICATION_TIME_ZONE_KEY),
       longTermGoals.getAll(),
+      recurrenceSeries.getAll(),
     ]);
     const timeZone = decodeTimeZoneId(storedTimeZone ?? this.detectTimeZone());
     const today = instantToLocalDate(decodeInstant(this.now()), timeZone);
@@ -114,6 +117,7 @@ export class TodoService {
         (item) => item.ownerKind === 'occurrence',
       ),
       occurrenceWindowEnd,
+      series,
     };
   }
 

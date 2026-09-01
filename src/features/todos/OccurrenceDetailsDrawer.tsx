@@ -1,9 +1,19 @@
-import { Check, Forward, Pause, Repeat2, Square } from 'lucide-react';
+import { Check, Forward, Pause, Pencil, Repeat2, Square } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { getApplicationServices } from '@/app/application';
-import type { CalendarItemView } from '@/application';
+import type { CalendarItemView, RecurrenceDraft, TodoSnapshot } from '@/application';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,16 +29,29 @@ import {
   decodeSchedulePoint,
   occurrenceKeySchema,
   schedulePointLocalDate,
+  type RecurrenceSeries,
 } from '@/domain';
+
+import { SeriesEditForm } from './SeriesEditForm';
 
 interface OccurrenceDetailsDrawerProps {
   readonly item: CalendarItemView;
+  readonly series?: RecurrenceSeries;
+  readonly snapshot?: TodoSnapshot;
   readonly onClose: () => void;
 }
 
-export function OccurrenceDetailsDrawer({ item, onClose }: OccurrenceDetailsDrawerProps) {
+export function OccurrenceDetailsDrawer({
+  item,
+  onClose,
+  series,
+  snapshot,
+}: OccurrenceDetailsDrawerProps) {
   const [busy, setBusy] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(false);
+  const [editingSeries, setEditingSeries] = useState(false);
+  const [pendingSeriesDraft, setPendingSeriesDraft] = useState<RecurrenceDraft>();
+  const [confirmingStop, setConfirmingStop] = useState(false);
   const [plannedDate, setPlannedDate] = useState(
     item.kind === 'planned' ? (schedulePointLocalDate(item.schedule) ?? '') : '',
   );
@@ -86,9 +109,25 @@ export function OccurrenceDetailsDrawer({ item, onClose }: OccurrenceDetailsDraw
     }
   };
 
+  const saveSeries = async () => {
+    if (series === undefined || pendingSeriesDraft === undefined) return;
+    setBusy(true);
+    try {
+      const recurrence = (await getApplicationServices()).recurrence;
+      await recurrence.updateSeries(series.id, pendingSeriesDraft);
+      toast.success('整个系列已更新，历史记录已保留');
+      setPendingSeriesDraft(undefined);
+      onClose();
+    } catch {
+      toast.error('更新整个系列失败，当前实例和历史均未改变。');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Repeat2 className="size-4" />
@@ -107,7 +146,16 @@ export function OccurrenceDetailsDrawer({ item, onClose }: OccurrenceDetailsDraw
             </Badge>
             <Badge variant="outline">整个系列可单独管理</Badge>
           </div>
-          {!item.virtual && editingSchedule ? (
+          {editingSeries && series !== undefined && snapshot !== undefined ? (
+            <SeriesEditForm
+              series={series}
+              snapshot={snapshot}
+              disabled={busy}
+              onCancel={() => setEditingSeries(false)}
+              onSubmit={setPendingSeriesDraft}
+            />
+          ) : null}
+          {!item.virtual && editingSchedule && !editingSeries ? (
             <div className="grid grid-cols-2 gap-3">
               <label className="grid gap-1 text-sm">
                 仅本次计划
@@ -136,7 +184,20 @@ export function OccurrenceDetailsDrawer({ item, onClose }: OccurrenceDetailsDraw
           ) : null}
         </div>
         <DialogFooter className="flex-wrap sm:justify-start">
-          {!item.virtual ? (
+          {!editingSeries && series !== undefined && snapshot !== undefined ? (
+            <Button
+              disabled={busy}
+              variant="outline"
+              onClick={() => {
+                setEditingSchedule(false);
+                setEditingSeries(true);
+              }}
+            >
+              <Pencil data-icon="inline-start" />
+              编辑整个系列
+            </Button>
+          ) : null}
+          {!item.virtual && !editingSeries ? (
             <>
               <Button disabled={busy} onClick={() => void run('complete')}>
                 <Check data-icon="inline-start" />
@@ -164,7 +225,7 @@ export function OccurrenceDetailsDrawer({ item, onClose }: OccurrenceDetailsDraw
               <Button
                 disabled={busy}
                 variant="destructive"
-                onClick={() => void run('stop')}
+                onClick={() => setConfirmingStop(true)}
               >
                 <Square data-icon="inline-start" />
                 停止整个系列
@@ -173,6 +234,48 @@ export function OccurrenceDetailsDrawer({ item, onClose }: OccurrenceDetailsDraw
           ) : null}
         </DialogFooter>
       </DialogContent>
+      <AlertDialog
+        open={pendingSeriesDraft !== undefined}
+        onOpenChange={(open) => !open && !busy && setPendingSeriesDraft(undefined)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认编辑整个系列？</AlertDialogTitle>
+            <AlertDialogDescription>
+              当前待处理实例会被替换；已完成和已跳过的历史会保留；未来将按新规则重新计算。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>返回检查</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={() => void saveSeries()}>
+              确认更新整个系列
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={confirmingStop}
+        onOpenChange={(open) => !open && !busy && setConfirmingStop(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>停止整个系列？</AlertDialogTitle>
+            <AlertDialogDescription>
+              当前待处理实例会移除，未来不再生成；既有完成和跳过历史会保留。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={busy}
+              onClick={() => void run('stop')}
+            >
+              确认停止并保留历史
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

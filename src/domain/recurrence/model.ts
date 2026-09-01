@@ -77,10 +77,12 @@ export const fixedRecurrenceRuleSchema = z.discriminatedUnion('frequency', [
 
 export type FixedRecurrenceRule = z.infer<typeof fixedRecurrenceRuleSchema>;
 
-export const taskTemplateSchema = taskDetailsSchema;
+export const taskTemplateSchema = taskDetailsSchema
+  .extend({ goalId: nonEmptyIdSchema.optional() })
+  .strict();
 export type TaskTemplate = z.infer<typeof taskTemplateSchema>;
 
-export const taskSnapshotSchema = taskDetailsSchema
+export const taskSnapshotSchema = taskTemplateSchema
   .extend({ capturedAt: instantSchema })
   .strict();
 export type TaskSnapshot = z.infer<typeof taskSnapshotSchema>;

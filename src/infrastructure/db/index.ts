@@ -10,6 +10,12 @@ export {
   toTagRecord,
 } from './projections';
 export { createDexieRepositories } from './repositories';
-export { DATABASE_NAME, DATABASE_VERSION, V1_STORES, V2_STORES } from './schema';
+export {
+  DATABASE_NAME,
+  DATABASE_VERSION,
+  V1_STORES,
+  V2_STORES,
+  V3_STORES,
+} from './schema';
 export { createInboxList, ensureInbox, INBOX_LIST_ID } from './system-data';
 export { DexieUnitOfWork } from './unit-of-work';

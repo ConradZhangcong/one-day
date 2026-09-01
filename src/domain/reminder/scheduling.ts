@@ -164,6 +164,34 @@ export function projectOccurrenceSchedule(
 }
 
 /**
+ * Project a materialized record from the template revision captured when it was
+ * handled. This prevents later whole-series edits from rewriting history.
+ */
+export function projectOccurrenceRecordSchedule(
+  series: RecurrenceSeries,
+  occurrence: OccurrenceRecord,
+): ReminderSchedule {
+  let scheduleSeries = series;
+  if (occurrence.templateSnapshot !== undefined) {
+    const { capturedAt: _capturedAt, ...template } = occurrence.templateSnapshot;
+    void _capturedAt;
+    scheduleSeries = {
+      ...series,
+      template,
+      anchor: template.plannedAt.kind !== 'none' ? 'planned' : 'deadline',
+    };
+  }
+  return projectOccurrenceSchedule(scheduleSeries, occurrence.originalAnchor, {
+    ...(occurrence.overridePlannedAt !== undefined
+      ? { plannedAt: occurrence.overridePlannedAt }
+      : {}),
+    ...(occurrence.overrideDeadlineAt !== undefined
+      ? { deadlineAt: occurrence.overrideDeadlineAt }
+      : {}),
+  });
+}
+
+/**
  * Project the current materialized occurrence while preserving the template's
  * local calendar-day and wall-time relationship. Recurrence expansion remains
  * owned by the recurrence projector in Phase 4.
@@ -180,12 +208,5 @@ export function projectActiveOccurrenceSchedule(
     return undefined;
   }
 
-  return projectOccurrenceSchedule(series, occurrence.originalAnchor, {
-    ...(occurrence.overridePlannedAt !== undefined
-      ? { plannedAt: occurrence.overridePlannedAt }
-      : {}),
-    ...(occurrence.overrideDeadlineAt !== undefined
-      ? { deadlineAt: occurrence.overrideDeadlineAt }
-      : {}),
-  });
+  return projectOccurrenceRecordSchedule(series, occurrence);
 }

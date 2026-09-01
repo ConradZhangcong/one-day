@@ -4,7 +4,7 @@
 
 ## Overview
 
-The UI is a React 19 client application. Ant Design provides accessible interaction primitives, React Router owns navigation, and IndexedDB is the local source of truth. Components call application services; they never write Dexie tables.
+The UI is a React 19 client application. Project-local shadcn/Base UI components provide accessible interaction primitives, React Router owns navigation, and IndexedDB is the local source of truth. Components call application services; they never write Dexie tables.
 
 ## Pre-Development Checklist
 
@@ -23,7 +23,7 @@ Before changing frontend code, read:
 | Guide | Description | Status |
 |---|---|---|
 | [Directory Structure](./directory-structure.md) | App composition and feature placement | Active |
-| [Component Guidelines](./component-guidelines.md) | Components, Ant Design, styling, accessibility | Active |
+| [Component Guidelines](./component-guidelines.md) | Components, shadcn/Base UI, styling, accessibility | Active |
 | [Hook Guidelines](./hook-guidelines.md) | Effects and browser subscriptions | Active |
 | [State Management](./state-management.md) | Local, URL, and IndexedDB-backed state | Active |
 | [Quality Guidelines](./quality-guidelines.md) | Required checks and forbidden shortcuts | Active |

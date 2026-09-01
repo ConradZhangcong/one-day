@@ -1,5 +1,5 @@
 export const DATABASE_NAME = 'one-day';
-export const DATABASE_VERSION = 2;
+export const DATABASE_VERSION = 3;
 
 /**
  * Every indexed property is either a domain scalar or a rebuildable projection
@@ -26,3 +26,6 @@ export const V2_STORES = {
     'id, state, listId, plannedLocalDate, deadlineLocalDate, *tagIds, updatedAt',
   longTermGoals: 'id, status, updatedAt',
 } as const;
+
+/** v3 adds an optional goalId inside recurrenceSeries.template; no new index is needed. */
+export const V3_STORES = V2_STORES;

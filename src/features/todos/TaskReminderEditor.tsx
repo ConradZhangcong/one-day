@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { getApplicationServices } from '@/app/application';
+import { useApplicationRevision } from '@/app/application-change';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { SimpleSelect } from '@/components/ui/compat';
@@ -12,10 +13,11 @@ import { Spinner } from '@/components/ui/spinner';
 import type { Reminder, ReminderTarget, SingleTask } from '@/domain';
 
 export function TaskReminderEditor({ task }: { readonly task: SingleTask }) {
+  const applicationRevision = useApplicationRevision();
   const reminders = useLiveQuery(async () => {
     const services = await getApplicationServices();
     return services.reminders.list('task', task.id);
-  }, [task.id]);
+  }, [applicationRevision, task.id]);
   const reminder = reminders?.[0];
   if (reminders === undefined) return <Spinner aria-label="正在加载提醒" />;
   return (
