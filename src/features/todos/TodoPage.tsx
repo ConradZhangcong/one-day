@@ -1,10 +1,20 @@
-import { Check, Forward, ListTodo, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import {
+  Check,
+  Forward,
+  ListTodo,
+  Pencil,
+  Plus,
+  Repeat2,
+  RotateCcw,
+  Trash2,
+} from 'lucide-react';
 import { Temporal } from 'temporal-polyfill';
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 
 import { getApplicationServices } from '@/app/application';
+import type { CalendarItemView, TaskOccurrenceView } from '@/application';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,12 +37,16 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   decodeSchedulePoint,
+  schedulePointLocalDate,
+  type FixedRecurrenceRule,
   type LongTermGoal,
   type SchedulePoint,
   type SingleTask,
 } from '@/domain';
 
 import { ListManager } from './ListManager';
+import { RecurrenceFields } from './RecurrenceFields';
+import { OccurrenceDetailsDrawer } from './OccurrenceDetailsDrawer';
 import { TaskDetailsDrawer } from './TaskDetailsDrawer';
 import {
   formatSchedule,
@@ -52,6 +66,26 @@ const VIEW_COPY: Record<TodoViewKind, { title: string; subtitle: string }> = {
   list: { title: '清单', subtitle: '一个清晰的一级任务清单。' },
 };
 
+function toCalendarItem(item: TaskOccurrenceView): CalendarItemView | undefined {
+  const schedule = item.plannedAt.kind !== 'none' ? item.plannedAt : item.deadlineAt;
+  if (schedule.kind === 'none') return undefined;
+  return {
+    key: item.key,
+    ownerKind: 'occurrence',
+    ownerId: item.ownerId,
+    ...(item.seriesId !== undefined ? { seriesId: item.seriesId } : {}),
+    title: item.title,
+    kind: item.plannedAt.kind !== 'none' ? 'planned' : 'deadline',
+    schedule,
+    ...(item.deadlineAt.kind !== 'none' ? { deadlineAt: item.deadlineAt } : {}),
+    state: item.state,
+    readonly: item.readonly,
+    virtual: item.virtual,
+    listId: item.listId,
+    priority: item.priority,
+  };
+}
+
 function QuickAdd({
   defaultListId,
   today,
@@ -66,6 +100,18 @@ function QuickAdd({
   const [deadlineAt, setDeadlineAt] = useState<SchedulePoint>({ kind: 'none' });
   const [saving, setSaving] = useState(false);
   const [goalId, setGoalId] = useState('');
+  const [recurring, setRecurring] = useState(false);
+  const [rule, setRule] = useState<FixedRecurrenceRule>({
+    frequency: 'daily',
+    interval: 1,
+    end: { kind: 'never' },
+  });
+  const recurrenceAnchor =
+    plannedAt.kind !== 'none'
+      ? plannedAt
+      : deadlineAt.kind !== 'none'
+        ? deadlineAt
+        : undefined;
 
   const create = async () => {
     if (!title.trim()) {
@@ -75,21 +121,24 @@ function QuickAdd({
     setSaving(true);
     try {
       const services = await getApplicationServices();
-      await services.todos.createTask({
+      const draft = {
         title,
         notes: '',
         listId: defaultListId,
         tagNames: [],
-        priority: 'none',
+        priority: 'none' as const,
         plannedAt,
         deadlineAt,
         ...(goalId ? { goalId } : {}),
-      });
+      };
+      if (recurring) await services.recurrence.createSeries({ ...draft, rule });
+      else await services.todos.createTask(draft);
       setTitle('');
       setPlannedAt({ kind: 'none' });
       setDeadlineAt({ kind: 'none' });
       setGoalId('');
-      toast.success('任务已加入');
+      setRecurring(false);
+      toast.success(recurring ? '重复事项已创建' : '任务已加入');
     } catch (error) {
       const code = error instanceof Error && 'code' in error ? String(error.code) : '';
       toast.error(
@@ -123,6 +172,12 @@ function QuickAdd({
           placeholder="添加一件待办，按 Enter 保存"
         />
       </div>
+      {recurring && plannedAt.kind === 'none' && deadlineAt.kind === 'none' ? (
+        <p className="text-sm text-destructive">请先选择首次发生日期（计划或截止）。</p>
+      ) : null}
+      {recurring && recurrenceAnchor !== undefined ? (
+        <RecurrenceFields anchor={recurrenceAnchor} rule={rule} onChange={setRule} />
+      ) : null}
       <div className="quick-schedule">
         <span>计划</span>
         <input
@@ -180,8 +235,22 @@ function QuickAdd({
             .map((goal) => ({ value: goal.id, label: goal.title }))}
           onChange={(value) => setGoalId(typeof value === 'string' ? value : '')}
         />
-        <Button type="submit" disabled={saving}>
-          {saving ? '正在添加…' : '添加'}
+        <Button
+          type="button"
+          variant={recurring ? 'secondary' : 'outline'}
+          size="sm"
+          onClick={() => setRecurring((value) => !value)}
+        >
+          <Repeat2 data-icon="inline-start" /> {recurring ? '收起重复' : '重复'}
+        </Button>
+        <Button
+          type="submit"
+          disabled={
+            saving ||
+            (recurring && plannedAt.kind === 'none' && deadlineAt.kind === 'none')
+          }
+        >
+          {saving ? '正在添加…' : recurring ? '创建重复事项' : '添加'}
         </Button>
       </div>
     </form>
@@ -198,6 +267,7 @@ export function TodoPage() {
   const [managingLists, setManagingLists] = useState(false);
   const [removing, setRemoving] = useState<SingleTask>();
   const [removingBusy, setRemovingBusy] = useState(false);
+  const [openedOccurrence, setOpenedOccurrence] = useState<TaskOccurrenceView>();
   const view = getTodoView(location.pathname);
   const today = useCurrentLocalDate(snapshot?.timeZone);
 
@@ -217,6 +287,41 @@ export function TodoPage() {
       taskFiltersFromSearchParams(searchParams),
       listId,
     );
+  }, [listId, searchParams, snapshot, today, view]);
+  const filteredOccurrences = useMemo(() => {
+    if (snapshot === undefined || today === undefined || view === 'completed') return [];
+    const filters = taskFiltersFromSearchParams(searchParams);
+    return snapshot.occurrences.filter((item) => {
+      const dates = [
+        schedulePointLocalDate(item.plannedAt),
+        schedulePointLocalDate(item.deadlineAt),
+      ].filter(Boolean);
+      if (view === 'inbox' && item.listId !== 'system:inbox') return false;
+      if (view === 'list' && item.listId !== listId) return false;
+      if (view === 'today' && !dates.includes(today)) return false;
+      if (
+        view === 'upcoming' &&
+        !dates.some((date) => date !== undefined && date > today)
+      )
+        return false;
+      if (
+        filters.text &&
+        !`${item.title}\n${item.notes}`
+          .normalize('NFKC')
+          .toLocaleLowerCase('zh-CN')
+          .includes(filters.text.normalize('NFKC').toLocaleLowerCase('zh-CN'))
+      )
+        return false;
+      if (filters.date && !dates.includes(filters.date)) return false;
+      if (filters.listId && item.listId !== filters.listId) return false;
+      if (filters.priority && item.priority !== filters.priority) return false;
+      if (
+        filters.tagIds.length > 0 &&
+        !filters.tagIds.every((id) => item.tagIds.includes(id))
+      )
+        return false;
+      return true;
+    });
   }, [listId, searchParams, snapshot, today, view]);
 
   if (snapshot === undefined || today === undefined)
@@ -254,6 +359,8 @@ export function TodoPage() {
     view === 'list' && currentList !== undefined && !currentList.archived
       ? currentList.id
       : 'system:inbox';
+  const openedCalendarItem =
+    openedOccurrence === undefined ? undefined : toCalendarItem(openedOccurrence);
 
   const run = async (operation: () => Promise<unknown>, success: string) => {
     try {
@@ -356,7 +463,7 @@ export function TodoPage() {
         />
       </div>
       <div className="task-list" aria-live="polite">
-        {filteredTasks.length === 0 ? (
+        {filteredTasks.length === 0 && filteredOccurrences.length === 0 ? (
           <EmptyState
             description={
               searchParams.size > 0
@@ -367,115 +474,150 @@ export function TodoPage() {
             }
           />
         ) : (
-          filteredTasks.map((task) => (
-            <article className={`task-row state-${task.state}`} key={task.id}>
-              <button
-                className="task-main"
-                onClick={() => setEditingId(task.id)}
-                aria-label={`编辑${task.title}`}
-              >
-                <span className="task-state">
-                  {task.state === 'pending'
-                    ? '○ 待处理'
-                    : task.state === 'completed'
-                      ? '✓ 已完成'
-                      : '↷ 已跳过'}
-                </span>
-                <strong>{task.title}</strong>
-                <small>{formatSchedule(task)}</small>
-                <span className="task-meta">
-                  <Badge variant="secondary">
-                    {snapshot.lists.find((item) => item.id === task.listId)?.name ??
-                      '未知清单'}
-                  </Badge>
-                  {task.priority !== 'none' ? (
-                    <Badge variant="outline">
-                      {({ low: '低', medium: '中', high: '高' } as const)[task.priority]}
-                      优先级
-                    </Badge>
-                  ) : null}
-                  {task.tagIds.map((id) => {
-                    const tag = snapshot.tags.find((item) => item.id === id);
-                    return tag ? (
-                      <TagBadge key={id} color={tag.color}>
-                        {tag.name}
-                      </TagBadge>
-                    ) : null;
-                  })}
-                </span>
-              </button>
-              <div className="flex flex-wrap gap-2">
-                {task.state === 'pending' ? (
-                  <>
-                    <Button
-                      variant="outline"
-                      aria-label={`完成${task.title}`}
-                      onClick={() =>
-                        void run(
-                          async () =>
-                            (await getApplicationServices()).todos.setTaskState(
-                              task.id,
-                              'completed',
-                            ),
-                          '已完成',
-                        )
-                      }
-                    >
-                      <Check data-icon="inline-start" /> 完成
-                    </Button>
-                    <Button
-                      variant="outline"
-                      aria-label={`跳过${task.title}`}
-                      onClick={() =>
-                        void run(
-                          async () =>
-                            (await getApplicationServices()).todos.setTaskState(
-                              task.id,
-                              'skipped',
-                            ),
-                          '已跳过',
-                        )
-                      }
-                    >
-                      <Forward data-icon="inline-start" /> 跳过
-                    </Button>
-                  </>
-                ) : null}
-                {task.state === 'completed' ? (
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      void run(
-                        async () =>
-                          (await getApplicationServices()).todos.undoTaskCompletion(
-                            task.id,
-                          ),
-                        '已撤销完成',
-                      )
-                    }
-                  >
-                    <RotateCcw data-icon="inline-start" /> 撤销完成
-                  </Button>
-                ) : null}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`编辑${task.title}`}
+          <>
+            {filteredTasks.map((task) => (
+              <article className={`task-row state-${task.state}`} key={task.id}>
+                <button
+                  className="task-main"
                   onClick={() => setEditingId(task.id)}
+                  aria-label={`编辑${task.title}`}
                 >
-                  <Pencil />
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  aria-label={`删除${task.title}`}
-                  onClick={() => setRemoving(task)}
-                >
-                  <Trash2 />
-                </Button>
-              </div>
-            </article>
-          ))
+                  <span className="task-state">
+                    {task.state === 'pending'
+                      ? '○ 待处理'
+                      : task.state === 'completed'
+                        ? '✓ 已完成'
+                        : '↷ 已跳过'}
+                  </span>
+                  <strong>{task.title}</strong>
+                  <small>{formatSchedule(task)}</small>
+                  <span className="task-meta">
+                    <Badge variant="secondary">
+                      {snapshot.lists.find((item) => item.id === task.listId)?.name ??
+                        '未知清单'}
+                    </Badge>
+                    {task.priority !== 'none' ? (
+                      <Badge variant="outline">
+                        {
+                          ({ low: '低', medium: '中', high: '高' } as const)[
+                            task.priority
+                          ]
+                        }
+                        优先级
+                      </Badge>
+                    ) : null}
+                    {task.tagIds.map((id) => {
+                      const tag = snapshot.tags.find((item) => item.id === id);
+                      return tag ? (
+                        <TagBadge key={id} color={tag.color}>
+                          {tag.name}
+                        </TagBadge>
+                      ) : null;
+                    })}
+                  </span>
+                </button>
+                <div className="flex flex-wrap gap-2">
+                  {task.state === 'pending' ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        aria-label={`完成${task.title}`}
+                        onClick={() =>
+                          void run(
+                            async () =>
+                              (await getApplicationServices()).todos.setTaskState(
+                                task.id,
+                                'completed',
+                              ),
+                            '已完成',
+                          )
+                        }
+                      >
+                        <Check data-icon="inline-start" /> 完成
+                      </Button>
+                      <Button
+                        variant="outline"
+                        aria-label={`跳过${task.title}`}
+                        onClick={() =>
+                          void run(
+                            async () =>
+                              (await getApplicationServices()).todos.setTaskState(
+                                task.id,
+                                'skipped',
+                              ),
+                            '已跳过',
+                          )
+                        }
+                      >
+                        <Forward data-icon="inline-start" /> 跳过
+                      </Button>
+                    </>
+                  ) : null}
+                  {task.state === 'completed' ? (
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        void run(
+                          async () =>
+                            (await getApplicationServices()).todos.undoTaskCompletion(
+                              task.id,
+                            ),
+                          '已撤销完成',
+                        )
+                      }
+                    >
+                      <RotateCcw data-icon="inline-start" /> 撤销完成
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`编辑${task.title}`}
+                    onClick={() => setEditingId(task.id)}
+                  >
+                    <Pencil />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    aria-label={`删除${task.title}`}
+                    onClick={() => setRemoving(task)}
+                  >
+                    <Trash2 />
+                  </Button>
+                </div>
+              </article>
+            ))}
+            {filteredOccurrences.map((item) => {
+              const schedule =
+                item.plannedAt.kind !== 'none' ? item.plannedAt : item.deadlineAt;
+              if (schedule.kind === 'none') return null;
+              return (
+                <article className="task-row state-pending" key={item.key}>
+                  <button
+                    className="task-main"
+                    onClick={() => setOpenedOccurrence(item)}
+                    aria-label={`查看重复事项${item.title}`}
+                  >
+                    <span className="task-state">
+                      {item.virtual ? '◇ 未来只读' : '↻ 当前实例'}
+                    </span>
+                    <strong>{item.title}</strong>
+                    <small>
+                      {item.plannedAt.kind !== 'none'
+                        ? `计划 ${schedulePointLocalDate(item.plannedAt)}`
+                        : `截止 ${schedulePointLocalDate(item.deadlineAt)}`}
+                    </small>
+                    <span className="task-meta">
+                      <Badge variant="secondary">
+                        {item.virtual ? '未来只读' : '仅本次可操作'}
+                      </Badge>
+                    </span>
+                  </button>
+                </article>
+              );
+            })}
+          </>
         )}
       </div>
       {editing ? (
@@ -484,6 +626,12 @@ export function TodoPage() {
           task={editing}
           snapshot={snapshot}
           onClose={() => setEditingId(undefined)}
+        />
+      ) : null}
+      {openedCalendarItem ? (
+        <OccurrenceDetailsDrawer
+          item={openedCalendarItem}
+          onClose={() => setOpenedOccurrence(undefined)}
         />
       ) : null}
       <ListManager

@@ -1,1 +1,11 @@
-{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file":".trellis/spec/backend/index.md","reason":"核对领域、应用服务和持久化规范覆盖"}
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"复审原子事务、schema 与历史保留"}
+{"file":".trellis/spec/backend/error-handling.md","reason":"复审稳定错误码和失败回滚"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"复审 recurrence 不变量、Temporal 与测试矩阵"}
+{"file":".trellis/spec/frontend/index.md","reason":"核对前端结构、交互和可访问性规范覆盖"}
+{"file":".trellis/spec/frontend/state-management.md","reason":"复审统一投影、live query 与状态边界"}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"复审严格类型、Zod 解码与 branded 时间值"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"执行 lint、typecheck、测试、构建和 UI 质量检查"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"检查列表、恢复、提醒和日历端到端数据流一致性"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"检查是否出现重复 recurrence 或 schedule 算法"}
+{"file":".trellis/tasks/archive/2026-09/08-12-todo-calendar-app/research/time-recurrence.md","reason":"对照固定周期、DST、COUNT、单活跃实例和历史语义验收"}

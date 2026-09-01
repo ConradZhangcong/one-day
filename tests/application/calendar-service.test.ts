@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { CalendarService } from '../../src/application';
-import { decodeLocalDate, singleTaskSchema } from '../../src/domain';
+import { createOccurrenceKey, decodeLocalDate, singleTaskSchema } from '../../src/domain';
 import { DexieUnitOfWork } from '../../src/infrastructure/db';
 import { createSeries, createSingleTask } from '../infrastructure/db/fixtures';
 import { createTestDatabase } from '../infrastructure/db/test-database';
@@ -36,7 +36,7 @@ describe('CalendarService', () => {
     }
   });
 
-  it('keeps completed tasks behind the state filter and projects active occurrences read-only', async () => {
+  it('keeps completed tasks behind the state filter and exposes the active occurrence as actionable', async () => {
     const context = await createTestDatabase();
     try {
       const unitOfWork = new DexieUnitOfWork(context.db);
@@ -56,10 +56,56 @@ describe('CalendarService', () => {
       };
       const pending = await service.query(input);
       expect(pending.items).toMatchObject([
-        { ownerKind: 'occurrence', readonly: true, title: '每周回顾' },
+        {
+          ownerKind: 'occurrence',
+          readonly: false,
+          virtual: false,
+          title: '每周回顾',
+        },
       ]);
       const done = await service.query({ ...input, state: 'completed' });
       expect(done.items).toMatchObject([{ ownerId: 'task:done', state: 'completed' }]);
+    } finally {
+      await context.cleanup();
+    }
+  });
+
+  it('uses stable keys for the active occurrence and read-only virtual future items', async () => {
+    const context = await createTestDatabase();
+    try {
+      const unitOfWork = new DexieUnitOfWork(context.db);
+      const { series, occurrence } = createSeries();
+      await unitOfWork.repositories.recurrenceSeries.save(series);
+      await unitOfWork.repositories.occurrenceRecords.save(occurrence);
+      const result = await new CalendarService(unitOfWork, () => 'Asia/Shanghai').query({
+        rangeStart: decodeLocalDate('2026-08-14'),
+        rangeEnd: decodeLocalDate('2026-08-29'),
+      });
+      expect(
+        result.items.map((item) => ({
+          key: item.key,
+          readonly: item.readonly,
+          virtual: item.virtual,
+        })),
+      ).toEqual([
+        { key: occurrence.occurrenceKey, readonly: false, virtual: false },
+        {
+          key: createOccurrenceKey(series.id, series.revision, {
+            kind: 'allDay',
+            date: decodeLocalDate('2026-08-21'),
+          }),
+          readonly: true,
+          virtual: true,
+        },
+        {
+          key: createOccurrenceKey(series.id, series.revision, {
+            kind: 'allDay',
+            date: decodeLocalDate('2026-08-28'),
+          }),
+          readonly: true,
+          virtual: true,
+        },
+      ]);
     } finally {
       await context.cleanup();
     }

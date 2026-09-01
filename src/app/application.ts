@@ -6,6 +6,8 @@ import {
   TodoService,
   GoalService,
   CalendarService,
+  OccurrenceQueryService,
+  RecurrenceService,
 } from '@/application';
 import { DexieUnitOfWork, openOneDayDatabase } from '@/infrastructure/db';
 import { deliverBrowserReminder } from '@/infrastructure/notifications';
@@ -18,6 +20,8 @@ export interface ApplicationServices {
   readonly reminderRuntime: ReminderRuntime;
   readonly goals: GoalService;
   readonly calendar: CalendarService;
+  readonly occurrences: OccurrenceQueryService;
+  readonly recurrence: RecurrenceService;
 }
 
 let servicesPromise: Promise<ApplicationServices> | undefined;
@@ -32,14 +36,19 @@ export function getApplicationServices(): Promise<ApplicationServices> {
     const todos = new TodoService(unitOfWork, {
       onScheduleChanged: () => void reminderRuntime.reconcile(),
     });
+    const recurrence = new RecurrenceService(unitOfWork, {
+      onScheduleChanged: () => void reminderRuntime.reconcile(),
+    });
     return {
       timeZoneSettings: new TimeZoneSettingsService(unitOfWork),
       todos,
-      recovery: new RecoveryService(unitOfWork, todos),
+      recovery: new RecoveryService(unitOfWork, todos, {}, recurrence),
       reminders: new ReminderService(unitOfWork),
       reminderRuntime,
       goals: new GoalService(unitOfWork),
       calendar: new CalendarService(unitOfWork),
+      occurrences: new OccurrenceQueryService(unitOfWork),
+      recurrence,
     };
   });
 

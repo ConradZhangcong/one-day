@@ -5,3 +5,5 @@ export * from './settings';
 export * from './todos';
 export * from './goals';
 export * from './calendar';
+export * from './recurrence';
+export * from './occurrences';

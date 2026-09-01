@@ -1,1 +1,15 @@
-{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file":".trellis/spec/backend/index.md","reason":"领域、应用服务与 Dexie 持久化的入口规范"}
+{"file":".trellis/spec/backend/directory-structure.md","reason":"保持 domain/application/infrastructure 依赖方向"}
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"系列与 occurrence 的 Dexie 事务、不变量和迁移规则"}
+{"file":".trellis/spec/backend/error-handling.md","reason":"新增稳定领域错误码及事务失败语义"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Temporal、occurrence identity 与数据库测试门禁"}
+{"file":".trellis/spec/frontend/index.md","reason":"React 功能实现入口规范"}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"feature 组件、应用服务与 composition root 的放置规则"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"组件边界、可访问性与交互约束；其中旧 Ant Design 描述由当前 shadcn 架构覆盖"}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Dexie source of truth、live query 与统一 occurrence 投影"}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"严格 TypeScript、Zod 边界和 branded 时间类型"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"UI、应用与生产构建质量门禁"}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"live query、时钟订阅和 React Strict Mode 清理规则"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"统一 occurrence 数据流跨领域、应用、持久化和 UI"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"复用唯一 recurrence/schedule projector，禁止多套算法"}
+{"file":".trellis/tasks/archive/2026-09/08-12-todo-calendar-app/research/time-recurrence.md","reason":"固定重复、单活跃实例、Temporal/DST 与提醒的已批准语义"}

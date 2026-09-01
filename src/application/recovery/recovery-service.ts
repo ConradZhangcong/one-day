@@ -4,10 +4,16 @@ import {
   compareLocalDates,
   decodeInstant,
   decodeTimeZoneId,
+  DomainError,
+  DomainErrorCode,
   deriveTaskStatus,
   instantToLocalDate,
   localDateSchema,
+  occurrenceKeySchema,
+  projectOccurrenceSchedule,
   schedulePointLocalDate,
+  singleTaskSchema,
+  tryParseOccurrenceKey,
   type DerivedTaskStatus,
   type Instant,
   type LocalDate,
@@ -18,6 +24,7 @@ import {
 import type { UnitOfWork } from '../repositories';
 import { APPLICATION_TIME_ZONE_KEY } from '../settings';
 import type { RescheduleTaskPatch, TodoService } from '../todos';
+import type { RecurrenceService } from '../recurrence';
 
 export interface RecoveryTaskView {
   readonly task: SingleTask;
@@ -117,6 +124,7 @@ export class RecoveryService {
     private readonly unitOfWork: UnitOfWork,
     private readonly todos: TodoService,
     dependencies: RecoveryServiceDependencies = {},
+    private readonly recurrence?: RecurrenceService,
   ) {
     this.now = dependencies.now ?? defaultNow;
     this.detectTimeZone = dependencies.detectTimeZone ?? defaultTimeZone;
@@ -204,14 +212,29 @@ export class RecoveryService {
   }
 
   completeTask(taskId: string): Promise<SingleTask> {
+    if (tryParseOccurrenceKey(taskId) !== undefined && this.recurrence !== undefined) {
+      return this.recurrence
+        .completeOccurrence(occurrenceKeySchema.parse(taskId))
+        .then(() => this.loadTaskView(taskId));
+    }
     return this.todos.setTaskState(taskId, 'completed');
   }
 
   skipTask(taskId: string): Promise<SingleTask> {
+    if (tryParseOccurrenceKey(taskId) !== undefined && this.recurrence !== undefined) {
+      return this.recurrence
+        .skipOccurrence(occurrenceKeySchema.parse(taskId))
+        .then(() => this.loadTaskView(taskId));
+    }
     return this.todos.setTaskState(taskId, 'skipped');
   }
 
   rescheduleTask(taskId: string, patch: RescheduleTaskPatch): Promise<SingleTask> {
+    if (tryParseOccurrenceKey(taskId) !== undefined && this.recurrence !== undefined) {
+      return this.recurrence
+        .rescheduleOccurrence(occurrenceKeySchema.parse(taskId), patch)
+        .then(() => this.loadTaskView(taskId));
+    }
     return this.todos.rescheduleTask(taskId, patch);
   }
 
@@ -220,14 +243,74 @@ export class RecoveryService {
     readonly timeZone: TimeZoneId;
     readonly tasks: SingleTask[];
   }> {
-    const [tasks, storedTimeZone] = await Promise.all([
+    const [singleTasks, series, occurrences, storedTimeZone] = await Promise.all([
       this.unitOfWork.repositories.singleTasks.getAll(),
+      this.unitOfWork.repositories.recurrenceSeries.getAll(),
+      this.unitOfWork.repositories.occurrenceRecords.getAll(),
       this.unitOfWork.repositories.settings.get(APPLICATION_TIME_ZONE_KEY),
     ]);
+    const seriesById = new Map(series.map((item) => [item.id, item]));
+    const occurrenceTasks = occurrences.flatMap((occurrence): SingleTask[] => {
+      const owner = seriesById.get(occurrence.seriesId);
+      if (owner === undefined) return [];
+      if (
+        occurrence.state === 'pending' &&
+        (owner.status !== 'active' ||
+          owner.activeOccurrenceKey !== occurrence.occurrenceKey)
+      )
+        return [];
+      const schedule = projectOccurrenceSchedule(owner, occurrence.originalAnchor, {
+        ...(occurrence.overridePlannedAt !== undefined
+          ? { plannedAt: occurrence.overridePlannedAt }
+          : {}),
+        ...(occurrence.overrideDeadlineAt !== undefined
+          ? { deadlineAt: occurrence.overrideDeadlineAt }
+          : {}),
+      });
+      const template = occurrence.templateSnapshot ?? owner.template;
+      return [
+        singleTaskSchema.parse({
+          id: occurrence.occurrenceKey,
+          ...template,
+          ...schedule,
+          state: occurrence.state,
+          ...(occurrence.completedAt !== undefined
+            ? { completedAt: occurrence.completedAt }
+            : {}),
+          ...(occurrence.skippedAt !== undefined
+            ? { skippedAt: occurrence.skippedAt }
+            : {}),
+          createdAt: owner.createdAt,
+          updatedAt: occurrence.templateSnapshot?.capturedAt ?? owner.updatedAt,
+        }),
+      ];
+    });
     return {
       now: decodeInstant(this.now()),
       timeZone: decodeTimeZoneId(storedTimeZone ?? this.detectTimeZone()),
-      tasks,
+      tasks: [...singleTasks, ...occurrenceTasks],
     };
+  }
+
+  private async loadTaskView(taskId: string): Promise<SingleTask> {
+    const context = await this.loadContext();
+    const task = context.tasks.find((item) => item.id === taskId);
+    if (task !== undefined) return task;
+    // A handled occurrence remains available as history under the same stable key.
+    const occurrence = await this.unitOfWork.repositories.occurrenceRecords.get(
+      occurrenceKeySchema.parse(taskId),
+    );
+    if (occurrence === undefined) {
+      throw new DomainError(DomainErrorCode.INVALID_OCCURRENCE, 'Occurrence not found.');
+    }
+    const refreshed = await this.loadContext();
+    const historical = refreshed.tasks.find((item) => item.id === taskId);
+    if (historical === undefined) {
+      throw new DomainError(
+        DomainErrorCode.INVALID_OCCURRENCE,
+        'Occurrence history not found.',
+      );
+    }
+    return historical;
   }
 }

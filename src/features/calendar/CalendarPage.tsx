@@ -10,13 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState, SimpleSelect } from '@/components/ui/compat';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   decodeLocalDate,
@@ -25,6 +18,7 @@ import {
   type LocalDate,
 } from '@/domain';
 import { TaskDetailsDrawer } from '@/features/todos/TaskDetailsDrawer';
+import { OccurrenceDetailsDrawer } from '@/features/todos/OccurrenceDetailsDrawer';
 import { useTodoSnapshot } from '@/features/todos/useTodoSnapshot';
 
 type CalendarView = 'agenda' | 'day' | 'week' | 'month';
@@ -75,7 +69,9 @@ function CalendarItem({
     <button className={`calendar-item kind-${item.kind}`} onClick={onOpen}>
       <span className="calendar-item-time">{itemTime(item)}</span>
       <strong>{item.title}</strong>
-      {item.readonly ? <Repeat2 className="size-3.5" aria-label="重复实例" /> : null}
+      {item.ownerKind === 'occurrence' ? (
+        <Repeat2 className="size-3.5" aria-label="重复实例" />
+      ) : null}
     </button>
   );
 }
@@ -361,23 +357,7 @@ export function CalendarPage() {
           })()
         : null}
       {opened?.ownerKind === 'occurrence' ? (
-        <Dialog open onOpenChange={(open) => !open && setOpened(undefined)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Repeat2 className="size-4" />
-                {opened.title}
-              </DialogTitle>
-              <DialogDescription>
-                这是数据库中已有的重复实例。完整的重复规则管理会作为独立任务实现，因此此处保持只读。
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex gap-2 px-6 pb-6">
-              <Badge>{itemTime(opened)}</Badge>
-              <Badge variant="outline">只读实例</Badge>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <OccurrenceDetailsDrawer item={opened} onClose={() => setOpened(undefined)} />
       ) : null}
     </section>
   );

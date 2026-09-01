@@ -7,6 +7,8 @@ import {
   decodeInstant,
   decodeTaskDraft,
   decodeTimeZoneId,
+  instantToLocalDate,
+  localDateSchema,
   reviseReminderSchedule,
   schedulePointSchema,
   singleTaskSchema,
@@ -23,6 +25,7 @@ import {
 } from '../../domain';
 import type { DeleteListResult, UnitOfWork } from '../repositories';
 import { APPLICATION_TIME_ZONE_KEY } from '../settings';
+import { OccurrenceQueryService, type TaskOccurrenceView } from '../occurrences';
 
 export interface TodoSnapshot {
   readonly tasks: SingleTask[];
@@ -30,6 +33,8 @@ export interface TodoSnapshot {
   readonly tags: Tag[];
   readonly timeZone: TimeZoneId;
   readonly goals: LongTermGoal[];
+  readonly occurrences: TaskOccurrenceView[];
+  readonly occurrenceWindowEnd: string;
 }
 
 export type TaskDraft = DomainTaskDraft;
@@ -90,12 +95,25 @@ export class TodoService {
       settings.get(APPLICATION_TIME_ZONE_KEY),
       longTermGoals.getAll(),
     ]);
+    const timeZone = decodeTimeZoneId(storedTimeZone ?? this.detectTimeZone());
+    const today = instantToLocalDate(decodeInstant(this.now()), timeZone);
+    const occurrenceWindowEnd = localDateSchema.parse(
+      Temporal.PlainDate.from(today).add({ days: 90 }).toString(),
+    );
+    const occurrenceSnapshot = await new OccurrenceQueryService(
+      this.unitOfWork,
+      this.detectTimeZone,
+    ).query({ rangeStart: today, rangeEnd: occurrenceWindowEnd });
     return {
       tasks,
       lists: allLists,
       tags: allTags,
-      timeZone: decodeTimeZoneId(storedTimeZone ?? this.detectTimeZone()),
+      timeZone,
       goals,
+      occurrences: occurrenceSnapshot.items.filter(
+        (item) => item.ownerKind === 'occurrence',
+      ),
+      occurrenceWindowEnd,
     };
   }
 

@@ -137,6 +137,32 @@ function shiftPointFromAnchor(
   };
 }
 
+export interface OccurrenceScheduleOverrides {
+  readonly plannedAt?: SchedulePoint;
+  readonly deadlineAt?: SchedulePoint;
+}
+
+/** Project any occurrence schedule while preserving local day and wall-time offsets. */
+export function projectOccurrenceSchedule(
+  series: RecurrenceSeries,
+  originalAnchor: ScheduledPoint,
+  overrides: OccurrenceScheduleOverrides = {},
+): ReminderSchedule {
+  const templateAnchor =
+    series.anchor === 'planned' ? series.template.plannedAt : series.template.deadlineAt;
+  if (templateAnchor.kind === 'none') {
+    throw new TypeError('A recurrence series must have a scheduled template anchor.');
+  }
+  return {
+    plannedAt:
+      overrides.plannedAt ??
+      shiftPointFromAnchor(series.template.plannedAt, templateAnchor, originalAnchor),
+    deadlineAt:
+      overrides.deadlineAt ??
+      shiftPointFromAnchor(series.template.deadlineAt, templateAnchor, originalAnchor),
+  };
+}
+
 /**
  * Project the current materialized occurrence while preserving the template's
  * local calendar-day and wall-time relationship. Recurrence expansion remains
@@ -154,26 +180,12 @@ export function projectActiveOccurrenceSchedule(
     return undefined;
   }
 
-  const templateAnchor =
-    series.anchor === 'planned' ? series.template.plannedAt : series.template.deadlineAt;
-  if (templateAnchor.kind === 'none') {
-    return undefined;
-  }
-
-  return {
-    plannedAt:
-      occurrence.overridePlannedAt ??
-      shiftPointFromAnchor(
-        series.template.plannedAt,
-        templateAnchor,
-        occurrence.originalAnchor,
-      ),
-    deadlineAt:
-      occurrence.overrideDeadlineAt ??
-      shiftPointFromAnchor(
-        series.template.deadlineAt,
-        templateAnchor,
-        occurrence.originalAnchor,
-      ),
-  };
+  return projectOccurrenceSchedule(series, occurrence.originalAnchor, {
+    ...(occurrence.overridePlannedAt !== undefined
+      ? { plannedAt: occurrence.overridePlannedAt }
+      : {}),
+    ...(occurrence.overrideDeadlineAt !== undefined
+      ? { deadlineAt: occurrence.overrideDeadlineAt }
+      : {}),
+  });
 }
