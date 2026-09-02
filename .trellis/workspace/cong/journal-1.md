@@ -70,3 +70,25 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 4: 完成本地备份与恢复
+
+**Date**: 2026-09-02
+**Task**: 完成本地备份与恢复
+**Branch**: `codex/todo-calendar-mvp`
+
+### Summary
+
+实现 one-day-backup v1 全量导出、严格预检与原子整库恢复；接入设置页确认流程、提醒重同步、跨层测试及数据库契约文档。格式、lint、类型检查、112 项测试、生产构建和桌面/移动端浏览器检查均通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bbb8e62` | (see git log) |
+| `4b44b3d` | (see git log) |
+
+### Status
+
+[OK] **Completed**
