@@ -90,23 +90,24 @@ export class TodoService {
   async snapshot(): Promise<TodoSnapshot> {
     const { lists, settings, singleTasks, tags, longTermGoals, recurrenceSeries } =
       this.unitOfWork.repositories;
-    const [tasks, allLists, allTags, storedTimeZone, goals, series] = await Promise.all([
-      singleTasks.getAll(),
-      lists.listInDisplayOrder({ includeArchived: true }),
-      tags.getAll(),
-      settings.get(APPLICATION_TIME_ZONE_KEY),
-      longTermGoals.getAll(),
-      recurrenceSeries.getAll(),
-    ]);
+    const storedTimeZone = await settings.get(APPLICATION_TIME_ZONE_KEY);
     const timeZone = decodeTimeZoneId(storedTimeZone ?? this.detectTimeZone());
     const today = instantToLocalDate(decodeInstant(this.now()), timeZone);
     const occurrenceWindowEnd = localDateSchema.parse(
       Temporal.PlainDate.from(today).add({ days: 90 }).toString(),
     );
-    const occurrenceSnapshot = await new OccurrenceQueryService(
-      this.unitOfWork,
-      this.detectTimeZone,
-    ).query({ rangeStart: today, rangeEnd: occurrenceWindowEnd });
+    const [tasks, allLists, allTags, goals, series, occurrenceSnapshot] =
+      await Promise.all([
+        singleTasks.getAll(),
+        lists.listInDisplayOrder({ includeArchived: true }),
+        tags.getAll(),
+        longTermGoals.getAll(),
+        recurrenceSeries.getAll(),
+        new OccurrenceQueryService(this.unitOfWork, this.detectTimeZone).query({
+          rangeStart: today,
+          rangeEnd: occurrenceWindowEnd,
+        }),
+      ]);
     return {
       tasks,
       lists: allLists,

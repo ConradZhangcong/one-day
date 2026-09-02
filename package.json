@@ -18,7 +18,10 @@
     "typecheck": "tsc -b --pretty false",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:performance": "vitest run --config vitest.performance.config.ts",
+    "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
+    "test:pwa": "pnpm build && node scripts/verify-pwa-build.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

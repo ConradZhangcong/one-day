@@ -2,7 +2,7 @@
 
 One Day 是一款本地优先、无需账号的个人待办与日历 Web/PWA。它用于快速记录任务、区分计划时间与截止时间、处理错过计划和逾期事项，并在浏览器允许执行时提供应用内或系统提醒。
 
-当前分支已完成工程地基、基础待办闭环、恢复/回顾、运行期提醒、固定重复事项、多维日历，以及版本化 JSON 备份与原子整库恢复。年视图和 PWA 发布加固仍在后续阶段开发中，详见 [实施计划](.trellis/tasks/archive/2026-09/08-12-todo-calendar-app/implement.md)。
+当前分支已完成工程地基、基础待办闭环、恢复/回顾、运行期提醒、固定重复事项、多维日历、长期目标、版本化 JSON 备份与原子整库恢复，以及 PWA 发布加固。自动化证据与正式发布前的 Android/iOS 真机门禁见 [发布检查清单](docs/release-checklist.md)。
 
 ## 技术栈
 
@@ -69,6 +69,12 @@ pnpm test
 
 # Playwright 端到端测试
 pnpm test:e2e
+
+# PWA 生产产物契约
+pnpm test:pwa
+
+# 大数据性能预算
+pnpm test:performance
 ```
 
 首次执行 Playwright 前可能需要安装浏览器：
@@ -84,6 +90,9 @@ pnpm format:check
 pnpm lint
 pnpm typecheck
 pnpm test:run
+pnpm test:pwa
+pnpm test:e2e
+pnpm test:performance
 pnpm build
 ```
 
@@ -126,7 +135,10 @@ tests/
 ├── domain/              # 纯领域测试
 ├── application/         # 用例与跨层行为测试
 ├── infrastructure/      # IndexedDB、事务和迁移测试
-└── features/            # 组件交互测试
+├── features/            # 组件交互测试
+├── build/               # PWA 生产产物契约
+├── e2e/                 # 跨浏览器、离线和发布质量流程
+└── performance/         # 确定性大数据性能预算
 ```
 
 依赖方向保持为：界面 → 应用用例 → 领域/仓储端口 → 基础设施适配器。React 组件不得直接读写 Dexie 表。

@@ -79,6 +79,15 @@ export const occurrenceKeySchema = z
   )
   .brand<'OccurrenceKey'>();
 
+const occurrenceIdentitySchema = z
+  .object({
+    seriesId: z.string().min(1),
+    revision: z.number().int().positive(),
+    originalAnchor: scheduledPointSchema,
+  })
+  .strict();
+const generatedOccurrenceKeySchema = z.string().brand<'OccurrenceKey'>();
+
 export type OccurrenceKey = z.infer<typeof occurrenceKeySchema>;
 
 export function createOccurrenceKey(identity: OccurrenceIdentity): OccurrenceKey;
@@ -111,12 +120,8 @@ export function createOccurrenceKey(
     identity = identityOrSeriesId;
   }
 
-  if (
-    identity.seriesId.length === 0 ||
-    !Number.isSafeInteger(identity.revision) ||
-    identity.revision < 1 ||
-    !scheduledPointSchema.safeParse(identity.originalAnchor).success
-  ) {
+  const parsedIdentity = occurrenceIdentitySchema.safeParse(identity);
+  if (!parsedIdentity.success) {
     throw new DomainError(
       DomainErrorCode.INVALID_OCCURRENCE_KEY,
       'Cannot create an occurrence key from an invalid identity.',
@@ -124,7 +129,7 @@ export function createOccurrenceKey(
     );
   }
 
-  return occurrenceKeySchema.parse(canonicalKey(identity));
+  return generatedOccurrenceKeySchema.parse(canonicalKey(parsedIdentity.data));
 }
 
 export function tryParseOccurrenceKey(input: unknown): OccurrenceIdentity | undefined {

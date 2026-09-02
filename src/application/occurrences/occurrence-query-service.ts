@@ -2,11 +2,13 @@ import { Temporal } from 'temporal-polyfill';
 
 import {
   compareLocalDates,
+  createOccurrenceKey,
   decodeTimeZoneId,
   localDateSchema,
   localDateTimeSchema,
   projectOccurrenceRange,
   projectOccurrenceRecordSchedule,
+  projectOccurrenceSchedule,
   schedulePointLocalDate,
   type Instant,
   type LocalDate,
@@ -75,12 +77,18 @@ function rangePoint(date: LocalDate, anchor: ScheduledPoint): ScheduledPoint {
   };
 }
 
+function compareText(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
 function occurrenceView(
   series: RecurrenceSeries,
   occurrence: OccurrenceRecord,
   virtual: boolean,
+  projectedSchedule?: { plannedAt: SchedulePoint; deadlineAt: SchedulePoint },
 ): TaskOccurrenceView {
-  const schedule = projectOccurrenceRecordSchedule(series, occurrence);
+  const schedule =
+    projectedSchedule ?? projectOccurrenceRecordSchedule(series, occurrence);
   const template = occurrence.templateSnapshot ?? series.template;
   return {
     key: occurrence.occurrenceKey,
@@ -149,6 +157,13 @@ export class OccurrenceQueryService {
       }))
       .filter((item) => inRange(primarySchedule(item), start, end));
     const recordsBySeries = new Map<string, OccurrenceRecord[]>();
+    const projectedPatterns = new Map<
+      string,
+      readonly {
+        originalAnchor: ScheduledPoint;
+        schedule: { plannedAt: SchedulePoint; deadlineAt: SchedulePoint };
+      }[]
+    >();
     for (const record of records) {
       const current = recordsBySeries.get(record.seriesId) ?? [];
       current.push(record);
@@ -175,24 +190,48 @@ export class OccurrenceQueryService {
           ? series.template.plannedAt
           : series.template.deadlineAt;
       if (templateAnchor.kind === 'none') continue;
-      const projected = projectOccurrenceRange({
-        seriesId: series.id,
-        revision: series.revision,
-        anchor: templateAnchor,
-        rule: series.rule,
-        rangeStart: rangePoint(start, templateAnchor),
-        rangeEnd: rangePoint(end, templateAnchor),
-        limit: Math.min(limit, MAX_OCCURRENCE_QUERY_RESULTS),
-      });
-      for (const identity of projected) {
-        if (identity.occurrenceKey === series.activeOccurrenceKey) continue;
-        const virtualRecord: OccurrenceRecord = {
-          occurrenceKey: identity.occurrenceKey,
+      const rangeStart = rangePoint(start, templateAnchor);
+      const rangeEnd = rangePoint(end, templateAnchor);
+      const projectionLimit = Math.min(limit, MAX_OCCURRENCE_QUERY_RESULTS);
+      const patternKey = JSON.stringify([
+        templateAnchor,
+        series.template.plannedAt,
+        series.template.deadlineAt,
+        series.rule,
+        rangeStart,
+        rangeEnd,
+        projectionLimit,
+      ]);
+      let projected = projectedPatterns.get(patternKey);
+      if (projected === undefined) {
+        projected = projectOccurrenceRange({
           seriesId: series.id,
+          revision: series.revision,
+          anchor: templateAnchor,
+          rule: series.rule,
+          rangeStart,
+          rangeEnd,
+          limit: projectionLimit,
+        }).map((identity) => ({
           originalAnchor: identity.originalAnchor,
+          schedule: projectOccurrenceSchedule(series, identity.originalAnchor),
+        }));
+        projectedPatterns.set(patternKey, projected);
+      }
+      for (const { originalAnchor, schedule } of projected) {
+        const occurrenceKey = createOccurrenceKey(
+          series.id,
+          series.revision,
+          originalAnchor,
+        );
+        if (occurrenceKey === series.activeOccurrenceKey) continue;
+        const virtualRecord: OccurrenceRecord = {
+          occurrenceKey,
+          seriesId: series.id,
+          originalAnchor,
           state: 'pending',
         };
-        const view = occurrenceView(series, virtualRecord, true);
+        const view = occurrenceView(series, virtualRecord, true, schedule);
         if (inRange(primarySchedule(view), start, end)) items.push(view);
       }
     }
@@ -212,9 +251,9 @@ export class OccurrenceQueryService {
             ? rightPoint.localDateTime
             : '';
       return (
-        leftValue.localeCompare(rightValue) ||
-        left.title.localeCompare(right.title) ||
-        left.key.localeCompare(right.key)
+        compareText(leftValue, rightValue) ||
+        compareText(left.title, right.title) ||
+        compareText(left.key, right.key)
       );
     });
     return {
