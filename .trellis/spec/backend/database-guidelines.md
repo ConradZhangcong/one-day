@@ -144,3 +144,64 @@ const { goalId: _goalId, ...template } = draft;
 // Correct: optional linkage survives in the persisted template.
 const { rule: _rule, tagNames: _tagNames, ...template } = draft;
 ```
+
+## Scenario: Versioned full backup and atomic restore
+
+### 1. Scope / Trigger
+
+Use this contract whenever a recoverable domain entity, persisted setting, backup version, or full-database restore flow changes. It prevents physical Dexie records, partial writes, or dangling references from becoming a user backup.
+
+### 2. Signatures
+
+```ts
+BackupService.createExport(): Promise<OneDayBackupV1>
+BackupService.inspect(text: string): BackupInspection
+BackupService.restore(inspection: BackupInspection): Promise<BackupSummary>
+BackupRepository.readSnapshot(): Promise<BackupDataV1>
+BackupRepository.replaceAll(data: BackupDataV1): Promise<void>
+```
+
+The v1 envelope is `format: "one-day-backup"`, `version: 1`, `exportedAt`, `timeZone`, and `data`. `data` owns domain entities plus explicit recoverable settings; it never owns record-only indexes or runtime caches.
+
+### 3. Contracts
+
+- Backup format versioning is independent from `DATABASE_VERSION`; adding a backup version does not imply a Dexie migration.
+- `readSnapshot` reads every recoverable table and setting inside one Dexie read transaction, then decodes records to domain entities.
+- Import parsing routes by exact format/version, decodes `unknown` once, and validates unique identities, the canonical inbox, cross-entity references, active occurrence ownership, reminder owners/targets, normalized tag-name uniqueness, and time-zone agreement before writing.
+- `replaceAll` is called only inside `UnitOfWork.write`; it clears every table, rebuilds record projections through shared encoders, and writes the complete replacement graph.
+- Internal `meta`, UI drafts, derived status, service-worker state, and index projections are excluded. `meta` is cleared and rebuilt by the current application when needed.
+- A successful restore publishes one commit invalidation and then reconciles reminders. Reminder delivery/snooze revisions remain in the backup so reconciliation cannot rediscover an already claimed delivery.
+
+### 4. Validation & Error Matrix
+
+- Invalid JSON -> `BACKUP_INVALID_JSON`, no database operation.
+- Foreign format -> `BACKUP_INVALID_FORMAT`, no database operation.
+- Unknown version -> `BACKUP_UNSUPPORTED_VERSION`, no guessing or partial import.
+- Zod failure, duplicate identity/index value, non-canonical inbox, dangling reference, active occurrence mismatch, reminder target mismatch, or time-zone disagreement -> `BACKUP_INVALID_DATA` before the restore transaction.
+- Dexie constraint/encoding/write failure -> propagate the storage error; the encompassing transaction restores every pre-restore table and emits no commit invalidation.
+
+### 5. Good/Base/Bad Cases
+
+- Good: export a non-empty v3 database, restore it over unrelated data, then re-export semantically identical domain entities with rebuilt indexes and preserved reminder delivery identity.
+- Base: export an inbox-only installation and restore it to a clean current database.
+- Bad: clear tables first, parse each array while writing, then discover a dangling reminder owner; this can destroy good data before validation completes.
+
+### 6. Tests Required
+
+- Domain tests cover envelope routing, strict v1 decoding, duplicate ids/normalized tag names, canonical inbox, all cross-references, active occurrence ownership, reminder targets, and time-zone equality.
+- Application tests assert deterministic export metadata, inspection performs zero writes, restore invokes its post-commit hook once, invalid data never invokes it, and every entity/settings kind survives round-trip.
+- Database tests assert a consistent decoded snapshot, old-row removal, record-index reconstruction, and injected late unique-index failure rolling every table back byte-for-byte.
+- UI tests assert JSON download cleanup, summary counts, cancel-without-write, destructive confirmation, stable Chinese errors, and no raw backup content in errors.
+
+### 7. Wrong vs Correct
+
+```ts
+// Wrong: physical records leak into the format and writes can partially commit.
+const backup = await db.tables.map((table) => table.toArray());
+await db.delete();
+await importRows(JSON.parse(text));
+
+// Correct: decode a closed domain graph, then replace it in one transaction.
+const inspection = backupService.inspect(text);
+await unitOfWork.write(({ backup }) => backup.replaceAll(inspection.backup.data));
+```

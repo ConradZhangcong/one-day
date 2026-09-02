@@ -17,6 +17,7 @@ import {
   longTermGoalSchema,
 } from '../../domain';
 import type {
+  BackupRepository,
   EntityRepository,
   KeyValueEntry,
   KeyValueRepository,
@@ -53,6 +54,7 @@ import type {
   TagRecord,
   LongTermGoalRecord,
 } from './records';
+import { DexieBackupRepository } from './backup-repository';
 
 type RecordEncoder<TEntity, TRecord> = (entity: TEntity) => TRecord;
 type RecordDecoder<TRecord, TEntity> = (record: TRecord) => TEntity;
@@ -288,7 +290,7 @@ class DexieKeyValueRepository implements KeyValueRepository {
 }
 
 export function createDexieRepositories(db: OneDayDatabase): OneDayRepositories {
-  return {
+  const repositories = {
     singleTasks: new DexieSingleTaskRepository(db.singleTasks),
     recurrenceSeries: new DexieRecurrenceSeriesRepository(db.recurrenceSeries),
     occurrenceRecords: new DexieOccurrenceRecordRepository(db.occurrenceRecords),
@@ -299,4 +301,6 @@ export function createDexieRepositories(db: OneDayDatabase): OneDayRepositories 
     meta: new DexieKeyValueRepository(db.meta),
     longTermGoals: new DexieLongTermGoalRepository(db.longTermGoals),
   };
+  const backup: BackupRepository = new DexieBackupRepository(db, repositories);
+  return { ...repositories, backup };
 }

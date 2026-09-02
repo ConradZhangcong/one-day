@@ -19,6 +19,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router';
 
 import logoUrl from '../../logo/concentric-ring-master-metal.svg';
 import { Button } from '@/components/ui/button';
+import { SYSTEM_INBOX_ID } from '@/domain';
 import { useTodoSnapshot } from '@/features/todos/useTodoSnapshot';
 import { cn } from '@/lib/utils';
 
@@ -45,7 +46,7 @@ export function AppShell() {
       label: '收件箱',
       to: '/inbox',
       icon: Inbox,
-      count: pending.filter((task) => task.listId === 'system:inbox').length,
+      count: pending.filter((task) => task.listId === SYSTEM_INBOX_ID).length,
     },
     { label: '错过计划', to: '/recovery?kind=missed', icon: RotateCcw },
     { label: '已逾期', to: '/recovery?kind=overdue', icon: AlertTriangle },

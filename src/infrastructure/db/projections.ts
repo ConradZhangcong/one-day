@@ -1,4 +1,5 @@
 import {
+  normalizeIndexedText,
   schedulePointLocalDate,
   type OccurrenceRecord,
   type RecurrenceSeries,
@@ -7,7 +8,7 @@ import {
   type TaskList,
 } from '../../domain';
 
-export { schedulePointLocalDate } from '../../domain';
+export { normalizeIndexedText, schedulePointLocalDate } from '../../domain';
 
 import type {
   ListRecord,
@@ -16,10 +17,6 @@ import type {
   SingleTaskRecord,
   TagRecord,
 } from './records';
-
-export function normalizeIndexedText(value: string): string {
-  return value.normalize('NFKC').trim().toLocaleLowerCase('zh-CN');
-}
 
 export function toSingleTaskRecord(task: SingleTask): SingleTaskRecord {
   return {

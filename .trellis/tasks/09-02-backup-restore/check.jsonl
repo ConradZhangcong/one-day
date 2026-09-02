@@ -1,0 +1,9 @@
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"复审一致快照、整库替换、索引重建与故障回滚"}
+{"file":".trellis/spec/backend/error-handling.md","reason":"复审稳定错误码、敏感内容和失败传播"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"检查领域/数据库/迁移测试和禁止模式"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"复审设置页可访问性、确认和移动交互"}
+{"file":".trellis/spec/frontend/state-management.md","reason":"复审提交后本地及跨标签页刷新语义"}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"复审 unknown、Zod、branded 时间值和 record 隔离"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"检查导出/导入/恢复/提醒端到端数据流"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"检查实体 schema、projection encoder 和错误映射是否复用"}
+{"file":".trellis/tasks/archive/2026-09/08-12-todo-calendar-app/design.md","reason":"对照已批准备份恢复产品与架构决策验收"}

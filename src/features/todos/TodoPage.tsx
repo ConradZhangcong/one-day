@@ -38,6 +38,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   decodeSchedulePoint,
   schedulePointLocalDate,
+  SYSTEM_INBOX_ID,
   type FixedRecurrenceRule,
   type LongTermGoal,
   type SchedulePoint,
@@ -298,7 +299,7 @@ export function TodoPage() {
         schedulePointLocalDate(item.plannedAt),
         schedulePointLocalDate(item.deadlineAt),
       ].filter(Boolean);
-      if (view === 'inbox' && item.listId !== 'system:inbox') return false;
+      if (view === 'inbox' && item.listId !== SYSTEM_INBOX_ID) return false;
       if (view === 'list' && item.listId !== listId) return false;
       if (view === 'today' && !dates.includes(today)) return false;
       if (
@@ -360,7 +361,7 @@ export function TodoPage() {
   const defaultListId =
     view === 'list' && currentList !== undefined && !currentList.archived
       ? currentList.id
-      : 'system:inbox';
+      : SYSTEM_INBOX_ID;
   const openedCalendarItem =
     openedOccurrence === undefined ? undefined : toCalendarItem(openedOccurrence);
   const openedSeries = snapshot.series.find(

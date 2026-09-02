@@ -7,3 +7,4 @@ export * from './goals';
 export * from './calendar';
 export * from './recurrence';
 export * from './occurrences';
+export * from './backup';

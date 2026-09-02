@@ -4,6 +4,11 @@ import { z } from 'zod';
 import { instantSchema, schedulePointSchema } from '../schedule/time';
 
 const nonEmptyIdSchema = z.string().min(1);
+export const SYSTEM_INBOX_ID = 'system:inbox';
+
+export function normalizeIndexedText(value: string): string {
+  return value.normalize('NFKC').trim().toLocaleLowerCase('zh-CN');
+}
 const uniqueIdsSchema = z
   .array(nonEmptyIdSchema)
   .refine((ids) => new Set(ids).size === ids.length, 'IDs must be unique.');

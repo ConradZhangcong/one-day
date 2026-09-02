@@ -1,0 +1,10 @@
+{"file":".trellis/spec/backend/index.md","reason":"加载领域、应用与 Dexie 持久化规范入口"}
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"遵守 record 投影、全表事务、迁移夹具和回滚契约"}
+{"file":".trellis/spec/backend/error-handling.md","reason":"为格式、版本、图校验和持久化失败提供稳定错误边界"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"执行 unknown 单次解码、事务和数据库测试门禁"}
+{"file":".trellis/spec/frontend/index.md","reason":"加载设置页结构、组件、状态和类型规范入口"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"实现可访问文件选择、摘要与危险确认交互"}
+{"file":".trellis/spec/frontend/state-management.md","reason":"保持 UI 草稿、本地文件和 IndexedDB 事实来源边界"}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"复用 Zod 边界并禁止 raw backup/record cast"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"核对文件到服务到事务到刷新和提醒的完整数据流"}
+{"file":".trellis/tasks/archive/2026-09/08-12-todo-calendar-app/design.md","reason":"继承已批准的 one-day-backup v1、整库替换和失败回滚决策"}

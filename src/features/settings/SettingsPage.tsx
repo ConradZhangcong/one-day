@@ -15,6 +15,8 @@ import {
   type BrowserNotificationPermission,
 } from '@/infrastructure/notifications';
 
+import { BackupRestoreCard } from './BackupRestoreCard';
+
 function permissionCopy(permission: BrowserNotificationPermission): string {
   if (permission === 'granted') return '系统通知已允许';
   if (permission === 'denied') return '系统通知已被拒绝，可继续使用应用内提醒';
@@ -135,6 +137,7 @@ export function SettingsPage() {
             </p>
           </CardContent>
         </Card>
+        <BackupRestoreCard />
       </div>
     </section>
   );

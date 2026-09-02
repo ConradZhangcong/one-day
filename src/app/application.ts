@@ -8,6 +8,7 @@ import {
   CalendarService,
   OccurrenceQueryService,
   RecurrenceService,
+  BackupService,
 } from '@/application';
 import { DexieUnitOfWork, openOneDayDatabase } from '@/infrastructure/db';
 import { deliverBrowserReminder } from '@/infrastructure/notifications';
@@ -24,6 +25,7 @@ export interface ApplicationServices {
   readonly calendar: CalendarService;
   readonly occurrences: OccurrenceQueryService;
   readonly recurrence: RecurrenceService;
+  readonly backup: BackupService;
 }
 
 let servicesPromise: Promise<ApplicationServices> | undefined;
@@ -41,6 +43,9 @@ export function getApplicationServices(): Promise<ApplicationServices> {
     const recurrence = new RecurrenceService(unitOfWork, {
       onScheduleChanged: () => void reminderRuntime.reconcile(),
     });
+    const backup = new BackupService(unitOfWork, {
+      onRestored: () => void reminderRuntime.reconcile(),
+    });
     return {
       timeZoneSettings: new TimeZoneSettingsService(unitOfWork),
       todos,
@@ -51,6 +56,7 @@ export function getApplicationServices(): Promise<ApplicationServices> {
       calendar: new CalendarService(unitOfWork),
       occurrences: new OccurrenceQueryService(unitOfWork),
       recurrence,
+      backup,
     };
   });
 

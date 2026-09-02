@@ -6,6 +6,7 @@ import {
   localDateSchema,
   prioritySchema,
   schedulePointLocalDate,
+  SYSTEM_INBOX_ID,
   type LocalDate,
   type Priority,
   type SingleTask,
@@ -85,7 +86,7 @@ export function projectTasks(
       if (kind === 'completed') {
         if (task.state === 'pending') return false;
       } else if (filters.state === undefined && task.state !== 'pending') return false;
-      if (kind === 'inbox' && task.listId !== 'system:inbox') return false;
+      if (kind === 'inbox' && task.listId !== SYSTEM_INBOX_ID) return false;
       if (kind === 'list' && task.listId !== routeListId) return false;
       if (kind === 'today' && !dates.includes(today)) return false;
       if (kind === 'upcoming' && !dates.some((date) => date > today)) return false;

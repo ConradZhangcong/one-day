@@ -1,9 +1,9 @@
-import { taskListSchema, type TaskList } from '../../domain';
+import { SYSTEM_INBOX_ID, taskListSchema, type TaskList } from '../../domain';
 
 import type { OneDayDatabase } from './database';
 import { fromListRecord, toListRecord } from './projections';
 
-export const INBOX_LIST_ID = 'system:inbox';
+export const INBOX_LIST_ID = SYSTEM_INBOX_ID;
 
 export function createInboxList(): TaskList {
   return taskListSchema.parse({

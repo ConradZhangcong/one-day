@@ -19,3 +19,4 @@ export {
 } from './schema';
 export { createInboxList, ensureInbox, INBOX_LIST_ID } from './system-data';
 export { DexieUnitOfWork } from './unit-of-work';
+export { DexieBackupRepository } from './backup-repository';
