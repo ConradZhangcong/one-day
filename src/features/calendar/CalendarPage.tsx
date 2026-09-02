@@ -161,9 +161,7 @@ export function CalendarPage() {
     <section className="calendar-page">
       <header className="calendar-header">
         <div>
-          <p className="page-eyebrow">时间安排</p>
           <h1>日历</h1>
-          <p className="text-muted-foreground">计划是行动位置，截止是最后边界。</p>
         </div>
         <div className="calendar-actions">
           <Button

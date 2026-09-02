@@ -197,12 +197,6 @@
   letter-spacing: -0.035em;
 }
 
-.brand-copy span,
-.privacy-note {
-  color: var(--muted-foreground);
-  font-size: 0.72rem;
-}
-
 .quick-add-button {
   width: 100%;
   height: 40px;
@@ -507,19 +501,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.privacy-note {
-  display: flex;
-  gap: 8px;
-  padding: 12px 8px 0;
-  border-top: 1px solid var(--sidebar-border);
-  line-height: 1.45;
-}
-
-.privacy-note svg {
-  width: 15px;
-  flex: 0 0 auto;
-}
-
 .sidebar-collapsed {
   grid-template-columns: 76px minmax(0, 1fr);
 }
@@ -537,7 +518,6 @@
 .sidebar-collapsed .nav-title,
 .sidebar-collapsed .nav-label,
 .sidebar-collapsed .nav-count,
-.sidebar-collapsed .privacy-note,
 .sidebar-collapsed .quick-add-button span {
   display: none;
 }
@@ -580,15 +560,7 @@
 
 .todo-header h1,
 .feature-header h1 {
-  margin: 4px 0 6px;
-}
-
-.page-eyebrow {
-  color: var(--muted-foreground);
-  font-size: 0.72rem;
-  font-weight: 650;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  margin: 0 0 6px;
 }
 
 .quick-add {
@@ -979,7 +951,6 @@ input[type='time'],
   }
 
   .brand-row,
-  .privacy-note,
   .sidebar-toggle,
   .nav-title {
     display: none;

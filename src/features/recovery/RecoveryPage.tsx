@@ -275,11 +275,7 @@ export function RecoveryPage() {
     <section className="feature-page recovery-page">
       <header className="feature-header">
         <div>
-          <p className="page-eyebrow">恢复节奏</p>
           <h1>恢复</h1>
-          <p className="text-muted-foreground">
-            时间会保留原样；由你决定完成、跳过或重新安排。
-          </p>
         </div>
       </header>
       <nav className="recovery-tabs" aria-label="恢复分组">

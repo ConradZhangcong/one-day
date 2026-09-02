@@ -60,12 +60,12 @@ import {
 import { useCurrentLocalDate } from './useCurrentLocalDate';
 import { useTodoSnapshot } from './useTodoSnapshot';
 
-const VIEW_COPY: Record<TodoViewKind, { title: string; subtitle: string }> = {
-  inbox: { title: '收件箱', subtitle: '先记下来，再慢慢整理。' },
-  today: { title: '今天', subtitle: '计划或截止落在今天的任务。' },
-  upcoming: { title: '即将到来', subtitle: '接下来有日期安排的任务。' },
-  completed: { title: '已完成', subtitle: '已完成与已跳过的普通任务。' },
-  list: { title: '清单', subtitle: '一个清晰的一级任务清单。' },
+const VIEW_TITLES: Record<TodoViewKind, string> = {
+  inbox: '收件箱',
+  today: '今天',
+  upcoming: '即将到来',
+  completed: '已完成',
+  list: '清单',
 };
 
 function toCalendarItem(item: TaskOccurrenceView): CalendarItemView | undefined {
@@ -349,15 +349,7 @@ export function TodoPage() {
       </section>
     );
 
-  const copy =
-    view === 'list'
-      ? {
-          title: currentList?.name ?? '清单',
-          subtitle: currentList?.archived
-            ? '此清单已归档，任务仍保留。'
-            : VIEW_COPY.list.subtitle,
-        }
-      : VIEW_COPY[view];
+  const title = view === 'list' ? (currentList?.name ?? '清单') : VIEW_TITLES[view];
   const defaultListId =
     view === 'list' && currentList !== undefined && !currentList.archived
       ? currentList.id
@@ -395,9 +387,10 @@ export function TodoPage() {
     <section className="todo-page">
       <header className="todo-header">
         <div>
-          <p className="page-eyebrow">任务浏览</p>
-          <h1>{copy.title}</h1>
-          <p className="text-muted-foreground">{copy.subtitle}</p>
+          <h1>{title}</h1>
+          {currentList?.archived ? (
+            <p className="text-muted-foreground">此清单已归档，任务仍保留。</p>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setManagingSeries(true)}>

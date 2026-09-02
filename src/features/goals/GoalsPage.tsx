@@ -150,9 +150,7 @@ export function GoalsPage() {
     <section className="goals-page">
       <header className="todo-header">
         <div>
-          <p className="page-eyebrow">方向与进展</p>
           <h1>长期目标</h1>
-          <p className="text-muted-foreground">把任务关联到目标，完成度会自动更新。</p>
         </div>
         <Button onClick={() => setEditing('new')}>
           <Plus data-icon="inline-start" />

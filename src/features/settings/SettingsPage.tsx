@@ -71,9 +71,7 @@ export function SettingsPage() {
     <section className="feature-page settings-page">
       <header className="feature-header">
         <div>
-          <p className="page-eyebrow">偏好与权限</p>
           <h1>设置</h1>
-          <p className="text-muted-foreground">时区、提醒权限与本地数据说明。</p>
         </div>
       </header>
       <div className="settings-grid">

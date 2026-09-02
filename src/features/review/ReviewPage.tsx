@@ -140,11 +140,7 @@ export function ReviewPage() {
     <section className="feature-page review-page">
       <header className="feature-header">
         <div>
-          <p className="page-eyebrow">完成记录</p>
           <h1>回顾</h1>
-          <p className="text-muted-foreground">
-            只读查看完成、跳过和仍需恢复的事项，不会修改任务。
-          </p>
         </div>
       </header>
       <div className="review-controls">

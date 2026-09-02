@@ -86,7 +86,6 @@ export function AppShell() {
           <img className="brand-logo" src={logoUrl} alt="One Day" />
           <div className="brand-copy">
             <strong>One Day</strong>
-            <span>把今天过清楚</span>
           </div>
           <Button
             variant="ghost"
@@ -133,11 +132,6 @@ export function AppShell() {
               ))}
           </div>
         </nav>
-
-        <p className="privacy-note">
-          <Inbox aria-hidden="true" />
-          <span>本地优先 · 数据仅保存在此设备</span>
-        </p>
       </aside>
       <main className="main-panel">
         <Outlet />
