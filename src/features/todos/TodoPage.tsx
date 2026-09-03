@@ -37,7 +37,6 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   decodeSchedulePoint,
-  schedulePointLocalDate,
   SYSTEM_INBOX_ID,
   type FixedRecurrenceRule,
   type LongTermGoal,
@@ -51,10 +50,12 @@ import { OccurrenceDetailsDrawer } from './OccurrenceDetailsDrawer';
 import { SeriesManager } from './SeriesManager';
 import { TaskDetailsDrawer } from './TaskDetailsDrawer';
 import {
+  formatCompletedAt,
   formatSchedule,
   getTodoView,
-  projectTasks,
+  projectTodoRows,
   taskFiltersFromSearchParams,
+  type TodoRow,
   type TodoViewKind,
 } from './task-view';
 import { useCurrentLocalDate } from './useCurrentLocalDate';
@@ -281,50 +282,16 @@ export function TodoPage() {
     setSearchParams(next, { replace: true });
   };
 
-  const filteredTasks = useMemo(() => {
+  const rows = useMemo(() => {
     if (snapshot === undefined || today === undefined) return [];
-    return projectTasks(
+    return projectTodoRows(
       snapshot.tasks,
+      snapshot.occurrences,
       view,
       today,
       taskFiltersFromSearchParams(searchParams),
       listId,
     );
-  }, [listId, searchParams, snapshot, today, view]);
-  const filteredOccurrences = useMemo(() => {
-    if (snapshot === undefined || today === undefined || view === 'completed') return [];
-    const filters = taskFiltersFromSearchParams(searchParams);
-    return snapshot.occurrences.filter((item) => {
-      const dates = [
-        schedulePointLocalDate(item.plannedAt),
-        schedulePointLocalDate(item.deadlineAt),
-      ].filter(Boolean);
-      if (view === 'inbox' && item.listId !== SYSTEM_INBOX_ID) return false;
-      if (view === 'list' && item.listId !== listId) return false;
-      if (view === 'today' && !dates.includes(today)) return false;
-      if (
-        view === 'upcoming' &&
-        !dates.some((date) => date !== undefined && date > today)
-      )
-        return false;
-      if (
-        filters.text &&
-        !`${item.title}\n${item.notes}`
-          .normalize('NFKC')
-          .toLocaleLowerCase('zh-CN')
-          .includes(filters.text.normalize('NFKC').toLocaleLowerCase('zh-CN'))
-      )
-        return false;
-      if (filters.date && !dates.includes(filters.date)) return false;
-      if (filters.listId && item.listId !== filters.listId) return false;
-      if (filters.priority && item.priority !== filters.priority) return false;
-      if (
-        filters.tagIds.length > 0 &&
-        !filters.tagIds.every((id) => item.tagIds.includes(id))
-      )
-        return false;
-      return true;
-    });
   }, [listId, searchParams, snapshot, today, view]);
 
   if (snapshot === undefined || today === undefined)
@@ -467,7 +434,7 @@ export function TodoPage() {
         />
       </div>
       <div className="task-list" aria-live="polite">
-        {filteredTasks.length === 0 && filteredOccurrences.length === 0 ? (
+        {rows.length === 0 ? (
           <EmptyState
             description={
               searchParams.size > 0
@@ -478,39 +445,57 @@ export function TodoPage() {
             }
           />
         ) : (
-          <>
-            {filteredTasks.map((task) => (
-              <article className={`task-row state-${task.state}`} key={task.id}>
+          rows.map((row: TodoRow) => {
+            const task = row.kind === 'task' ? row.task : undefined;
+            const completion = formatCompletedAt(row.completedAt, snapshot.timeZone);
+            return (
+              <article
+                className={`task-row state-${row.state}${row.kind === 'occurrence' ? ' task-row-recurring' : ''}`}
+                key={row.key}
+              >
                 <button
                   className="task-main"
-                  onClick={() => setEditingId(task.id)}
-                  aria-label={`编辑${task.title}`}
+                  onClick={() => {
+                    if (row.kind === 'task') setEditingId(row.task.id);
+                    else setOpenedOccurrence(row.occurrence);
+                  }}
+                  aria-label={`${row.kind === 'task' ? '编辑' : '查看重复事项'}${row.title}`}
                 >
                   <span className="task-state">
-                    {task.state === 'pending'
+                    {row.state === 'pending'
                       ? '○ 待处理'
-                      : task.state === 'completed'
+                      : row.state === 'completed'
                         ? '✓ 已完成'
                         : '↷ 已跳过'}
                   </span>
-                  <strong>{task.title}</strong>
-                  <small>{formatSchedule(task)}</small>
+                  <strong>{row.title}</strong>
+                  <small className="task-schedule">{formatSchedule(row)}</small>
+                  {completion ? (
+                    <small className="task-completion">{completion}</small>
+                  ) : null}
                   <span className="task-meta">
                     <Badge variant="secondary">
-                      {snapshot.lists.find((item) => item.id === task.listId)?.name ??
+                      {snapshot.lists.find((item) => item.id === row.listId)?.name ??
                         '未知清单'}
                     </Badge>
-                    {task.priority !== 'none' ? (
-                      <Badge variant="outline">
-                        {
-                          ({ low: '低', medium: '中', high: '高' } as const)[
-                            task.priority
-                          ]
-                        }
-                        优先级
-                      </Badge>
+                    <Badge variant="outline">
+                      {row.priority === 'none'
+                        ? '无优先级'
+                        : `${({ low: '低', medium: '中', high: '高' } as const)[row.priority]}优先级`}
+                    </Badge>
+                    {row.kind === 'occurrence' ? (
+                      <>
+                        <Badge variant="outline">重复</Badge>
+                        <Badge variant="secondary">
+                          {row.state !== 'pending'
+                            ? '历史只读'
+                            : row.virtual
+                              ? '未来只读'
+                              : '当前实例 · 仅本次'}
+                        </Badge>
+                      </>
                     ) : null}
-                    {task.tagIds.map((id) => {
+                    {row.tagIds.map((id) => {
                       const tag = snapshot.tags.find((item) => item.id === id);
                       return tag ? (
                         <TagBadge key={id} color={tag.color}>
@@ -520,108 +505,81 @@ export function TodoPage() {
                     })}
                   </span>
                 </button>
-                <div className="flex flex-wrap gap-2">
-                  {task.state === 'pending' ? (
-                    <>
+                {task ? (
+                  <div className="task-actions">
+                    {task.state === 'pending' ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          aria-label={`完成${task.title}`}
+                          onClick={() =>
+                            void run(
+                              async () =>
+                                (await getApplicationServices()).todos.setTaskState(
+                                  task.id,
+                                  'completed',
+                                ),
+                              '已完成',
+                            )
+                          }
+                        >
+                          <Check data-icon="inline-start" /> 完成
+                        </Button>
+                        <Button
+                          variant="outline"
+                          aria-label={`跳过${task.title}`}
+                          onClick={() =>
+                            void run(
+                              async () =>
+                                (await getApplicationServices()).todos.setTaskState(
+                                  task.id,
+                                  'skipped',
+                                ),
+                              '已跳过',
+                            )
+                          }
+                        >
+                          <Forward data-icon="inline-start" /> 跳过
+                        </Button>
+                      </>
+                    ) : null}
+                    {task.state === 'completed' ? (
                       <Button
                         variant="outline"
-                        aria-label={`完成${task.title}`}
                         onClick={() =>
                           void run(
                             async () =>
-                              (await getApplicationServices()).todos.setTaskState(
+                              (await getApplicationServices()).todos.undoTaskCompletion(
                                 task.id,
-                                'completed',
                               ),
-                            '已完成',
+                            '已撤销完成',
                           )
                         }
                       >
-                        <Check data-icon="inline-start" /> 完成
+                        <RotateCcw data-icon="inline-start" /> 撤销完成
                       </Button>
-                      <Button
-                        variant="outline"
-                        aria-label={`跳过${task.title}`}
-                        onClick={() =>
-                          void run(
-                            async () =>
-                              (await getApplicationServices()).todos.setTaskState(
-                                task.id,
-                                'skipped',
-                              ),
-                            '已跳过',
-                          )
-                        }
-                      >
-                        <Forward data-icon="inline-start" /> 跳过
-                      </Button>
-                    </>
-                  ) : null}
-                  {task.state === 'completed' ? (
+                    ) : null}
                     <Button
-                      variant="outline"
-                      onClick={() =>
-                        void run(
-                          async () =>
-                            (await getApplicationServices()).todos.undoTaskCompletion(
-                              task.id,
-                            ),
-                          '已撤销完成',
-                        )
-                      }
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`编辑${task.title}`}
+                      onClick={() => setEditingId(task.id)}
                     >
-                      <RotateCcw data-icon="inline-start" /> 撤销完成
+                      <Pencil />
                     </Button>
-                  ) : null}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`编辑${task.title}`}
-                    onClick={() => setEditingId(task.id)}
-                  >
-                    <Pencil />
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    aria-label={`删除${task.title}`}
-                    onClick={() => setRemoving(task)}
-                  >
-                    <Trash2 />
-                  </Button>
-                </div>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      aria-label={`删除${task.title}`}
+                      onClick={() => setRemoving(task)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </div>
+                ) : null}
               </article>
-            ))}
-            {filteredOccurrences.map((item) => {
-              const schedule =
-                item.plannedAt.kind !== 'none' ? item.plannedAt : item.deadlineAt;
-              if (schedule.kind === 'none') return null;
-              return (
-                <article className="task-row state-pending" key={item.key}>
-                  <button
-                    className="task-main"
-                    onClick={() => setOpenedOccurrence(item)}
-                    aria-label={`查看重复事项${item.title}`}
-                  >
-                    <span className="task-state">
-                      {item.virtual ? '◇ 未来只读' : '↻ 当前实例'}
-                    </span>
-                    <strong>{item.title}</strong>
-                    <small>
-                      {item.plannedAt.kind !== 'none'
-                        ? `计划 ${schedulePointLocalDate(item.plannedAt)}`
-                        : `截止 ${schedulePointLocalDate(item.deadlineAt)}`}
-                    </small>
-                    <span className="task-meta">
-                      <Badge variant="secondary">
-                        {item.virtual ? '未来只读' : '仅本次可操作'}
-                      </Badge>
-                    </span>
-                  </button>
-                </article>
-              );
-            })}
-          </>
+            );
+          })
         )}
       </div>
       {editing ? (

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { TodoService } from '../../src/application';
-import { decodeSchedulePoint } from '../../src/domain';
+import { RecurrenceService, TodoService } from '../../src/application';
+import { decodeSchedulePoint, occurrenceKeySchema } from '../../src/domain';
 import { DexieUnitOfWork, INBOX_LIST_ID } from '../../src/infrastructure/db';
 import { createTestDatabase } from '../infrastructure/db/test-database';
 
@@ -194,6 +194,46 @@ describe('TodoService', () => {
       await expect(service.snapshot()).resolves.toMatchObject({
         tasks: [{ title: '更新后的标题', state: 'completed' }],
       });
+    } finally {
+      await context.cleanup();
+    }
+  });
+
+  it('merges today occurrence history with the future window without duplicate keys', async () => {
+    const context = await createTestDatabase();
+    try {
+      const unitOfWork = new DexieUnitOfWork(context.db);
+      const recurrence = new RecurrenceService(unitOfWork, {
+        createId: () => 'today-series',
+        now: () => '2026-08-13T01:00:00Z',
+        detectTimeZone: () => 'Asia/Shanghai',
+      });
+      const series = await recurrence.createSeries({
+        title: '每日复盘',
+        notes: '',
+        listId: INBOX_LIST_ID,
+        tagNames: [],
+        priority: 'high',
+        plannedAt: decodeSchedulePoint({ kind: 'allDay', date: '2026-08-13' }),
+        deadlineAt: decodeSchedulePoint({ kind: 'none' }),
+        rule: { frequency: 'daily', interval: 1, end: { kind: 'never' } },
+      });
+      await recurrence.completeOccurrence(
+        occurrenceKeySchema.parse(series.activeOccurrenceKey),
+      );
+
+      const snapshot = await createService(unitOfWork).snapshot();
+      const completed = snapshot.occurrences.filter((item) => item.state === 'completed');
+      expect(completed).toMatchObject([
+        {
+          key: series.activeOccurrenceKey,
+          completedAt: '2026-08-13T01:00:00Z',
+          readonly: true,
+        },
+      ]);
+      expect(new Set(snapshot.occurrences.map((item) => item.key)).size).toBe(
+        snapshot.occurrences.length,
+      );
     } finally {
       await context.cleanup();
     }

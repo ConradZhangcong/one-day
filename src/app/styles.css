@@ -656,6 +656,10 @@ input[type='time'],
   border-left-color: var(--muted-foreground);
 }
 
+.task-row-recurring {
+  border-left-style: double;
+}
+
 .task-main {
   min-width: 0;
   display: grid;
@@ -689,6 +693,17 @@ input[type='time'],
 .task-state {
   font-size: 0.7rem;
   font-weight: 650;
+}
+
+.task-completion {
+  color: oklch(0.5 0.11 150);
+  font-weight: 650;
+}
+
+.task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .task-meta,
@@ -1055,6 +1070,10 @@ input[type='time'],
   .recovery-card {
     grid-template-columns: 1fr;
     align-items: stretch;
+  }
+
+  .task-actions {
+    justify-content: flex-end;
   }
 
   .review-grid,

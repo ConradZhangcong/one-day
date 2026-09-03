@@ -41,6 +41,7 @@ export interface TaskOccurrenceView {
   readonly tagIds: readonly string[];
   readonly goalId?: string;
   readonly priority: Priority;
+  readonly completedAt?: Instant;
   readonly updatedAt?: Instant;
 }
 
@@ -106,6 +107,7 @@ function occurrenceView(
     tagIds: template.tagIds,
     ...(template.goalId === undefined ? {} : { goalId: template.goalId }),
     priority: template.priority,
+    ...(occurrence.state === 'completed' ? { completedAt: occurrence.completedAt } : {}),
     updatedAt: series.updatedAt,
   };
 }
@@ -153,10 +155,14 @@ export class OccurrenceQueryService {
         tagIds: task.tagIds,
         ...(task.goalId === undefined ? {} : { goalId: task.goalId }),
         priority: task.priority,
+        ...(task.state === 'completed' ? { completedAt: task.completedAt } : {}),
         updatedAt: task.updatedAt,
       }))
       .filter((item) => inRange(primarySchedule(item), start, end));
     const recordsBySeries = new Map<string, OccurrenceRecord[]>();
+    const persistedOccurrenceKeys = new Set(
+      records.map((record) => record.occurrenceKey),
+    );
     const projectedPatterns = new Map<
       string,
       readonly {
@@ -224,7 +230,7 @@ export class OccurrenceQueryService {
           series.revision,
           originalAnchor,
         );
-        if (occurrenceKey === series.activeOccurrenceKey) continue;
+        if (persistedOccurrenceKeys.has(occurrenceKey)) continue;
         const virtualRecord: OccurrenceRecord = {
           occurrenceKey,
           seriesId: series.id,

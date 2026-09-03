@@ -134,6 +134,19 @@ describe('recurrence UI scope', () => {
     expect(screen.queryByRole('button', { name: '仅本次改期' })).not.toBeInTheDocument();
   });
 
+  it('keeps a completed occurrence read-only', () => {
+    const item = {
+      ...occurrenceItem(false),
+      state: 'completed' as const,
+      readonly: true,
+    };
+    render(<OccurrenceDetailsDrawer item={item} onClose={vi.fn()} />);
+    expect(screen.getByText(/历史只读：已处理的重复实例/)).toBeVisible();
+    expect(screen.queryByRole('button', { name: '完成本次' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '跳过本次' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '仅本次改期' })).not.toBeInTheDocument();
+  });
+
   it('requires explicit impact confirmation before updating the entire series', async () => {
     const user = userEvent.setup();
     const currentSnapshot = snapshot();

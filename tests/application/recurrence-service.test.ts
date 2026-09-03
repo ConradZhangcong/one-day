@@ -58,6 +58,21 @@ describe('RecurrenceService', () => {
     ]);
     expect(completed).toHaveLength(1);
     expect(updated?.activeOccurrenceKey).toBe(pending[0]?.occurrenceKey);
+    const completedView = await new OccurrenceQueryService(
+      uow,
+      () => 'Asia/Shanghai',
+    ).query({
+      rangeStart: decodeLocalDate('2026-08-10'),
+      rangeEnd: decodeLocalDate('2026-08-11'),
+      includeHistory: true,
+    });
+    expect(completedView.items).toMatchObject([
+      {
+        key: series.activeOccurrenceKey,
+        state: 'completed',
+        completedAt: '2026-08-13T01:00:00Z',
+      },
+    ]);
   });
 
   it('persists a validated long-term goal link in the series template and query view', async () => {

@@ -135,3 +135,64 @@ const snapshot = useLiveQuery(() => services.todos.snapshot(), []);
 const revision = useApplicationRevision();
 const snapshot = useLiveQuery(() => services.todos.snapshot(), [revision]);
 ```
+
+## Scenario: Todo lists combine occurrence history with future projections
+
+### 1. Scope / Trigger
+
+Apply when a Todo route displays recurring occurrences together with ordinary tasks, completion metadata, or a bounded future preview.
+
+### 2. Signatures
+
+```ts
+interface TaskOccurrenceView {
+  readonly key: string;
+  readonly seriesId?: string;
+  readonly state: 'pending' | 'completed' | 'skipped';
+  readonly completedAt?: Instant;
+  readonly readonly: boolean;
+  readonly virtual: boolean;
+}
+
+TodoService.snapshot(): Promise<TodoSnapshot>
+projectTodoRows(tasks, occurrences, kind, today, filters, routeListId?): TodoRow[]
+```
+
+### 3. Contracts
+
+- `completedAt` comes from the decoded task or occurrence record and remains an `Instant` until the UI formats it in the application `TimeZoneId`.
+- The Todo snapshot merges today's persisted occurrence history with the bounded pending/future occurrence window by stable occurrence `key`.
+- A persisted occurrence key suppresses virtual regeneration of that key, even when history is not requested; a completed record must never reappear as pending.
+- Today defaults to pending plus completed work; skipped work requires an explicit state filter.
+- Upcoming filters first, sorts by primary schedule, then keeps the nearest item per `seriesId`. Ordinary tasks are never series-folded.
+
+### 4. Validation & Error Matrix
+
+- Completed occurrence without a decoded `completedAt` -> invalid domain record before projection.
+- Persisted and projected occurrence share a key -> keep the persisted view; never emit the virtual duplicate.
+- Explicit state filter -> return only that state, overriding the Today default.
+- Completed or skipped occurrence -> `readonly=true`; do not expose instance or series mutations from its detail entry.
+
+### 5. Good/Base/Bad Cases
+
+- Good: Today's completed occurrence displays `完成于 HH:mm` in the configured zone, while Upcoming shows only the next filtered occurrence for its series.
+- Base: Pending ordinary and recurring work interleave by their primary schedule and share list, priority, tag, and textual state metadata.
+- Bad: Merge a virtual projection after history by blind overwrite; the same occurrence becomes pending again and loses its completion time.
+
+### 6. Tests Required
+
+- Application query test asserts a completed occurrence carries `completedAt` and is not accompanied or replaced by a same-key virtual item.
+- Todo snapshot test asserts history/future key uniqueness.
+- Pure projection tests cover Today default/explicit states, filtering-before-folding, per-series nearest selection, and mixed task/occurrence ordering.
+- Component test asserts visible completion time and recurring/read-only labels and proves historical occurrence actions are absent.
+
+### 7. Wrong vs Correct
+
+```ts
+// Wrong: a later virtual item can overwrite the persisted completed view.
+const byKey = new Map([...history, ...future].map((item) => [item.key, item]));
+
+// Correct: the occurrence query never regenerates any persisted key, and the
+// Todo snapshot performs a stable-key merge before the pure display projection.
+if (persistedOccurrenceKeys.has(occurrenceKey)) continue;
+```

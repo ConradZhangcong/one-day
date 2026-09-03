@@ -96,27 +96,49 @@ export class TodoService {
     const occurrenceWindowEnd = localDateSchema.parse(
       Temporal.PlainDate.from(today).add({ days: 90 }).toString(),
     );
-    const [tasks, allLists, allTags, goals, series, occurrenceSnapshot] =
-      await Promise.all([
-        singleTasks.getAll(),
-        lists.listInDisplayOrder({ includeArchived: true }),
-        tags.getAll(),
-        longTermGoals.getAll(),
-        recurrenceSeries.getAll(),
-        new OccurrenceQueryService(this.unitOfWork, this.detectTimeZone).query({
-          rangeStart: today,
-          rangeEnd: occurrenceWindowEnd,
-        }),
-      ]);
+    const tomorrow = localDateSchema.parse(
+      Temporal.PlainDate.from(today).add({ days: 1 }).toString(),
+    );
+    const occurrenceQuery = new OccurrenceQueryService(
+      this.unitOfWork,
+      this.detectTimeZone,
+    );
+    const [
+      tasks,
+      allLists,
+      allTags,
+      goals,
+      series,
+      occurrenceSnapshot,
+      todayHistorySnapshot,
+    ] = await Promise.all([
+      singleTasks.getAll(),
+      lists.listInDisplayOrder({ includeArchived: true }),
+      tags.getAll(),
+      longTermGoals.getAll(),
+      recurrenceSeries.getAll(),
+      occurrenceQuery.query({
+        rangeStart: today,
+        rangeEnd: occurrenceWindowEnd,
+      }),
+      occurrenceQuery.query({
+        rangeStart: today,
+        rangeEnd: tomorrow,
+        includeHistory: true,
+      }),
+    ]);
+    const occurrencesByKey = new Map(
+      [...occurrenceSnapshot.items, ...todayHistorySnapshot.items]
+        .filter((item) => item.ownerKind === 'occurrence')
+        .map((item) => [item.key, item]),
+    );
     return {
       tasks,
       lists: allLists,
       tags: allTags,
       timeZone,
       goals,
-      occurrences: occurrenceSnapshot.items.filter(
-        (item) => item.ownerKind === 'occurrence',
-      ),
+      occurrences: [...occurrencesByKey.values()],
       occurrenceWindowEnd,
       series,
     };

@@ -62,7 +62,7 @@ export function OccurrenceDetailsDrawer({
   );
 
   const run = async (action: 'complete' | 'skip' | 'pause' | 'stop') => {
-    if (item.seriesId === undefined || item.virtual) return;
+    if (item.seriesId === undefined || item.readonly) return;
     setBusy(true);
     try {
       const recurrence = (await getApplicationServices()).recurrence;
@@ -136,13 +136,19 @@ export function OccurrenceDetailsDrawer({
           <DialogDescription>
             {item.virtual
               ? '未来只读：此 occurrence 尚未物化，不能完成、跳过或仅本次改期。'
-              : '当前实例操作标记为“仅本次”；暂停和停止作用于整个系列。'}
+              : item.readonly
+                ? '历史只读：已处理的重复实例不能再次完成、跳过或改期。'
+                : '当前实例操作标记为“仅本次”；暂停和停止作用于整个系列。'}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 px-6 pb-2">
           <div className="flex flex-wrap gap-2">
-            <Badge variant={item.virtual ? 'outline' : 'secondary'}>
-              {item.virtual ? '未来只读' : '当前实例 · 仅本次'}
+            <Badge variant={item.readonly ? 'outline' : 'secondary'}>
+              {item.virtual
+                ? '未来只读'
+                : item.readonly
+                  ? '历史只读'
+                  : '当前实例 · 仅本次'}
             </Badge>
             <Badge variant="outline">整个系列可单独管理</Badge>
           </div>
@@ -184,7 +190,10 @@ export function OccurrenceDetailsDrawer({
           ) : null}
         </div>
         <DialogFooter className="flex-wrap sm:justify-start">
-          {!editingSeries && series !== undefined && snapshot !== undefined ? (
+          {!item.readonly &&
+          !editingSeries &&
+          series !== undefined &&
+          snapshot !== undefined ? (
             <Button
               disabled={busy}
               variant="outline"
@@ -197,7 +206,7 @@ export function OccurrenceDetailsDrawer({
               编辑整个系列
             </Button>
           ) : null}
-          {!item.virtual && !editingSeries ? (
+          {!item.readonly && !editingSeries ? (
             <>
               <Button disabled={busy} onClick={() => void run('complete')}>
                 <Check data-icon="inline-start" />
