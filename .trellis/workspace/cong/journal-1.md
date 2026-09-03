@@ -92,3 +92,25 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 5: 完成 PWA 发布加固
+
+**Date**: 2026-09-03
+**Task**: 完成 PWA 发布加固
+**Branch**: `codex/todo-calendar-mvp`
+
+### Summary
+
+完成 PWA 安装资产与构建验证、五项目核心 E2E、Chromium 离线重启与升级提示测试、无障碍/响应式检查和大数据性能门禁；修复 ESLint 对脚本的类型规则配置及移动 Chrome 完成流程竞态，更新发布清单和前端质量规范。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1f3c046` | (see git log) |
+| `a1c73b7` | (see git log) |
+
+### Status
+
+[OK] **Completed**
