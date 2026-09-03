@@ -114,3 +114,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 6: 优化重复任务列表展示
+
+**Date**: 2026-09-03
+**Task**: 优化重复任务列表展示
+**Branch**: `main`
+
+### Summary
+
+折叠即将到来的重复系列，统一今天的普通与重复任务展示，补充完成状态、应用时区完成时间与历史实例只读保护；完成全量测试和浏览器恢复页验证。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `99caa4d` | (see git log) |
+
+### Status
+
+[OK] **Completed**
