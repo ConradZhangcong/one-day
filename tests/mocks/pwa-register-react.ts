@@ -6,6 +6,6 @@ export function useRegisterSW() {
   return {
     offlineReady: [false, setState] as const,
     needRefresh: [false, setState] as const,
-    updateServiceWorker: async () => undefined,
+    updateServiceWorker: () => Promise.resolve(),
   };
 }

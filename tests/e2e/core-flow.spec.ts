@@ -36,7 +36,12 @@ test('核心任务事实跨列表和日历保持一致', async ({ page }, testIn
   await expect(page.getByRole('button', { name: new RegExp(title) })).toBeVisible();
 
   await page.goto('/today');
-  await page.getByRole('button', { name: `完成${title}`, exact: true }).click();
+  const completeButton = page.getByRole('button', {
+    name: `完成${title}`,
+    exact: true,
+  });
+  await completeButton.click();
+  await expect(completeButton).toBeHidden();
   await page.goto('/completed');
   await expect(
     page.getByRole('button', { name: `编辑${title}`, exact: true }).first(),

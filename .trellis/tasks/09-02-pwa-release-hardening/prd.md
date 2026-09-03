@@ -25,14 +25,14 @@
 
 ## Acceptance Criteria
 
-- [ ] `pnpm build` 后 manifest、图标、Service Worker、导航回退与缓存清理通过自动检查。
-- [ ] Chromium 生产预览中，首次在线加载后断网重启 `/today`、`/calendar/agenda` 等深层路由成功，IndexedDB 数据仍可读写。
-- [ ] 升级测试证明仅在用户点击后激活新 Service Worker 并刷新，取消/忽略不会中断当前页面。
-- [ ] 五个 Playwright 项目均运行核心 smoke 流程；不支持完整 PWA API 的浏览器使用明确、可审计的能力分支而非伪造成功。
-- [ ] 键盘、焦点、200% 文字缩放、浅/深色及移动宽度检查无阻断核心流程的问题。
-- [ ] 性能基准在固定规模和环境下通过已批准阈值，并输出可复查结果；超限时有定位信息而非提高阈值掩盖。
-- [ ] 格式、lint、类型检查、单元/组件/数据库测试、E2E、生产构建和 Trellis 复审全部通过。
-- [ ] 发布文档不声称已完成本轮无法取得的真机证据，并列出仍需人工验证的 Android Chrome 与 iOS Safari/PWA 项目。
+- [x] `pnpm build` 后 manifest、图标、Service Worker、导航回退与缓存清理通过自动检查。
+- [x] Chromium 生产预览中，首次在线加载后断网重启 `/today`、`/calendar/agenda` 等深层路由成功，IndexedDB 数据仍可读写。
+- [x] 升级测试证明仅在用户点击后激活新 Service Worker 并刷新，取消/忽略不会中断当前页面。
+- [x] 五个 Playwright 项目均运行核心 smoke 流程；不支持完整 PWA API 的浏览器使用明确、可审计的能力分支而非伪造成功。
+- [x] 键盘、焦点、200% 文字缩放、浅/深色及移动宽度检查无阻断核心流程的问题。
+- [x] 性能基准在固定规模和环境下通过已批准阈值，并输出可复查结果；超限时有定位信息而非提高阈值掩盖。
+- [x] 格式、lint、类型检查、单元/组件/数据库测试、E2E、生产构建和 Trellis 复审全部通过。
+- [x] 发布文档不声称已完成本轮无法取得的真机证据，并列出仍需人工验证的 Android Chrome 与 iOS Safari/PWA 项目。
 
 ## Out of Scope
 

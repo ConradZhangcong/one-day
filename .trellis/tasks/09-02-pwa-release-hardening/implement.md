@@ -55,11 +55,11 @@
 
 ## Phase 6 — 全量发布门禁
 
-- [ ] 运行 `pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test:run`、`pnpm test:pwa`、`pnpm test:e2e`、`pnpm build`。
-- [ ] 对照 AC10、AC11、AC15、AC16 和本任务验收标准逐项留证。
-- [ ] 使用 `trellis-check` 检查规范、跨浏览器降级、Service Worker 生命周期、无障碍和性能证据。
-- [ ] 使用 `trellis-update-spec` 记录稳定 PWA 发布与离线验收契约。
-- [ ] 提交实现，归档任务并执行 `trellis-finish-work`。
+- [x] 运行 `pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test:run`、`pnpm test:pwa`、`pnpm test:e2e`、`pnpm build`。
+- [x] 对照 AC10、AC11、AC15、AC16 和本任务验收标准逐项留证。
+- [x] 使用 `trellis-check` 检查规范、跨浏览器降级、Service Worker 生命周期、无障碍和性能证据。
+- [x] 使用 `trellis-update-spec` 记录稳定 PWA 发布与离线验收契约。
+- [x] 提交实现，归档任务并执行 `trellis-finish-work`。
 
 ## 风险文件与检查
 

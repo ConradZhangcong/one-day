@@ -1,5 +1,5 @@
 import { readFile, readdir } from 'node:fs/promises';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 
 const EXPECTED_ICONS = [
