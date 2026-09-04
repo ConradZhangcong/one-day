@@ -156,3 +156,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 8: 收件箱重复任务折叠与醒目标识
+
+**Date**: 2026-09-04
+**Task**: 收件箱重复任务折叠与醒目标识
+**Branch**: `main`
+
+### Summary
+
+收件箱复用筛选后按系列保留最近 occurrence 的折叠规则；所有 Todo 列表增加重复图标、实心“重复任务”徽标与轻量强调容器，并保持完成/跳过状态边框优先；补充投影与组件回归测试，完整质量门禁通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9c1416a` | (see git log) |
+
+### Status
+
+[OK] **Completed**
