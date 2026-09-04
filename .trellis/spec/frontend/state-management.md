@@ -164,7 +164,8 @@ projectTodoRows(tasks, occurrences, kind, today, filters, routeListId?): TodoRow
 - The Todo snapshot merges today's persisted occurrence history with the bounded pending/future occurrence window by stable occurrence `key`.
 - A persisted occurrence key suppresses virtual regeneration of that key, even when history is not requested; a completed record must never reappear as pending.
 - Today defaults to pending plus completed work; skipped work requires an explicit state filter.
-- Upcoming filters first, sorts by primary schedule, then keeps the nearest item per `seriesId`. Ordinary tasks are never series-folded.
+- Inbox and Upcoming filter first, sort by primary schedule, then keep the nearest item per `seriesId`. Today and custom-list views keep their existing per-occurrence display, and ordinary tasks are never series-folded.
+- Every Todo occurrence row has a visible repeat icon plus `重复任务` text and a semantic-token container treatment. Completed/skipped text and left-edge state styling take precedence over the recurring container so recurrence never obscures lifecycle state.
 
 ### 4. Validation & Error Matrix
 
@@ -172,19 +173,21 @@ projectTodoRows(tasks, occurrences, kind, today, filters, routeListId?): TodoRow
 - Persisted and projected occurrence share a key -> keep the persisted view; never emit the virtual duplicate.
 - Explicit state filter -> return only that state, overriding the Today default.
 - Completed or skipped occurrence -> `readonly=true`; do not expose instance or series mutations from its detail entry.
+- Inbox/Upcoming filter excludes a series' earliest item but matches a later one -> fold the filtered result and show that later item; never fold before filtering.
 
 ### 5. Good/Base/Bad Cases
 
-- Good: Today's completed occurrence displays `完成于 HH:mm` in the configured zone, while Upcoming shows only the next filtered occurrence for its series.
+- Good: Today's completed occurrence displays `完成于 HH:mm` in the configured zone, while Inbox and Upcoming each show only the next filtered occurrence for its series.
 - Base: Pending ordinary and recurring work interleave by their primary schedule and share list, priority, tag, and textual state metadata.
 - Bad: Merge a virtual projection after history by blind overwrite; the same occurrence becomes pending again and loses its completion time.
+- Bad: fold every Todo route or fold before applying its filters; Today/custom-list detail disappears, or a hidden earlier occurrence suppresses the visible match.
 
 ### 6. Tests Required
 
 - Application query test asserts a completed occurrence carries `completedAt` and is not accompanied or replaced by a same-key virtual item.
 - Todo snapshot test asserts history/future key uniqueness.
-- Pure projection tests cover Today default/explicit states, filtering-before-folding, per-series nearest selection, and mixed task/occurrence ordering.
-- Component test asserts visible completion time and recurring/read-only labels and proves historical occurrence actions are absent.
+- Pure projection tests cover Today default/explicit states, Inbox/Upcoming filtering-before-folding, per-series nearest selection, ordinary-task preservation, unchanged Today/custom-list expansion, and mixed task/occurrence ordering.
+- Component tests assert visible completion time, icon-plus-text recurring/read-only labels, inbox series folding, and prove historical occurrence actions are absent.
 
 ### 7. Wrong vs Correct
 
@@ -195,4 +198,12 @@ const byKey = new Map([...history, ...future].map((item) => [item.key, item]));
 // Correct: the occurrence query never regenerates any persisted key, and the
 // Todo snapshot performs a stable-key merge before the pure display projection.
 if (persistedOccurrenceKeys.has(occurrenceKey)) continue;
+
+// Wrong: a non-matching earlier item can suppress the matching later item.
+const visible = foldBySeries(occurrences).filter(matchesFilters);
+
+// Correct: only Inbox and Upcoming fold, after their complete filter + sort step.
+const filtered = occurrences.filter(matchesFilters).sort(compareRows);
+const visible =
+  kind === 'inbox' || kind === 'upcoming' ? foldBySeries(filtered) : filtered;
 ```

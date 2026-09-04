@@ -221,6 +221,72 @@ describe('projectTasks', () => {
     ).toEqual(['a:second']);
   });
 
+  it('folds inbox occurrences by series without folding ordinary tasks', () => {
+    const first = occurrence('a:first', 'series:a', '2026-08-14');
+    const second = occurrence('a:second', 'series:a', '2026-08-15');
+    const other = occurrence('b:first', 'series:b', '2026-08-16');
+    const ordinaryFirst = createSingleTask({
+      id: 'task:first',
+      title: '普通事项一',
+      plannedAt: { kind: 'allDay', date: decodeLocalDate('2026-08-17') },
+      deadlineAt: { kind: 'none' },
+    });
+    const ordinarySecond = createSingleTask({
+      id: 'task:second',
+      title: '普通事项二',
+      plannedAt: { kind: 'allDay', date: decodeLocalDate('2026-08-18') },
+      deadlineAt: { kind: 'none' },
+    });
+
+    expect(
+      projectTodoRows(
+        [ordinarySecond, ordinaryFirst],
+        [second, other, first],
+        'inbox',
+        today,
+        noFilters,
+      ).map((row) => row.key),
+    ).toEqual(['a:first', 'b:first', 'task:first', 'task:second']);
+  });
+
+  it('filters inbox occurrences before choosing the nearest matching series item', () => {
+    const first = occurrence('a:first', 'series:a', '2026-08-14', {
+      title: '较早但不匹配',
+    });
+    const second = occurrence('a:second', 'series:a', '2026-08-15', {
+      title: '稍后需要展示',
+    });
+
+    expect(
+      projectOccurrences([first, second], 'inbox', today, {
+        ...noFilters,
+        text: '需要展示',
+      }).map((item) => item.key),
+    ).toEqual(['a:second']);
+  });
+
+  it('keeps today and custom-list occurrence expansion semantics unchanged', () => {
+    const first = occurrence('a:first', 'series:a', '2026-08-13', {
+      readonly: false,
+      virtual: false,
+      listId: 'list:work',
+    });
+    const second = occurrence('a:second', 'series:a', '2026-08-13', {
+      listId: 'list:work',
+    });
+
+    expect(
+      projectOccurrences([second, first], 'today', today, noFilters).map(
+        (item) => item.key,
+      ),
+    ).toEqual(['a:first', 'a:second']);
+    expect(
+      projectOccurrences([second, first], 'list', today, noFilters, 'list:work').map(
+        (item) => item.key,
+      ),
+    ).toEqual(['a:first', 'a:second']);
+  });
+
   it('interleaves ordinary and recurring today rows by their primary schedule', () => {
     const laterTask = createSingleTask({
       id: 'task:later',

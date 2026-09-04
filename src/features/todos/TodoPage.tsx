@@ -485,7 +485,10 @@ export function TodoPage() {
                     </Badge>
                     {row.kind === 'occurrence' ? (
                       <>
-                        <Badge variant="outline">重复</Badge>
+                        <Badge className="task-recurring-badge">
+                          <Repeat2 data-icon="inline-start" aria-hidden="true" />
+                          重复任务
+                        </Badge>
                         <Badge variant="secondary">
                           {row.state !== 'pending'
                             ? '历史只读'

@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Verify projection and visible component behavior with the complete frontend quality gate."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Check inbox folding against established Todo series-folding, filtering, and route consistency contracts."}

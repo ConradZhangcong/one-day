@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Implement accessible, responsive recurring-row emphasis with project-local styling conventions."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Preserve Todo projection contracts, including filtering-before-series-folding and route-specific semantics."}

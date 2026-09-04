@@ -133,7 +133,9 @@ describe('TodoPage rows', () => {
     const occurrenceRow = screen.getByRole('button', {
       name: '查看重复事项重复已完成',
     });
-    expect(within(occurrenceRow).getByText('重复')).toBeVisible();
+    const recurringBadge = within(occurrenceRow).getByText('重复任务');
+    expect(recurringBadge).toBeVisible();
+    expect(recurringBadge.closest('span')?.querySelector('svg')).toBeInTheDocument();
     expect(screen.getByText('高优先级')).toBeVisible();
     expect(screen.getByText('历史只读')).toBeVisible();
 
@@ -162,6 +164,25 @@ describe('TodoPage rows', () => {
     expect(
       screen.getByRole('button', { name: '查看重复事项重复事项 series:b' }),
     ).toHaveTextContent('2026-08-16');
+    expect(screen.queryByText(/2026-08-15/)).not.toBeInTheDocument();
+  });
+
+  it('folds inbox series rows and keeps the visible recurring marker', () => {
+    renderPage(
+      '/inbox',
+      snapshot({
+        occurrences: [
+          occurrence('series:a:second', 'series:a', '2026-08-15'),
+          occurrence('series:a:first', 'series:a', '2026-08-14'),
+        ],
+      }),
+    );
+
+    const occurrenceRow = screen.getByRole('button', {
+      name: '查看重复事项重复事项 series:a',
+    });
+    expect(occurrenceRow).toHaveTextContent('2026-08-14');
+    expect(within(occurrenceRow).getByText('重复任务')).toBeVisible();
     expect(screen.queryByText(/2026-08-15/)).not.toBeInTheDocument();
   });
 });

@@ -249,7 +249,7 @@ export function projectOccurrences(
   const filtered = occurrences
     .filter((item) => matchesItem(item, kind, today, filters, routeListId))
     .sort((left, right) => compareRows(toOccurrenceRow(left), toOccurrenceRow(right)));
-  if (kind !== 'upcoming') return filtered;
+  if (kind !== 'inbox' && kind !== 'upcoming') return filtered;
 
   const nearestBySeries = new Map<string, TaskOccurrenceView>();
   for (const item of filtered) {
