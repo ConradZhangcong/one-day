@@ -157,4 +157,56 @@ describe('BackupService', () => {
       await context.cleanup();
     }
   });
+
+  it('clears with the decoded device time zone and runs hooks only after commit', async () => {
+    const context = await createTestDatabase();
+    try {
+      let commits = 0;
+      const unitOfWork = new DexieUnitOfWork(context.db, () => {
+        commits += 1;
+      });
+      await unitOfWork.repositories.settings.set('applicationTimeZone', 'Europe/Paris');
+      await unitOfWork.repositories.singleTasks.save(createSingleTask());
+      const onCleared = vi.fn();
+      const service = new BackupService(unitOfWork, {
+        detectTimeZone: () => 'Asia/Shanghai',
+        onCleared,
+      });
+
+      await service.clearLocalData();
+
+      expect(commits).toBe(1);
+      expect(onCleared).toHaveBeenCalledOnce();
+      await expect(context.db.singleTasks.count()).resolves.toBe(0);
+      await expect(
+        unitOfWork.repositories.settings.get('applicationTimeZone'),
+      ).resolves.toBe('Asia/Shanghai');
+      await expect(
+        unitOfWork.repositories.settings.get('allDayReminderTime'),
+      ).resolves.toBeUndefined();
+    } finally {
+      await context.cleanup();
+    }
+  });
+
+  it('rejects an invalid detected time zone before writing or calling the hook', async () => {
+    const context = await createTestDatabase();
+    try {
+      const onCleared = vi.fn();
+      let commits = 0;
+      const service = new BackupService(
+        new DexieUnitOfWork(context.db, () => {
+          commits += 1;
+        }),
+        { detectTimeZone: () => 'Mars/Olympus', onCleared },
+      );
+
+      await expect(service.clearLocalData()).rejects.toBeDefined();
+      expect(commits).toBe(0);
+      expect(onCleared).not.toHaveBeenCalled();
+      await expect(context.db.lists.count()).resolves.toBe(1);
+    } finally {
+      await context.cleanup();
+    }
+  });
 });

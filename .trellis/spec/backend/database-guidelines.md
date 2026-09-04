@@ -149,7 +149,7 @@ const { rule: _rule, tagNames: _tagNames, ...template } = draft;
 
 ### 1. Scope / Trigger
 
-Use this contract whenever a recoverable domain entity, persisted setting, backup version, or full-database restore flow changes. It prevents physical Dexie records, partial writes, or dangling references from becoming a user backup.
+Use this contract whenever a recoverable domain entity, persisted setting, backup version, full-database restore flow, or full local-data reset changes. It prevents physical Dexie records, partial writes, dangling references, or an unusable post-reset database from reaching the user.
 
 ### 2. Signatures
 
@@ -157,8 +157,10 @@ Use this contract whenever a recoverable domain entity, persisted setting, backu
 BackupService.createExport(): Promise<OneDayBackupV1>
 BackupService.inspect(text: string): BackupInspection
 BackupService.restore(inspection: BackupInspection): Promise<BackupSummary>
+BackupService.clearLocalData(): Promise<void>
 BackupRepository.readSnapshot(): Promise<BackupDataV1>
 BackupRepository.replaceAll(data: BackupDataV1): Promise<void>
+BackupRepository.clearAll(applicationTimeZone: TimeZoneId): Promise<void>
 ```
 
 The v1 envelope is `format: "one-day-backup"`, `version: 1`, `exportedAt`, `timeZone`, and `data`. `data` owns domain entities plus explicit recoverable settings; it never owns record-only indexes or runtime caches.
@@ -169,6 +171,8 @@ The v1 envelope is `format: "one-day-backup"`, `version: 1`, `exportedAt`, `time
 - `readSnapshot` reads every recoverable table and setting inside one Dexie read transaction, then decodes records to domain entities.
 - Import parsing routes by exact format/version, decodes `unknown` once, and validates unique identities, the canonical inbox, cross-entity references, active occurrence ownership, reminder owners/targets, normalized tag-name uniqueness, and time-zone agreement before writing.
 - `replaceAll` is called only inside `UnitOfWork.write`; it clears every table, rebuilds record projections through shared encoders, and writes the complete replacement graph.
+- `clearAll` shares the same all-table clear step and transaction boundary as `replaceAll`; it writes back only the canonical system inbox and the validated current device time zone. Reminder defaults and internal `meta` remain absent so current product defaults apply.
+- `clearLocalData` validates the detected device IANA time zone before opening the transaction. After commit invalidation it reconciles the reminder runtime, whose first queued step cancels the old timer and reloads the now-empty reminder graph.
 - Internal `meta`, UI drafts, derived status, service-worker state, and index projections are excluded. `meta` is cleared and rebuilt by the current application when needed.
 - A successful restore publishes one commit invalidation and then reconciles reminders. Reminder delivery/snooze revisions remain in the backup so reconciliation cannot rediscover an already claimed delivery.
 
@@ -178,20 +182,24 @@ The v1 envelope is `format: "one-day-backup"`, `version: 1`, `exportedAt`, `time
 - Foreign format -> `BACKUP_INVALID_FORMAT`, no database operation.
 - Unknown version -> `BACKUP_UNSUPPORTED_VERSION`, no guessing or partial import.
 - Zod failure, duplicate identity/index value, non-canonical inbox, dangling reference, active occurrence mismatch, reminder target mismatch, or time-zone disagreement -> `BACKUP_INVALID_DATA` before the restore transaction.
+- Invalid detected device time zone during clear -> reject before opening a write transaction; keep all tables and do not invoke commit or clear-success hooks.
 - Dexie constraint/encoding/write failure -> propagate the storage error; the encompassing transaction restores every pre-restore table and emits no commit invalidation.
 
 ### 5. Good/Base/Bad Cases
 
 - Good: export a non-empty v3 database, restore it over unrelated data, then re-export semantically identical domain entities with rebuilt indexes and preserved reminder delivery identity.
 - Base: export an inbox-only installation and restore it to a clean current database.
+- Good clear: atomically remove every current table, recreate only `system:inbox` plus `applicationTimeZone`, publish one invalidation, and cancel the old reminder timer.
 - Bad: clear tables first, parse each array while writing, then discover a dangling reminder owner; this can destroy good data before validation completes.
+- Bad clear: call `db.delete()`, clear a hard-coded subset of tables, or reinsert the previous reminder preference/meta after reset; these approaches break the live database, drift when tables are added, or fail fresh-install semantics.
 
 ### 6. Tests Required
 
 - Domain tests cover envelope routing, strict v1 decoding, duplicate ids/normalized tag names, canonical inbox, all cross-references, active occurrence ownership, reminder targets, and time-zone equality.
 - Application tests assert deterministic export metadata, inspection performs zero writes, restore invokes its post-commit hook once, invalid data never invokes it, and every entity/settings kind survives round-trip.
-- Database tests assert a consistent decoded snapshot, old-row removal, record-index reconstruction, and injected late unique-index failure rolling every table back byte-for-byte.
-- UI tests assert JSON download cleanup, summary counts, cancel-without-write, destructive confirmation, stable Chinese errors, and no raw backup content in errors.
+- Application clear tests assert device-zone decoding occurs before the transaction, one successful commit invokes the clear hook once, failure invokes neither hook, and reminder reconciliation cancels a previously scheduled timer.
+- Database tests assert a consistent decoded snapshot, old-row removal, record-index reconstruction, full-table reset to only inbox/time zone, and injected late write failures rolling every table back byte-for-byte.
+- UI tests assert JSON download cleanup, summary counts, cancel-without-write, destructive confirmation, stable Chinese errors, no raw backup content in errors, clear double-submit locking, and settings re-read after commit invalidation.
 
 ### 7. Wrong vs Correct
 
@@ -204,4 +212,8 @@ await importRows(JSON.parse(text));
 // Correct: decode a closed domain graph, then replace it in one transaction.
 const inspection = backupService.inspect(text);
 await unitOfWork.write(({ backup }) => backup.replaceAll(inspection.backup.data));
+
+// Correct reset: reuse the all-table repository operation inside UnitOfWork.
+const zone = decodeTimeZoneId(detectDeviceTimeZone());
+await unitOfWork.write(({ backup }) => backup.clearAll(zone));
 ```

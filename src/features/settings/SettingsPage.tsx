@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { getApplicationServices } from '@/app/application';
+import { useApplicationRevision } from '@/app/application-change';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,7 @@ function permissionCopy(permission: BrowserNotificationPermission): string {
 }
 
 export function SettingsPage() {
+  const applicationRevision = useApplicationRevision();
   const [defaultTime, setDefaultTime] = useState<LocalTime>();
   const [permission, setPermission] = useState<BrowserNotificationPermission>(
     getBrowserNotificationPermission(),
@@ -36,7 +38,7 @@ export function SettingsPage() {
       .then(({ reminders }) => reminders.getAllDayDefaultTime())
       .then(setDefaultTime)
       .catch(() => toast.error('读取提醒设置失败，请重试。'));
-  }, []);
+  }, [applicationRevision]);
 
   const requestPermission = () => {
     const request = requestBrowserNotificationPermission();

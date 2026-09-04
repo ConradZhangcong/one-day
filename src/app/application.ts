@@ -45,6 +45,7 @@ export function getApplicationServices(): Promise<ApplicationServices> {
     });
     const backup = new BackupService(unitOfWork, {
       onRestored: () => void reminderRuntime.reconcile(),
+      onCleared: () => void reminderRuntime.reconcile(),
     });
     return {
       timeZoneSettings: new TimeZoneSettingsService(unitOfWork),

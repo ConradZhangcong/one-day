@@ -11,6 +11,7 @@ const serviceMocks = vi.hoisted(() => ({
   createExport: vi.fn(),
   inspect: vi.fn(),
   restore: vi.fn(),
+  clearLocalData: vi.fn(),
 }));
 
 const toastMocks = vi.hoisted(() => ({
@@ -82,6 +83,7 @@ describe('BackupRestoreCard', () => {
     serviceMocks.createExport.mockResolvedValue(createMinimalBackup());
     serviceMocks.inspect.mockReturnValue(inspection());
     serviceMocks.restore.mockResolvedValue(inspection().summary);
+    serviceMocks.clearLocalData.mockResolvedValue(undefined);
   });
 
   it('downloads a versioned JSON file and releases the object URL', async () => {
@@ -149,5 +151,61 @@ describe('BackupRestoreCard', () => {
       ),
     );
     expect(screen.queryByText('private task content')).not.toBeInTheDocument();
+  });
+
+  it('shows the permanent deletion scope and cancellation performs no clear', async () => {
+    const user = userEvent.setup();
+    render(<BackupRestoreCard />);
+
+    expect(screen.getByText('危险操作')).toBeVisible();
+    expect(screen.getByText(/建议先导出完整备份/)).toBeVisible();
+    await user.click(screen.getByRole('button', { name: '清空本地数据' }));
+
+    expect(screen.getByText('确认清空此设备上的全部数据？')).toBeVisible();
+    expect(serviceMocks.clearLocalData).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: '取消，保留数据' }));
+    expect(serviceMocks.clearLocalData).not.toHaveBeenCalled();
+  });
+
+  it('confirms a clear only once and discards a pending restore inspection', async () => {
+    let resolveClear: (() => void) | undefined;
+    serviceMocks.clearLocalData.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveClear = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+    render(<BackupRestoreCard />);
+    await user.upload(screen.getByLabelText('选择 One Day JSON 备份'), backupFile());
+    await screen.findByText('备份摘要');
+    await user.click(screen.getByRole('button', { name: '清空本地数据' }));
+    const confirm = screen.getByRole('button', { name: '确认清空全部数据' });
+    await user.dblClick(confirm);
+
+    expect(serviceMocks.clearLocalData).toHaveBeenCalledOnce();
+    expect(screen.getByRole('button', { name: '正在清空…' })).toBeDisabled();
+    resolveClear?.();
+    await waitFor(() =>
+      expect(toastMocks.success).toHaveBeenCalledWith(
+        '本地数据已清空，One Day 已恢复为全新状态。',
+      ),
+    );
+    expect(screen.queryByText('备份摘要')).not.toBeInTheDocument();
+  });
+
+  it('reports clear failure without claiming data was deleted', async () => {
+    serviceMocks.clearLocalData.mockRejectedValue(new Error('storage failed'));
+    const user = userEvent.setup();
+    render(<BackupRestoreCard />);
+    await user.click(screen.getByRole('button', { name: '清空本地数据' }));
+    await user.click(screen.getByRole('button', { name: '确认清空全部数据' }));
+
+    await waitFor(() =>
+      expect(toastMocks.error).toHaveBeenCalledWith('清空失败，原数据保持不变。'),
+    );
+    expect(toastMocks.success).not.toHaveBeenCalledWith(
+      '本地数据已清空，One Day 已恢复为全新状态。',
+    );
   });
 });

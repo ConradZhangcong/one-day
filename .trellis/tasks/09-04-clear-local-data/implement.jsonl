@@ -1,0 +1,4 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Atomic Dexie full-table reset, rollback, and system-data rules"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Accessible destructive confirmation and component boundaries"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Application service, live-query invalidation, and settings refresh contracts"}

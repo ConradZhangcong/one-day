@@ -1,4 +1,4 @@
-import { backupDataV1Schema, type BackupDataV1 } from '../../domain';
+import { backupDataV1Schema, type BackupDataV1, type TimeZoneId } from '../../domain';
 import type {
   BackupRepository,
   KeyValueRepository,
@@ -21,6 +21,7 @@ import {
   toSingleTaskRecord,
   toTagRecord,
 } from './projections';
+import { createInboxList } from './system-data';
 
 interface SnapshotRepositories {
   readonly singleTasks: SingleTaskRepository;
@@ -81,7 +82,7 @@ export class DexieBackupRepository implements BackupRepository {
 
   async replaceAll(data: BackupDataV1): Promise<void> {
     const decoded = backupDataV1Schema.parse(data);
-    await Promise.all(this.db.tables.map((table) => table.clear()));
+    await this.clearTables();
 
     const settings = [
       {
@@ -122,5 +123,18 @@ export class DexieBackupRepository implements BackupRepository {
     if (decoded.reminders.length > 0) {
       await this.db.reminders.bulkAdd(decoded.reminders);
     }
+  }
+
+  async clearAll(applicationTimeZone: TimeZoneId): Promise<void> {
+    await this.clearTables();
+    await this.db.settings.add({
+      key: APPLICATION_TIME_ZONE_KEY,
+      value: applicationTimeZone,
+    });
+    await this.db.lists.add(toListRecord(createInboxList()));
+  }
+
+  private async clearTables(): Promise<void> {
+    await Promise.all(this.db.tables.map((table) => table.clear()));
   }
 }

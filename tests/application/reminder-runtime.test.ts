@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  BackupService,
   ReminderRuntime,
   ReminderService,
   type ReminderDelivery,
@@ -155,6 +156,57 @@ describe('ReminderRuntime', () => {
         now = '2026-08-13T01:00:30Z';
         window.dispatchEvent(new Event('focus'));
         await vi.waitFor(() => expect(delivered).toEqual(['task:clock']));
+      } finally {
+        runtime.stop();
+      }
+    } finally {
+      await context.cleanup();
+    }
+  });
+
+  it('cancels a scheduled timer after local data is cleared', async () => {
+    const context = await createTestDatabase();
+    try {
+      const unitOfWork = new DexieUnitOfWork(context.db);
+      await unitOfWork.repositories.settings.set('applicationTimeZone', 'Asia/Shanghai');
+      await unitOfWork.repositories.singleTasks.save(
+        createSingleTask({
+          id: 'task:future',
+          plannedAt: decodeSchedulePoint({
+            kind: 'timed',
+            localDateTime: '2026-08-13T10:00',
+          }),
+          deadlineAt: { kind: 'none' },
+        }),
+      );
+      await new ReminderService(unitOfWork, () => 'future').create({
+        ownerKind: 'task',
+        ownerId: 'task:future',
+        target: 'planned',
+        offsetMinutes: 0,
+      });
+      const clearTimer = vi.fn();
+      const deliver = vi.fn();
+      const runtime = new ReminderRuntime(unitOfWork, {
+        now: () => '2026-08-13T01:00:00Z',
+        isVisible: () => true,
+        setTimer: () => 11,
+        clearTimer,
+        deliver,
+      });
+      try {
+        runtime.start();
+        await runtime.reconcile();
+        clearTimer.mockClear();
+        const service = new BackupService(unitOfWork, {
+          detectTimeZone: () => 'Asia/Shanghai',
+          onCleared: () => void runtime.reconcile(),
+        });
+
+        await service.clearLocalData();
+
+        await vi.waitFor(() => expect(clearTimer).toHaveBeenCalledWith(11));
+        expect(deliver).not.toHaveBeenCalled();
       } finally {
         runtime.stop();
       }

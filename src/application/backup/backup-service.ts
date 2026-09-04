@@ -3,6 +3,7 @@ import { Temporal } from 'temporal-polyfill';
 import {
   decodeInstant,
   decodeOneDayBackup,
+  decodeTimeZoneId,
   DomainError,
   DomainErrorCode,
   ONE_DAY_BACKUP_FORMAT,
@@ -33,7 +34,9 @@ export interface BackupInspection {
 
 export interface BackupServiceDependencies {
   readonly now?: () => string;
+  readonly detectTimeZone?: () => string;
   readonly onRestored?: () => void;
+  readonly onCleared?: () => void;
 }
 
 function summarize(backup: OneDayBackupV1): BackupSummary {
@@ -55,12 +58,16 @@ function summarize(backup: OneDayBackupV1): BackupSummary {
 
 export class BackupService {
   private readonly now: () => string;
+  private readonly detectTimeZone: () => string;
 
   constructor(
     private readonly unitOfWork: UnitOfWork,
     private readonly dependencies: BackupServiceDependencies = {},
   ) {
     this.now = dependencies.now ?? (() => Temporal.Now.instant().toString());
+    this.detectTimeZone =
+      dependencies.detectTimeZone ??
+      (() => Intl.DateTimeFormat().resolvedOptions().timeZone);
   }
 
   async createExport(): Promise<OneDayBackupV1> {
@@ -95,5 +102,11 @@ export class BackupService {
     );
     this.dependencies.onRestored?.();
     return summarize(backup);
+  }
+
+  async clearLocalData(): Promise<void> {
+    const applicationTimeZone = decodeTimeZoneId(this.detectTimeZone());
+    await this.unitOfWork.write(({ backup }) => backup.clearAll(applicationTimeZone));
+    this.dependencies.onCleared?.();
   }
 }

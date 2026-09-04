@@ -1,4 +1,11 @@
-import { DatabaseBackup, Download, FileJson, TriangleAlert, Upload } from 'lucide-react';
+import {
+  DatabaseBackup,
+  Download,
+  FileJson,
+  Trash2,
+  TriangleAlert,
+  Upload,
+} from 'lucide-react';
 import { useState, type ChangeEvent } from 'react';
 import { toast } from 'sonner';
 
@@ -109,7 +116,10 @@ export function BackupRestoreCard() {
   const [exporting, setExporting] = useState(false);
   const [inspecting, setInspecting] = useState(false);
   const [restoring, setRestoring] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const busy = exporting || inspecting || restoring || clearing;
 
   const exportData = async () => {
     setExporting(true);
@@ -147,7 +157,7 @@ export function BackupRestoreCard() {
   const clearInspection = () => {
     setInspection(undefined);
     setFileName(undefined);
-    setConfirmOpen(false);
+    setRestoreConfirmOpen(false);
   };
 
   const restoreData = async () => {
@@ -159,10 +169,29 @@ export function BackupRestoreCard() {
       clearInspection();
       toast.success('备份已恢复，页面数据和提醒已重新加载。');
     } catch (error) {
-      setConfirmOpen(false);
+      setRestoreConfirmOpen(false);
       toast.error(backupErrorMessage(error));
     } finally {
       setRestoring(false);
+    }
+  };
+
+  const clearLocalData = async () => {
+    if (clearing) return;
+    setClearing(true);
+    try {
+      const services = await getApplicationServices();
+      await services.backup.clearLocalData();
+      setInspection(undefined);
+      setFileName(undefined);
+      setRestoreConfirmOpen(false);
+      setClearConfirmOpen(false);
+      toast.success('本地数据已清空，One Day 已恢复为全新状态。');
+    } catch {
+      setClearConfirmOpen(false);
+      toast.error('清空失败，原数据保持不变。');
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -191,7 +220,7 @@ export function BackupRestoreCard() {
                 下载版本化 JSON，包含当前设备上的全部可恢复数据。
               </p>
             </div>
-            <Button disabled={exporting || restoring} onClick={() => void exportData()}>
+            <Button disabled={busy} onClick={() => void exportData()}>
               <Download data-icon="inline-start" />
               {exporting ? '正在生成…' : '导出备份'}
             </Button>
@@ -209,7 +238,7 @@ export function BackupRestoreCard() {
               <Input
                 type="file"
                 accept="application/json,.json"
-                disabled={inspecting || restoring}
+                disabled={busy}
                 onChange={(event) => void inspectFile(event)}
               />
             </label>
@@ -226,13 +255,13 @@ export function BackupRestoreCard() {
             </p>
             <Summary summary={inspection.summary} />
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button variant="outline" disabled={restoring} onClick={clearInspection}>
+              <Button variant="outline" disabled={busy} onClick={clearInspection}>
                 取消
               </Button>
               <Button
                 variant="destructive"
-                disabled={restoring}
-                onClick={() => setConfirmOpen(true)}
+                disabled={busy}
+                onClick={() => setRestoreConfirmOpen(true)}
               >
                 <Upload data-icon="inline-start" />
                 恢复此备份
@@ -240,9 +269,37 @@ export function BackupRestoreCard() {
             </div>
           </div>
         )}
+
+        <section className="grid gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+          <div className="flex items-start gap-3">
+            <TriangleAlert className="mt-0.5 size-5 text-destructive" aria-hidden />
+            <div>
+              <h2 className="font-medium text-destructive">危险操作</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                清空会永久删除此设备上的任务、重复系列、历史、清单、标签、提醒、长期目标和应用偏好，且无法撤销。
+              </p>
+              <p className="mt-2 text-sm font-medium">建议先导出完整备份并妥善保存。</p>
+            </div>
+          </div>
+          <div>
+            <Button
+              variant="destructive"
+              disabled={busy}
+              onClick={() => setClearConfirmOpen(true)}
+            >
+              <Trash2 data-icon="inline-start" />
+              清空本地数据
+            </Button>
+          </div>
+        </section>
       </CardContent>
 
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialog
+        open={restoreConfirmOpen}
+        onOpenChange={(open) => {
+          if (!restoring) setRestoreConfirmOpen(open);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogMedia>
@@ -262,6 +319,35 @@ export function BackupRestoreCard() {
               onClick={() => void restoreData()}
             >
               {restoring ? '正在恢复…' : '确认替换并恢复'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={clearConfirmOpen}
+        onOpenChange={(open) => {
+          if (!clearing) setClearConfirmOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogMedia>
+              <TriangleAlert aria-hidden />
+            </AlertDialogMedia>
+            <AlertDialogTitle>确认清空此设备上的全部数据？</AlertDialogTitle>
+            <AlertDialogDescription>
+              所有任务、重复系列、历史、清单、标签、提醒、长期目标和应用偏好都将永久删除。浏览器通知权限不会改变。此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={clearing}>取消，保留数据</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={clearing}
+              onClick={() => void clearLocalData()}
+            >
+              {clearing ? '正在清空…' : '确认清空全部数据'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
