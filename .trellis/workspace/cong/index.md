@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 6
-- **Last Active**: 2026-09-03
+- **Total Sessions**: 7
+- **Last Active**: 2026-09-04
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~137 | Active |
+| `journal-1.md` | ~158 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 7 | 2026-09-04 | 增加清空本地数据功能 | `feaccfc` | `main` |
 | 6 | 2026-09-03 | 优化重复任务列表展示 | `99caa4d` | `main` |
 | 5 | 2026-09-03 | 完成 PWA 发布加固 | `1f3c046`, `a1c73b7` | `codex/todo-calendar-mvp` |
 | 4 | 2026-09-02 | 完成本地备份与恢复 | `bbb8e62`, `4b44b3d` | `codex/todo-calendar-mvp` |

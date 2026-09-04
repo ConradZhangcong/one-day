@@ -135,3 +135,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 7: 增加清空本地数据功能
+
+**Date**: 2026-09-04
+**Task**: 增加清空本地数据功能
+**Branch**: `main`
+
+### Summary
+
+实现设置页清空本地数据危险操作：原子清空全部 IndexedDB 表后重建系统收件箱与设备时区，恢复默认提醒设置并重新协调提醒；补充事务回滚、重复提交、设置刷新和计时器取消测试，完整质量门禁通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `feaccfc` | (see git log) |
+
+### Status
+
+[OK] **Completed**
