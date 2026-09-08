@@ -143,12 +143,10 @@ tests/
 
 依赖方向保持为：界面 → 应用用例 → 领域/仓储端口 → 基础设施适配器。React 组件不得直接读写 Dexie 表。
 
-## Trellis 开发流程
+## 项目文档
 
-项目使用 Trellis 管理需求、技术设计、实施阶段和项目规范：
+- [文档导航](docs/README.md)：需求、发布检查和原型入口。
+- [产品需求文档](docs/需求文档.md)：当前功能规则、范围变更、实现限制与验收映射。
+- [发布检查清单](docs/release-checklist.md)：自动化和真机发布门禁。
 
-- `.trellis/tasks/archive/2026-09/08-12-todo-calendar-app/`：MVP 的 PRD、设计、研究和实施计划
-- `.trellis/spec/`：项目实际编码与检查规范
-- `.trellis/workflow.md`：规划、实施、检查和收尾流程
-
-开始修改前请阅读根目录 `AGENTS.md` 以及本次变更涉及层的 `.trellis/spec/*/index.md`。
+项目已移除 Trellis 工作流及相关配置，历史任务与规范可从 Git 历史查阅。
