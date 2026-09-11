@@ -127,6 +127,7 @@ describe('TodoPage rows', () => {
 
     renderPage('/today', snapshot({ tasks: [task], occurrences: [completedOccurrence] }));
 
+    await user.click(screen.getByText('今天完成 · 2'));
     expect(screen.getAllByText('✓ 已完成')).toHaveLength(2);
     expect(screen.getByText('完成于 09:05')).toBeVisible();
     expect(screen.getByText('完成于 10:10')).toBeVisible();
@@ -144,6 +145,30 @@ describe('TodoPage rows', () => {
     expect(screen.queryByRole('button', { name: '完成本次' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '跳过本次' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '仅本次改期' })).not.toBeInTheDocument();
+  });
+
+  it('opens secondary task actions from the compact menu', async () => {
+    const user = userEvent.setup();
+    renderPage('/inbox', snapshot({ tasks: [createSingleTask({ title: '菜单任务' })] }));
+    expect(screen.getByRole('button', { name: '完成菜单任务' })).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: '删除菜单任务' }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '更多操作：菜单任务' }));
+    expect(screen.getByRole('button', { name: '删除菜单任务' })).toBeVisible();
+  });
+
+  it('opens a centered task composer without duplicating the quick input id', async () => {
+    const user = userEvent.setup();
+    renderPage('/today', snapshot());
+    await user.click(screen.getByRole('button', { name: '添加任务' }));
+    expect(screen.getByRole('dialog', { name: '添加任务' })).toBeVisible();
+    expect(document.querySelectorAll('#quick-add-title')).toHaveLength(1);
+    expect(
+      within(screen.getByRole('dialog')).getByRole('textbox', { name: '任务标题' }),
+    ).toBeVisible();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('shows only the nearest filtered occurrence for each series in upcoming', () => {

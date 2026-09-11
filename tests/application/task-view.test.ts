@@ -324,6 +324,53 @@ describe('projectTasks', () => {
     ).toEqual(['task:earlier', 'series:a:today', 'task:later']);
   });
 
+  it('uses actual local completion dates and includes recurring history', () => {
+    const done = createSingleTask({
+      id: 'done',
+      state: 'completed',
+      completedAt: decodeInstant('2026-08-12T17:00:00Z'),
+      plannedAt: { kind: 'none' },
+      deadlineAt: { kind: 'none' },
+    });
+    const old = createSingleTask({
+      id: 'old',
+      state: 'completed',
+      completedAt: decodeInstant('2026-08-12T01:00:00Z'),
+      plannedAt: { kind: 'allDay', date: today },
+      deadlineAt: { kind: 'none' },
+    });
+    const recurring = occurrence('history', 'series', '2026-08-01', {
+      state: 'completed',
+      completedAt: decodeInstant('2026-08-13T02:00:00Z'),
+      virtual: false,
+    });
+    expect(
+      projectTodoRows(
+        [done, old],
+        [recurring],
+        'today',
+        today,
+        noFilters,
+        undefined,
+        decodeTimeZoneId('Asia/Shanghai'),
+      ).map((row) => row.key),
+    ).toEqual(['history', 'done']);
+    expect(
+      projectTodoRows([], [recurring], 'completed', today, noFilters).map(
+        (row) => row.key,
+      ),
+    ).toEqual(['history']);
+    expect(
+      projectTodoRows(
+        [done],
+        [],
+        'inbox',
+        today,
+        taskFiltersFromSearchParams(new URLSearchParams('state=all')),
+      ),
+    ).toHaveLength(1);
+  });
+
   it('formats a completed instant in the configured application time zone', () => {
     expect(
       formatCompletedAt(

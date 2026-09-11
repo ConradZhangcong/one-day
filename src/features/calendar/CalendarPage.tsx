@@ -1,3 +1,4 @@
+import { PageActions } from '@/app/PageActions';
 import { ChevronLeft, ChevronRight, Repeat2 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Temporal } from 'temporal-polyfill';
@@ -24,7 +25,7 @@ import { useTodoSnapshot } from '@/features/todos/useTodoSnapshot';
 
 type CalendarView = 'agenda' | 'day' | 'week' | 'month';
 const VIEW_LABEL: Record<CalendarView, string> = {
-  agenda: '议程',
+  agenda: '日程',
   day: '日',
   week: '周',
   month: '月',
@@ -55,8 +56,9 @@ function rangeFor(view: CalendarView, anchor: LocalDate) {
 }
 
 function itemTime(item: CalendarItemView): string {
-  if (item.kind === 'deadline' && item.schedule.kind === 'allDay') return '截止';
-  return item.schedule.kind === 'allDay' ? '全天' : item.schedule.localDateTime.slice(11);
+  const time =
+    item.schedule.kind === 'allDay' ? '全天' : item.schedule.localDateTime.slice(11);
+  return `${item.kind === 'deadline' ? '截止 ' : ''}${time}`;
 }
 
 function CalendarItem({
@@ -70,8 +72,16 @@ function CalendarItem({
     <button className={`calendar-item kind-${item.kind}`} onClick={onOpen}>
       <span className="calendar-item-time">{itemTime(item)}</span>
       <strong>{item.title}</strong>
+      {item.kind === 'planned' && item.deadlineAt && item.deadlineAt.kind !== 'none' ? (
+        <small>
+          截止{' '}
+          {item.deadlineAt.kind === 'allDay'
+            ? item.deadlineAt.date
+            : item.deadlineAt.localDateTime.replace('T', ' ')}
+        </small>
+      ) : null}
       {item.ownerKind === 'occurrence' ? (
-        <Repeat2 className="size-3.5" aria-label="重复实例" />
+        <Repeat2 className="size-3.5" aria-label="重复事项" />
       ) : null}
     </button>
   );
@@ -115,7 +125,10 @@ export function CalendarPage() {
   const priority = parsedPriority.success ? parsedPriority.data : undefined;
   const stateValue = searchParams.get('state');
   const state =
-    stateValue === 'completed' || stateValue === 'skipped' || stateValue === 'pending'
+    stateValue === 'all' ||
+    stateValue === 'completed' ||
+    stateValue === 'skipped' ||
+    stateValue === 'pending'
       ? stateValue
       : undefined;
   const calendar = useLiveQuery(
@@ -162,6 +175,9 @@ export function CalendarPage() {
       <header className="calendar-header">
         <div>
           <h1>日历</h1>
+          <p className="text-sm text-muted-foreground">
+            {range.start.toString()} — {range.end.subtract({ days: 1 }).toString()}
+          </p>
         </div>
         <div className="calendar-actions">
           <Button
@@ -184,12 +200,14 @@ export function CalendarPage() {
             <ChevronRight />
           </Button>
         </div>
+        <PageActions defaultPlannedDate={anchor} />
       </header>
       <div className="calendar-toolbar">
         <div className="calendar-view-switch" aria-label="日历视图">
           {(Object.keys(VIEW_LABEL) as CalendarView[]).map((item) => (
             <Button
               key={item}
+              aria-pressed={view === item}
               variant={view === item ? 'default' : 'ghost'}
               size="sm"
               onClick={() => switchView(item)}
@@ -198,52 +216,69 @@ export function CalendarPage() {
             </Button>
           ))}
         </div>
-        <div className="calendar-filters">
-          <SimpleSelect
-            allowClear
-            ariaLabel="日历清单筛选"
-            placeholder="全部清单"
-            value={listId}
-            options={(todoSnapshot?.lists ?? []).map((item) => ({
-              value: item.id,
-              label: item.name,
-            }))}
-            onChange={(value) =>
-              setQuery('list', typeof value === 'string' ? value : undefined)
-            }
-          />
-          <SimpleSelect
-            allowClear
-            ariaLabel="日历优先级筛选"
-            placeholder="全部优先级"
-            value={priority}
-            options={[
-              { value: 'none', label: '无优先级' },
-              { value: 'low', label: '低' },
-              { value: 'medium', label: '中' },
-              { value: 'high', label: '高' },
-            ]}
-            onChange={(value) =>
-              setQuery('priority', typeof value === 'string' ? value : undefined)
-            }
-          />
-          <SimpleSelect
-            ariaLabel="日历状态筛选"
-            value={state ?? 'pending'}
-            options={[
-              { value: 'pending', label: '待处理' },
-              { value: 'completed', label: '已完成' },
-              { value: 'skipped', label: '已跳过' },
-            ]}
-            onChange={(value) =>
-              setQuery(
-                'state',
-                typeof value === 'string' && value !== 'pending' ? value : undefined,
-              )
-            }
-          />
-        </div>
+        <details className="filter-panel">
+          <summary>筛选{listId || priority || state ? ' · 已启用' : ''}</summary>
+          <div className="calendar-filters">
+            <SimpleSelect
+              allowClear
+              ariaLabel="日历清单筛选"
+              placeholder="全部清单"
+              value={listId}
+              options={(todoSnapshot?.lists ?? []).map((item) => ({
+                value: item.id,
+                label: item.name,
+              }))}
+              onChange={(value) =>
+                setQuery('list', typeof value === 'string' ? value : undefined)
+              }
+            />
+            <SimpleSelect
+              allowClear
+              ariaLabel="日历优先级筛选"
+              placeholder="全部优先级"
+              value={priority}
+              options={[
+                { value: 'none', label: '无优先级' },
+                { value: 'low', label: '低' },
+                { value: 'medium', label: '中' },
+                { value: 'high', label: '高' },
+              ]}
+              onChange={(value) =>
+                setQuery('priority', typeof value === 'string' ? value : undefined)
+              }
+            />
+            <SimpleSelect
+              ariaLabel="日历状态筛选"
+              value={state ?? 'pending'}
+              options={[
+                { value: 'all', label: '全部状态' },
+                { value: 'pending', label: '待处理' },
+                { value: 'completed', label: '已完成' },
+                { value: 'skipped', label: '已跳过' },
+              ]}
+              onChange={(value) =>
+                setQuery(
+                  'state',
+                  typeof value === 'string' && value !== 'pending' ? value : undefined,
+                )
+              }
+            />
+            <Button
+              variant="ghost"
+              onClick={() => {
+                const next = new URLSearchParams(searchParams);
+                ['list', 'priority', 'state'].forEach((key) => next.delete(key));
+                setSearchParams(next, { replace: true });
+              }}
+            >
+              清除全部筛选
+            </Button>
+          </div>
+        </details>
       </div>
+      <Button variant="ghost" onClick={() => navigate('/recovery')}>
+        查看待恢复事项
+      </Button>
       {calendar === undefined || todoSnapshot === undefined ? (
         <Skeleton className="h-[480px] w-full" />
       ) : calendar.items.length === 0 && view === 'agenda' ? (
@@ -279,6 +314,10 @@ export function CalendarPage() {
       ) : view === 'day' ? (
         <div className="day-calendar">
           <h2>{range.start.toString()}</h2>
+          <p className="text-sm text-muted-foreground">按时间排序，不代表持续时长</p>
+          {itemsFor(range.start).length === 0 ? (
+            <EmptyState description="这一天没有安排" />
+          ) : null}
           {itemsFor(range.start).map((item) => (
             <CalendarItem key={item.key} item={item} onOpen={() => setOpened(item)} />
           ))}
@@ -292,9 +331,7 @@ export function CalendarPage() {
                 <header>
                   <span>周{WEEKDAY[day.dayOfWeek - 1]}</span>
                   <strong>{day.day}</strong>
-                  <Badge variant="secondary">
-                    {items.filter((item) => item.kind === 'planned').length}
-                  </Badge>
+                  <Badge variant="secondary">{items.length}</Badge>
                 </header>
                 <div>
                   {items.map((item) => (
@@ -311,6 +348,11 @@ export function CalendarPage() {
         </div>
       ) : (
         <div className="month-calendar">
+          {WEEKDAY.map((label) => (
+            <div className="month-weekday" key={label}>
+              周{label}
+            </div>
+          ))}
           {days.map((day) => {
             const items = itemsFor(day);
             const inMonth = day.month === Temporal.PlainDate.from(anchor).month;
@@ -320,10 +362,19 @@ export function CalendarPage() {
                 key={day.toString()}
               >
                 <button
+                  aria-label={day.toString()}
+                  aria-current={day.toString() === today ? 'date' : undefined}
                   className="month-date"
                   onClick={() => switchView('day', day.toString())}
                 >
                   {day.day}
+                </button>
+                <button
+                  className="month-mobile-count"
+                  onClick={() => switchView('day', day.toString())}
+                  aria-label={`${day.toString()}，${items.length}项`}
+                >
+                  {items.length ? `${items.length}项` : '—'}
                 </button>
                 {items.slice(0, 3).map((item) => (
                   <CalendarItem

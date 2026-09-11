@@ -199,7 +199,7 @@ describe('TodoService', () => {
     }
   });
 
-  it('merges today occurrence history with the future window without duplicate keys', async () => {
+  it('merges older occurrence history with the future window without duplicate keys', async () => {
     const context = await createTestDatabase();
     try {
       const unitOfWork = new DexieUnitOfWork(context.db);
@@ -214,7 +214,7 @@ describe('TodoService', () => {
         listId: INBOX_LIST_ID,
         tagNames: [],
         priority: 'high',
-        plannedAt: decodeSchedulePoint({ kind: 'allDay', date: '2026-08-13' }),
+        plannedAt: decodeSchedulePoint({ kind: 'allDay', date: '2026-08-01' }),
         deadlineAt: decodeSchedulePoint({ kind: 'none' }),
         rule: { frequency: 'daily', interval: 1, end: { kind: 'never' } },
       });

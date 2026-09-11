@@ -33,7 +33,7 @@ export interface TaskFilters {
   readonly listId?: string | undefined;
   readonly tagIds: readonly string[];
   readonly priority?: Priority | undefined;
-  readonly state?: SingleTask['state'] | undefined;
+  readonly state?: SingleTask['state'] | 'all' | undefined;
 }
 
 interface TodoRowBase {
@@ -88,7 +88,7 @@ export function taskFiltersFromSearchParams(searchParams: URLSearchParams): Task
     listId: listValue === '' ? undefined : listValue,
     tagIds,
     priority: parsedPriority.success ? parsedPriority.data : undefined,
-    state: isTaskState(stateValue) ? stateValue : undefined,
+    state: stateValue === 'all' || isTaskState(stateValue) ? stateValue : undefined,
   };
 }
 
@@ -118,9 +118,10 @@ function itemDates(item: Pick<FilterableItem, 'plannedAt' | 'deadlineAt'>): Loca
 function matchesDefaultState(
   state: SingleTask['state'],
   kind: TodoViewKind,
-  selectedState: SingleTask['state'] | undefined,
+  selectedState: SingleTask['state'] | 'all' | undefined,
 ): boolean {
   if (kind === 'completed' && state === 'pending') return false;
+  if (selectedState === 'all') return true;
   if (selectedState !== undefined) return state === selectedState;
   if (kind === 'today') return state === 'pending' || state === 'completed';
   if (kind === 'completed') return true;
@@ -243,9 +244,6 @@ export function projectOccurrences(
   filters: TaskFilters,
   routeListId?: string,
 ): TaskOccurrenceView[] {
-  // The completed route has never been an occurrence-history view. The Todo snapshot
-  // deliberately loads only today's history, so showing it there would be incomplete.
-  if (kind === 'completed') return [];
   const filtered = occurrences
     .filter((item) => matchesItem(item, kind, today, filters, routeListId))
     .sort((left, right) => compareRows(toOccurrenceRow(left), toOccurrenceRow(right)));
@@ -266,13 +264,36 @@ export function projectTodoRows(
   today: LocalDate,
   filters: TaskFilters,
   routeListId?: string,
+  timeZone?: TimeZoneId,
 ): TodoRow[] {
-  return [
-    ...projectTasks(tasks, kind, today, filters, routeListId).map(toTaskRow),
-    ...projectOccurrences(occurrences, kind, today, filters, routeListId).map(
-      toOccurrenceRow,
-    ),
-  ].sort(compareRows);
+  // Today needs actual completion dates, independently of the original schedule.
+  const candidates = [
+    ...tasks.map(toTaskRow),
+    ...(kind === 'today'
+      ? occurrences
+      : projectOccurrences(occurrences, kind, today, filters, routeListId)
+    ).map(toOccurrenceRow),
+  ];
+  return candidates
+    .filter((row) => {
+      if (kind === 'today' && row.state === 'completed' && timeZone) {
+        return (
+          row.completedAt !== undefined &&
+          instantToLocalDate(row.completedAt, timeZone) === today &&
+          matchesItem(row, 'completed', today, filters, routeListId)
+        );
+      }
+      return (
+        matchesItem(row, kind, today, filters, routeListId) &&
+        !(kind === 'today' && row.state === 'completed' && timeZone)
+      );
+    })
+    .sort(
+      kind === 'completed'
+        ? (a, b) =>
+            (b.completedAt ?? '').localeCompare(a.completedAt ?? '') || compareRows(a, b)
+        : compareRows,
+    );
 }
 
 export function formatSchedule(

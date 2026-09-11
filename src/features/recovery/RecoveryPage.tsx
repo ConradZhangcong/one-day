@@ -1,7 +1,8 @@
+import { PageActions } from '@/app/PageActions';
 import { Check, Clock3, Forward, Info, Repeat2, TriangleAlert } from 'lucide-react';
+import { Temporal } from 'temporal-polyfill';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 
 import { getApplicationServices } from '@/app/application';
@@ -20,6 +21,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  decodeSchedulePoint,
   schedulePointLocalDate,
   tryParseOccurrenceKey,
   validateScheduleOrder,
@@ -29,8 +31,6 @@ import { ScheduleFields } from '@/features/todos/ScheduleFields';
 import { formatSchedule } from '@/features/todos/task-view';
 
 import { useClockTick } from './useClockTick';
-
-type RecoveryKind = 'missed' | 'overdue';
 
 interface RescheduleDialogProps {
   readonly item: RecoveryTaskView;
@@ -96,7 +96,7 @@ function RescheduleDialog({ item, onCancel, onSaved, snapshot }: RescheduleDialo
           </DialogTitle>
           <DialogDescription>
             {recurring
-              ? '只修改当前活跃实例，不改变整个系列的后续规则相位。'
+              ? '只调整这一次的时间，后续仍按原周期安排。'
               : '只有保存后才会修改原任务时间。'}
           </DialogDescription>
         </DialogHeader>
@@ -106,6 +106,33 @@ function RescheduleDialog({ item, onCancel, onSaved, snapshot }: RescheduleDialo
             <AlertTitle>原时间不会被静默移到今天</AlertTitle>
             <AlertDescription>当前安排：{formatSchedule(item.task)}。</AlertDescription>
           </Alert>
+          <div className="flex gap-2">
+            {[0, 1].map((offset) => (
+              <Button
+                key={offset}
+                variant="outline"
+                disabled={saving}
+                onClick={() => {
+                  const date = Temporal.PlainDate.from(snapshot.today)
+                    .add({ days: offset })
+                    .toString();
+                  setPlannedAt(
+                    decodeSchedulePoint(
+                      plannedAt.kind === 'timed'
+                        ? {
+                            kind: 'timed',
+                            localDateTime: `${date}T${plannedAt.localDateTime.slice(11)}`,
+                          }
+                        : { kind: 'allDay', date },
+                    ),
+                  );
+                  setSaveError(undefined);
+                }}
+              >
+                {offset === 0 ? '计划今天' : '计划明天'}
+              </Button>
+            ))}
+          </div>
           <ScheduleFields
             label="计划"
             value={plannedAt}
@@ -160,11 +187,9 @@ function RescheduleDialog({ item, onCancel, onSaved, snapshot }: RescheduleDialo
 function RecoveryTaskCard({
   busy,
   item,
-  kind,
   onAction,
 }: {
   readonly item: RecoveryTaskView;
-  readonly kind: RecoveryKind;
   readonly busy: boolean;
   readonly onAction: (
     item: RecoveryTaskView,
@@ -172,31 +197,25 @@ function RecoveryTaskCard({
   ) => void;
 }) {
   const recurring = tryParseOccurrenceKey(item.task.id) !== undefined;
+  const kind = item.status.overdue ? 'overdue' : 'missed';
   return (
     <article className={`recovery-card recovery-${kind}`}>
       <div className="recovery-card-copy">
-        <span className="task-state">
-          {kind === 'overdue' ? '⚠ 已逾期' : '◷ 计划已错过'}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={kind === 'overdue' ? 'destructive' : 'secondary'}>
+            {kind === 'overdue' ? <TriangleAlert /> : <Clock3 />}
+            {kind === 'overdue' ? '已逾期' : '错过计划'}
+          </Badge>
+          {kind === 'overdue' && item.status.missedPlan ? (
+            <span className="text-xs text-muted-foreground">计划也已错过</span>
+          ) : null}
+        </div>
         <h3>{item.task.title}</h3>
         <p>{formatSchedule(item.task)}</p>
         <div className="recovery-flags flex flex-wrap gap-2">
-          {kind === 'overdue' ? (
-            <Badge variant="outline">
-              <TriangleAlert /> 保留原截止时间
-            </Badge>
-          ) : null}
-          {kind === 'missed' ? (
-            <Badge variant="outline">
-              <Clock3 /> 保留原计划时间
-            </Badge>
-          ) : null}
-          {kind === 'overdue' && item.status.missedPlan ? (
-            <Badge variant="secondary">计划也已错过</Badge>
-          ) : null}
           {recurring ? (
             <Badge variant="secondary">
-              <Repeat2 /> 当前重复实例 · 仅本次
+              <Repeat2 /> 重复事项 · 仅本次
             </Badge>
           ) : null}
         </div>
@@ -232,9 +251,6 @@ function RecoveryTaskCard({
 
 export function RecoveryPage() {
   const applicationRevision = useApplicationRevision();
-  const [searchParams] = useSearchParams();
-  const kind: RecoveryKind =
-    searchParams.get('kind') === 'overdue' ? 'overdue' : 'missed';
   const [busyTaskId, setBusyTaskId] = useState<string>();
   const [rescheduling, setRescheduling] = useState<RecoveryTaskView>();
   const clockTick = useClockTick();
@@ -264,49 +280,35 @@ export function RecoveryPage() {
     }
   };
 
-  const items =
-    snapshot === undefined
-      ? []
-      : kind === 'overdue'
-        ? snapshot.overdueItems
-        : snapshot.missedPlanItems;
+  // The service groups are mutually exclusive; overdue items take priority.
+  // Legacy ?kind= links intentionally show the same combined list.
+  const items = snapshot ? [...snapshot.overdueItems, ...snapshot.missedPlanItems] : [];
 
   return (
     <section className="feature-page recovery-page">
       <header className="feature-header">
         <div>
-          <h1>恢复</h1>
+          <h1>待恢复</h1>
         </div>
+        <PageActions />
       </header>
-      <nav className="recovery-tabs" aria-label="恢复分组">
-        <Link
-          className={kind === 'missed' ? 'active' : undefined}
-          aria-current={kind === 'missed' ? 'page' : undefined}
-          to="/recovery?kind=missed"
-        >
-          错过计划{snapshot === undefined ? '' : ` ${snapshot.missedPlanItems.length}`}
-        </Link>
-        <Link
-          className={kind === 'overdue' ? 'active' : undefined}
-          aria-current={kind === 'overdue' ? 'page' : undefined}
-          to="/recovery?kind=overdue"
-        >
-          已逾期{snapshot === undefined ? '' : ` ${snapshot.overdueItems.length}`}
-        </Link>
-      </nav>
+      {snapshot !== undefined ? (
+        <div className="recovery-summary" role="status">
+          <strong>共 {items.length} 项待恢复</strong>
+          <span>已逾期 {snapshot.overdueItems.length} 项</span>
+          <span>错过计划 {snapshot.missedPlanItems.length} 项</span>
+        </div>
+      ) : null}
       {snapshot === undefined ? (
         <LoadingState label="正在加载恢复任务…" />
       ) : items.length === 0 ? (
-        <EmptyState
-          description={kind === 'overdue' ? '没有仍逾期的任务' : '没有错过计划的任务'}
-        />
+        <EmptyState description="没有需要恢复的任务" />
       ) : (
         <div className="recovery-list" aria-live="polite">
           {items.map((item) => (
             <RecoveryTaskCard
               key={item.task.id}
               item={item}
-              kind={kind}
               busy={busyTaskId === item.task.id}
               onAction={(task, action) => void runAction(task, action)}
             />

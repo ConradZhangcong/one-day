@@ -1,3 +1,4 @@
+import { PageActions } from '@/app/PageActions';
 import { CheckCircle2, Clock3, Forward, TriangleAlert } from 'lucide-react';
 import { Temporal } from 'temporal-polyfill';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -142,6 +143,7 @@ export function ReviewPage() {
         <div>
           <h1>回顾</h1>
         </div>
+        <PageActions />
       </header>
       <div className="review-controls">
         <nav className="recovery-tabs" aria-label="回顾范围">

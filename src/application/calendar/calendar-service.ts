@@ -11,7 +11,7 @@ import type { UnitOfWork } from '../repositories';
 export interface CalendarFilters {
   readonly listId?: string;
   readonly priority?: Priority;
-  readonly state?: 'pending' | 'completed' | 'skipped';
+  readonly state?: 'pending' | 'completed' | 'skipped' | 'all';
 }
 
 export interface CalendarQuery extends CalendarFilters {
@@ -44,7 +44,7 @@ function matches(item: TaskOccurrenceView, query: CalendarQuery): boolean {
   return (
     (query.listId === undefined || item.listId === query.listId) &&
     (query.priority === undefined || item.priority === query.priority) &&
-    item.state === (query.state ?? 'pending')
+    (query.state === 'all' || item.state === (query.state ?? 'pending'))
   );
 }
 

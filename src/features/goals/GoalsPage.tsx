@@ -1,6 +1,8 @@
+import { PageActions } from '@/app/PageActions';
 import { Archive, CheckCircle2, Circle, Pencil, Plus, Target } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
 import { getApplicationServices } from '@/app/application';
@@ -129,6 +131,7 @@ function GoalEditor({
 }
 
 export function GoalsPage() {
+  const navigate = useNavigate();
   const applicationRevision = useApplicationRevision();
   const goals = useLiveQuery(
     async () => (await getApplicationServices()).goals.snapshot(),
@@ -156,6 +159,7 @@ export function GoalsPage() {
           <Plus data-icon="inline-start" />
           新建目标
         </Button>
+        <PageActions />
       </header>
       {goals.length === 0 ? (
         <EmptyState description="还没有长期目标。建立一个方向，再从任务详情中关联具体行动。" />
@@ -188,29 +192,54 @@ export function GoalsPage() {
                 </div>
                 {item.linkedTasks.length > 0 ? (
                   <div className="goal-task-list">
-                    {item.linkedTasks.map((task) => (
-                      <button key={task.id} onClick={() => setOpenedTaskId(task.id)}>
-                        {task.state === 'completed' ? (
-                          <CheckCircle2 className="size-4" />
-                        ) : (
-                          <Circle className="size-4" />
-                        )}
-                        <span>{task.title}</span>
-                        <Badge variant="outline">
-                          {task.state === 'completed'
-                            ? '已完成'
-                            : task.state === 'skipped'
-                              ? '已跳过'
-                              : '待处理'}
-                        </Badge>
-                      </button>
-                    ))}
+                    {[item.linkedTasks.slice(0, 3), item.linkedTasks.slice(3)].map(
+                      (group, index) => {
+                        const content = group.map((task) => (
+                          <button key={task.id} onClick={() => setOpenedTaskId(task.id)}>
+                            {task.state === 'completed' ? (
+                              <CheckCircle2 className="size-4" />
+                            ) : (
+                              <Circle className="size-4" />
+                            )}
+                            <span>{task.title}</span>
+                            <Badge variant="outline">
+                              {task.state === 'completed'
+                                ? '已完成'
+                                : task.state === 'skipped'
+                                  ? '已跳过'
+                                  : '待处理'}
+                            </Badge>
+                          </button>
+                        ));
+                        return index === 0 ? (
+                          <div key="first" className="goal-task-list">
+                            {content}
+                          </div>
+                        ) : group.length ? (
+                          <details key="more">
+                            <summary>其余 {group.length} 个任务</summary>
+                            <div className="goal-task-list">{content}</div>
+                          </details>
+                        ) : null;
+                      },
+                    )}
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">尚未关联任务</p>
                 )}
               </CardContent>
               <CardFooter className="justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={item.goal.status === 'archived'}
+                  onClick={() =>
+                    navigate(`/inbox?quick=1&goal=${encodeURIComponent(item.goal.id)}`)
+                  }
+                >
+                  <Plus />
+                  添加关联任务
+                </Button>
                 {item.goal.status !== 'archived' ? (
                   <Button
                     variant="ghost"

@@ -1,3 +1,4 @@
+import { PageActions } from '@/app/PageActions';
 import { Bell, Info, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -75,6 +76,7 @@ export function SettingsPage() {
         <div>
           <h1>设置</h1>
         </div>
+        <PageActions />
       </header>
       <div className="settings-grid">
         <Card>

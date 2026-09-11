@@ -119,6 +119,20 @@ export class OccurrenceQueryService {
       Intl.DateTimeFormat().resolvedOptions().timeZone,
   ) {}
 
+  async history(): Promise<TaskOccurrenceView[]> {
+    const [series, records] = await Promise.all([
+      this.unitOfWork.repositories.recurrenceSeries.getAll(),
+      this.unitOfWork.repositories.occurrenceRecords.getAll(),
+    ]);
+    const byId = new Map(series.map((item) => [item.id, item]));
+    return records.flatMap((record) => {
+      const owner = byId.get(record.seriesId);
+      return owner && record.state !== 'pending'
+        ? [occurrenceView(owner, record, false)]
+        : [];
+    });
+  }
+
   async query(query: OccurrenceRangeQuery): Promise<OccurrenceQuerySnapshot> {
     const start = localDateSchema.parse(query.rangeStart);
     const end = localDateSchema.parse(query.rangeEnd);

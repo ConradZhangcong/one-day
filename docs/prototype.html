@@ -1,30 +1,1836 @@
 <!doctype html>
 <html lang="zh-CN">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>One Day · 个人待办日历</title>
-<style>
-:root{--bg:#f7f8f4;--card:#fffefa;--ink:#18231d;--muted:#6c776f;--line:#e2e6de;--green:#176447;--green-bg:#e5f2e9;--blue:#e8edfb;--orange:#fff0dc;--red:#fbe7e4;--shadow:0 14px 40px #20362812;font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-size:14px}button,input,select{font:inherit}button{border:0;cursor:pointer}.app{display:grid;grid-template-columns:256px 1fr;min-height:100vh}.sidebar{position:sticky;top:0;display:flex;flex-direction:column;gap:24px;height:100vh;padding:22px 16px;background:#f0f2eb;border-right:1px solid var(--line)}.brand{display:flex;align-items:center;gap:10px;padding:0 7px;font-size:19px;font-weight:800;letter-spacing:-.05em}.brand img{width:34px;height:34px;object-fit:contain}.primary{padding:12px 14px;border-radius:10px;background:var(--green);color:#fff;text-align:left;font-weight:700;box-shadow:0 7px 15px #17644730}.primary span{font-size:18px;margin-right:8px}.nav-title{margin:2px 9px 6px;color:#8a938b;font-size:11px;font-weight:800;letter-spacing:.1em}.nav,.list{display:flex;align-items:center;gap:10px;width:100%;padding:9px;border-radius:8px;background:transparent;color:#4e5a52;text-align:left}.nav:hover,.list:hover{background:#e4e9e2}.nav.active,.list.active{background:#fff;color:var(--green);font-weight:750;box-shadow:0 2px 7px #182b200d}.count{margin-left:auto;color:#849086;font-size:12px}.dot{width:9px;height:9px;border-radius:50%;background:#ebb258}.dot.blue{background:#6f8ddd}.dot.gray{background:#a4afa7}.foot{margin-top:auto;padding:13px 9px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}main{min-width:0;padding:32px 40px 52px}.top{display:flex;justify-content:space-between;gap:24px;align-items:center}.crumb{color:var(--muted);font-size:13px}.crumb b{color:var(--ink)}h1{margin:7px 0 0;font-size:29px;letter-spacing:-.055em}.actions{display:flex;gap:9px}.button{padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:#4b574e;font-weight:650}.tabs{display:flex;gap:3px;width:max-content;margin:28px 0 20px;padding:4px;border-radius:9px;background:#edf0e9}.tabs button{padding:8px 15px;border-radius:6px;background:transparent;color:var(--muted)}.tabs button.active{background:var(--card);color:var(--green);font-weight:750;box-shadow:0 1px 4px #2434291f}.layout{display:grid;grid-template-columns:minmax(590px,1fr) 280px;gap:22px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 8px #27352b08}.calendar{overflow:hidden}.head{display:flex;justify-content:space-between;align-items:center;padding:19px 20px 15px;border-bottom:1px solid var(--line)}.head h2{margin:0;font-size:17px}.pager{display:flex;gap:5px}.pager button{padding:6px 8px;border-radius:7px;background:#f1f3ed;color:#47534a}.view{display:none}.view.active{display:block}.scroll{overflow:auto}.week{display:grid;grid-template-columns:repeat(7,minmax(90px,1fr));min-width:710px}.day{min-height:388px;padding:12px 8px;border-right:1px solid var(--line)}.day:last-child{border:0}.dayname{display:flex;justify-content:space-between;margin-bottom:12px;color:var(--muted);font-size:12px}.num{color:var(--ink);font-size:16px;font-weight:750}.today .num{display:grid;width:27px;height:27px;border-radius:99px;place-items:center;background:var(--green);color:#fff}.load{padding:3px 5px;border-radius:4px;background:#edf5ea;color:#72937d;font-size:10px}.allday{min-height:52px;padding-bottom:8px;border-bottom:1px dashed #d8ddd4}.grid{min-height:280px;padding-top:9px;background:repeating-linear-gradient(to bottom,transparent 0,transparent 48px,#eff1ec 49px)}.time{height:48px;color:#a1aaa1;font-size:10px}.event{margin-bottom:7px;padding:5px 6px;border-left:3px solid;border-radius:6px;cursor:pointer;font-size:11px;line-height:1.35}.event b{display:block}.green{border-color:#48966d;background:var(--green-bg)}.blue{border-color:#6d87d5;background:var(--blue)}.orange{border-color:#e79b40;background:var(--orange)}.deadline{border:1px dashed #c95648;border-left:3px solid #c95648;background:transparent;color:#a64438}.mini{padding:4px;margin-bottom:4px}.m10{margin-top:22px}.m11{margin-top:16px}.m13{margin-top:28px}.panel{padding:18px}.panel h3{margin:0 0 13px;font-size:14px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{padding:11px;border-radius:10px;background:#f4f6f1}.stat strong{display:block;font-size:21px}.stat span{color:var(--muted);font-size:11px}.warn{background:var(--orange)}.recovery{display:flex;gap:9px;padding:11px 0;border-top:1px solid var(--line)}.status{padding:4px 6px;border-radius:4px;font-size:10px;font-weight:800;white-space:nowrap}.overdue{background:var(--red);color:#a83e34}.missed{background:var(--orange);color:#a46019}.recovery b{font-size:12px}.recovery small{display:block;margin-top:3px;color:var(--muted);font-size:11px}.link{margin-top:11px;padding:0;background:none;color:var(--green);font-size:12px;font-weight:750}.tasks{margin-top:24px}.section-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:11px}.section-head h2{margin:0;font-size:17px}.filters{display:flex;gap:7px}.filter{padding:6px 10px;border:1px solid var(--line);border-radius:99px;background:var(--card);color:var(--muted);font-size:12px}.filter.active{border-color:#8db89a;background:#eff8ed;color:var(--green)}.tasklist{display:grid;grid-template-columns:repeat(2,minmax(240px,1fr));gap:10px}.task{display:flex;gap:11px;padding:14px;cursor:pointer}.task:hover{box-shadow:var(--shadow);transform:translateY(-1px)}.check{width:19px;height:19px;margin:1px 0 0;appearance:none;border:1.5px solid #a5ada4;border-radius:99px}.check:checked{background:var(--green);border-color:var(--green);box-shadow:inset 0 0 0 4px #fff}.taskmain{flex:1}.tasktitle{margin-bottom:5px;font-weight:750}.meta{display:flex;gap:6px;flex-wrap:wrap;color:var(--muted);font-size:12px}.badge{padding:2px 5px;border-radius:4px;background:#eef1eb;color:#68746a;font-size:10px}.priority{background:var(--orange);color:#a95724}.repeat{background:var(--blue);color:#4360b5}.agenda{padding:8px 20px 20px}.agenda-date{padding:16px 0 8px;color:var(--muted);font-size:12px;font-weight:700}.agenda-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.agenda-time{width:58px;color:var(--muted);font-size:12px}.agenda-row b{font-size:13px}.agenda-row small{display:block;margin-top:3px;color:var(--muted)}.agenda-row .badge{margin-left:auto}.dayview{display:grid;grid-template-columns:86px 1fr;min-height:387px}.hours{padding:25px 12px 0;border-right:1px solid var(--line);color:#99a39a;text-align:right;font-size:11px;line-height:55px}.schedule{padding:21px;background:repeating-linear-gradient(to bottom,transparent 0,transparent 54px,#edf0ea 55px)}.schedule-event{width:min(74%,430px);margin:20px 0 0;padding:10px 12px;border-left:3px solid;border-radius:8px;font-size:12px}.schedule-event b{display:block;margin-bottom:3px}.monthgrid{display:grid;grid-template-columns:repeat(7,1fr);min-width:640px;padding:0 14px 14px}.mlabel{padding:11px 7px;color:var(--muted);font-size:11px;text-align:right}.mday{min-height:95px;padding:8px;border-top:1px solid var(--line);border-right:1px solid var(--line);color:#556056}.mday:nth-child(7n+7){border-right:0}.mday.muted{color:#b0b8b0}.mday.today{background:#f4faf3}.mday strong{display:block;margin-bottom:6px;text-align:right;font-size:12px}.mevent{overflow:hidden;margin:3px 0;padding:3px 4px;border-radius:4px;background:#e2f0e7;color:#265d43;font-size:10px;white-space:nowrap;text-overflow:ellipsis}.mevent.blue{background:var(--blue);color:#5269b6}.mevent.orange{background:var(--orange);color:#a4611c}.more{margin-top:4px;color:var(--green);font-size:10px;font-weight:700}.year{padding:17px 20px 22px}.legend{display:flex;gap:7px;margin-bottom:16px;color:var(--muted);font-size:11px}.sq{width:11px;height:11px;border-radius:3px;background:#eef1ec}.sq.s1{background:#d8eddd}.sq.s2{background:#9ecfb0}.sq.s3{background:#4f9a70}.yeargrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.mini-month h3{margin:0 0 7px;font-size:12px}.heat{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.heat span{aspect-ratio:1;border-radius:2px;background:#eef1ec}.heat span.s1{background:#d8eddd}.heat span.s2{background:#9ecfb0}.heat span.s3{background:#4f9a70}.browser{display:none;max-width:990px}.browser.active{display:block}.intro{margin-bottom:20px}.intro h2{margin:0;font-size:22px}.intro p{color:var(--muted)}.browsergrid{display:grid;grid-template-columns:1fr 280px;gap:20px}.listcard{padding:0 18px}.listrow{display:flex;gap:12px;align-items:center;padding:16px 2px;border-bottom:1px solid var(--line);cursor:pointer}.listrow:last-child{border:0}.rowmain{flex:1}.listrow b{display:block}.listrow small{display:block;margin-top:4px;color:var(--muted)}.tips{padding:18px}.tips h3{margin:0 0 12px}.tips p{color:var(--muted);font-size:12px;line-height:1.6}.note{padding:14px;border-radius:9px;background:#f2f6f0;color:#526158;font-size:12px;line-height:1.6}.overlay{position:fixed;z-index:5;inset:0;background:#15201959;opacity:0;pointer-events:none;transition:.2s}.overlay.show{opacity:1;pointer-events:auto}.drawer{position:fixed;z-index:6;top:0;right:0;width:min(440px,100%);height:100vh;padding:25px;overflow:auto;background:var(--card);box-shadow:-15px 0 48px #16221e2e;transform:translateX(102%);transition:.25s}.drawer.show{transform:translateX(0)}.drawer-top{display:flex;justify-content:space-between}.close{background:transparent;color:var(--muted);font-size:22px}.drawer h2{margin:25px 0 10px;font-size:23px}.notice{margin:15px 0;padding:12px;border-radius:8px;background:var(--orange);color:#80571e;font-size:12px;line-height:1.55}.detail-actions{display:flex;gap:8px;margin:21px 0}.detail-actions button{padding:10px 12px;border-radius:8px;font-weight:700}.complete,.save{background:var(--green);color:white}.skip,.secondary{background:#f0f2ed;color:#566158}.details{margin-top:20px;border-top:1px solid var(--line)}.detailrow{display:grid;grid-template-columns:92px 1fr;padding:15px 0;border-bottom:1px solid var(--line);font-size:13px}.detailrow label{color:var(--muted)}.modal{position:fixed;z-index:7;top:50%;left:50%;width:min(480px,calc(100% - 32px));padding:24px;border-radius:14px;background:var(--card);box-shadow:var(--shadow);opacity:0;pointer-events:none;transform:translate(-50%,-45%) scale(.96);transition:.2s}.modal.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}.modal h2{margin:0 0 18px}.field{display:block;margin:12px 0}.field span{display:block;margin-bottom:6px;color:#59655d;font-size:12px;font-weight:700}.field input,.field select{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;background:#fff}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}.modal-actions button{padding:10px 14px;border-radius:8px;font-weight:700}.toast{position:fixed;z-index:8;bottom:24px;left:50%;padding:11px 15px;border-radius:9px;background:#20362a;color:#fff;font-size:13px;opacity:0;pointer-events:none;transform:translate(-50%,20px);transition:.25s}.toast.show{opacity:1;transform:translate(-50%,0)}@media(max-width:1040px){main{padding:28px 24px}.layout{grid-template-columns:1fr}.sidepanels{display:grid;grid-template-columns:1fr 1fr;gap:16px}.recovery-panel{display:none}.browsergrid{grid-template-columns:1fr}.tips{display:none}}@media(max-width:720px){.app{display:block}.sidebar{position:static;display:grid;grid-template-columns:auto 1fr auto;align-items:center;height:auto;padding:13px;gap:10px}.brand{padding:0}.brand img{width:32px;height:32px}.primary{padding:10px;font-size:0}.primary span{margin:0;font-size:20px}.side-nav,.side-lists,.foot{display:none}main{padding:22px 16px}.top{align-items:flex-start}.actions .button{display:none}h1{font-size:25px}.tabs{max-width:100%;margin-top:22px;overflow:auto}.tabs button{padding:8px 12px}.sidepanels{display:block}.sidepanels .card:first-child{margin-bottom:16px}.tasklist{grid-template-columns:1fr}.calendar{border-radius:12px}.head{padding:15px}.day{min-height:338px}.formgrid{grid-template-columns:1fr}.section-head{align-items:flex-start;flex-direction:column}.yeargrid{grid-template-columns:repeat(2,1fr);gap:14px}}
-  </style>
-  <style>
-    /* shadcn/ui default-inspired neutral theme overrides */
-    :root{--bg:#ffffff;--card:#ffffff;--ink:#020817;--muted:#64748b;--line:#e2e8f0;--green:#020817;--green-bg:#f1f5f9;--blue:#eff6ff;--orange:#fff7ed;--red:#fef2f2;--shadow:0 1px 2px rgba(0,0,0,.05)}
-    .sidebar{background:#fafafa;border-color:#e2e8f0}.primary{background:#020817;box-shadow:none}.nav:hover,.list:hover{background:#f1f5f9}.nav.active,.list.active{color:#020817;box-shadow:none}.tabs{background:#f1f5f9}.tabs button.active{color:#020817;box-shadow:0 1px 2px rgba(0,0,0,.06)}.button{border-color:#e2e8f0;color:#0f172a}.today .num,.check:checked,.complete,.save{background:#020817;border-color:#020817}.filter.active{border-color:#020817;background:#fff;color:#020817}.link{color:#0f172a}.event.green{background:#f1f5f9;border-color:#64748b}.event.blue{background:#eff6ff;border-color:#3b82f6}.event.orange{background:#fff7ed;border-color:#f97316}.stat{background:#f8fafc}.warn{background:#fff7ed}.nav{position:relative;padding-left:42px;font-size:14px}.nav::before{content:attr(data-icon);position:absolute;left:10px;top:50%;display:grid;width:22px;height:22px;place-items:center;transform:translateY(-50%);border-radius:6px;background:#f1f5f9;color:#334155;font-size:16px;font-weight:500}.nav.active::before{background:#020817;color:#fff}.actions .button{display:grid;min-width:40px;height:40px;place-items:center;font-size:17px}.pager button{display:grid;width:32px;height:32px;place-items:center;font-size:18px}.pager button:nth-child(2){width:auto;padding:6px 10px;font-size:12px}.goal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:18px}.goal-card{padding:16px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer}.goal-card:hover{box-shadow:0 5px 16px rgba(15,23,42,.08)}.goal-card h3{margin:0;font-size:15px}.goal-card p{margin:7px 0 12px;color:#64748b;font-size:12px;line-height:1.55}.goal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.goal-icon{display:grid;width:34px;height:34px;place-items:center;border-radius:8px;background:#f1f5f9;font-size:19px}.progress{height:7px;overflow:hidden;border-radius:99px;background:#e2e8f0}.progress span{display:block;height:100%;border-radius:inherit;background:#020817}.goal-meta{display:flex;justify-content:space-between;margin-top:8px;color:#64748b;font-size:11px}.goal-empty{margin:0 18px 18px;padding:13px;border:1px dashed #cbd5e1;border-radius:9px;color:#64748b;font-size:12px}@media(max-width:720px){.goal-grid{grid-template-columns:1fr}.nav::before{font-size:18px}}
-  </style>
-  <style>
-    .sidebar-toggle{display:grid;width:30px;height:30px;margin-left:auto;place-items:center;border:1px solid #e2e8f0;border-radius:7px;background:#fff;color:#334155;font-size:17px}.sidebar-toggle:hover{background:#f1f5f9}.app{transition:grid-template-columns .2s ease}.sidebar{transition:padding .2s ease}.app.collapsed{grid-template-columns:76px 1fr}.app.collapsed .sidebar{padding:22px 12px;gap:18px}.app.collapsed .brand{justify-content:center;padding:0}.app.collapsed .brand>span,.app.collapsed .nav-title,.app.collapsed .count,.app.collapsed .foot{display:none}.app.collapsed .sidebar-toggle{margin:0}.app.collapsed .primary{padding:11px;text-align:center;font-size:0}.app.collapsed .primary span{margin:0;font-size:21px}.app.collapsed .nav{justify-content:center;padding:9px;font-size:0}.app.collapsed .nav::before{position:static;transform:none;width:30px;height:30px;font-size:19px}.app.collapsed .list{justify-content:center;padding:11px;font-size:0}.app.collapsed .list .dot{width:12px;height:12px}.app.collapsed .side-lists{margin-top:-5px}@media(max-width:720px){.sidebar-toggle{display:none}}
-  </style>
-</head>
-<body><div class="app"><aside class="sidebar" aria-label="主导航"><div class="brand"><img src="../logo/concentric-ring-master-metal.svg" alt="One Day"><span>One Day</span></div><button class="primary" data-form><span>＋</span>快速新增</button><div class="side-nav"><div class="nav-title">浏览</div><button class="nav active" data-page="today">◫ 今天 <span class="count">6</span></button><button class="nav" data-page="upcoming">◷ 即将到来 <span class="count">12</span></button><button class="nav" data-page="inbox">▣ 收件箱 <span class="count">4</span></button><button class="nav" data-page="missed">↗ 错过计划 <span class="count">2</span></button><button class="nav" data-page="overdue">! 已逾期 <span class="count">1</span></button></div><div class="side-lists"><div class="nav-title">我的清单</div><button class="list" data-page="work"><span class="dot"></span>工作 <span class="count">8</span></button><button class="list" data-page="life"><span class="dot blue"></span>生活 <span class="count">5</span></button><button class="list" data-page="study"><span class="dot gray"></span>学习 <span class="count">3</span></button></div><div class="foot">本地优先 · 数据仅保存在此设备</div></aside><main><header class="top"><div><div class="crumb" id="crumb">2026 年 9 月 · <b>第 36 周</b></div><h1 id="title">本周，稳稳地过好每一天</h1></div><div class="actions"><button class="button">⌕ 搜索</button><button class="button">☼</button><button class="button" aria-label="设置">⚙</button></div></header><nav class="tabs" id="tabs" aria-label="日历视图"><button data-view="agenda">议程</button><button data-view="day">日</button><button class="active" data-view="week">周</button><button data-view="month">月</button><button data-view="year">年</button></nav>
-<section id="calendar-shell"><div class="layout"><section class="calendar card"><div class="head"><h2 id="heading">9 月 1 日 — 9 月 7 日</h2><div class="pager"><button>‹</button><button>今天</button><button>›</button></div></div><div class="view" id="agenda"><div class="agenda"><div class="agenda-date">今天 · 9 月 2 日 · 周二</div><div class="agenda-row"><span class="agenda-time">10:00</span><div><b>整理客户反馈</b><small>工作 · 高优先级</small></div><span class="badge">计划执行</span></div><div class="agenda-row"><span class="agenda-time">18:00</span><div><b>提交方案初稿</b><small>工作 · 截止时间</small></div><span class="badge priority">今日截止</span></div><div class="agenda-row"><span class="agenda-time">18:30</span><div><b>健身</b><small>生活 · 每周二、四、六</small></div><span class="badge repeat">重复</span></div><div class="agenda-date">明天 · 9 月 3 日 · 周三</div><div class="agenda-row"><span class="agenda-time">17:30</span><div><b>去超市采购</b><small>生活 · 已安排</small></div><span class="badge">计划执行</span></div><div class="agenda-row"><span class="agenda-time">20:00</span><div><b>英语练习</b><small>学习 · 每周三</small></div><span class="badge repeat">重复</span></div></div></div><div class="view" id="day"><div class="dayview"><div class="hours">09:00<br>10:00<br>11:00<br>12:00<br>13:00<br>14:00</div><div class="schedule"><div class="schedule-event green" data-task="整理客户反馈"><b>10:00 · 整理客户反馈</b>工作 · 高优先级</div><div class="schedule-event blue" data-task="健身"><b>18:30 · 健身</b>生活 · 固定重复</div><div class="schedule-event orange" data-task="提交方案初稿"><b>18:00 前 · 提交方案初稿</b>截止提醒 · 工作</div></div></div></div><div class="view active" id="week"><div class="scroll"><div class="week"><div class="day"><div class="dayname">周一 <span class="num">1</span></div><div class="allday"><div class="event mini orange" data-task="预算复盘"><b>预算复盘</b>全天</div></div><div class="grid"><div class="time">09:00</div><div class="event green" data-task="项目周会"><b>项目周会</b>09:30 · 工作</div><div class="time">10:00</div><div class="time">11:00</div><div class="event blue m11" data-task="阅读 30 分钟"><b>阅读 30 分钟</b>12:00 · 重复</div></div></div><div class="day today"><div class="dayname">周二 <span class="num">2</span></div><div class="allday"><div class="event mini deadline" data-task="提交方案初稿"><b>提交方案初稿</b>今日截止</div></div><div class="grid"><div class="time">09:00</div><div class="event green" data-task="整理客户反馈"><b>整理客户反馈</b>10:00 · 工作</div><div class="time">10:00</div><div class="event blue m10" data-task="健身"><b>健身</b>18:30 · 重复</div></div></div><div class="day"><div class="dayname">周三 <span class="num">3</span><span class="load">负载 3</span></div><div class="allday"></div><div class="grid"><div class="time">09:00</div><div class="event orange m10" data-task="去超市采购"><b>去超市采购</b>17:30 · 生活</div><div class="time">10:00</div><div class="event blue m11" data-task="英语练习"><b>英语练习</b>20:00 · 重复</div></div></div><div class="day"><div class="dayname">周四 <span class="num">4</span></div><div class="allday"><div class="event mini green" data-task="团队同步"><b>团队同步</b>全天</div></div><div class="grid"><div class="time">09:00</div><div class="event green" data-task="产品评审"><b>产品评审</b>14:00 · 工作</div></div></div><div class="day"><div class="dayname">周五 <span class="num">5</span><span class="load">负载 2</span></div><div class="allday"></div><div class="grid"><div class="time">09:00</div><div class="event green m10" data-task="周报整理"><b>周报整理</b>16:00 · 工作</div></div></div><div class="day"><div class="dayname">周六 <span class="num">6</span></div><div class="allday"></div><div class="grid"><div class="time">09:00</div><div class="event orange m13" data-task="和朋友吃饭"><b>和朋友吃饭</b>19:00 · 生活</div></div></div><div class="day"><div class="dayname">周日 <span class="num">7</span></div><div class="allday"><div class="event mini blue" data-task="下周计划"><b>下周计划</b>全天</div></div><div class="grid"><div class="time">09:00</div><div class="event blue m10" data-task="本周回顾"><b>本周回顾</b>20:00</div></div></div></div></div></div><div class="view" id="month"><div class="scroll"><div class="monthgrid"><div class="mlabel">一</div><div class="mlabel">二</div><div class="mlabel">三</div><div class="mlabel">四</div><div class="mlabel">五</div><div class="mlabel">六</div><div class="mlabel">日</div><div class="mday muted"><strong>25</strong></div><div class="mday muted"><strong>26</strong></div><div class="mday muted"><strong>27</strong></div><div class="mday muted"><strong>28</strong></div><div class="mday muted"><strong>29</strong></div><div class="mday muted"><strong>30</strong></div><div class="mday muted"><strong>31</strong></div><div class="mday"><strong>1</strong><div class="mevent orange">预算复盘</div><div class="mevent">项目周会</div></div><div class="mday today"><strong>2</strong><div class="mevent">整理客户反馈</div><div class="mevent orange">提交方案初稿</div><div class="more">+1 项</div></div><div class="mday"><strong>3</strong><div class="mevent orange">去超市采购</div><div class="mevent blue">英语练习</div></div><div class="mday"><strong>4</strong><div class="mevent">团队同步</div><div class="mevent">产品评审</div></div><div class="mday"><strong>5</strong><div class="mevent">周报整理</div></div><div class="mday"><strong>6</strong><div class="mevent orange">和朋友吃饭</div></div><div class="mday"><strong>7</strong><div class="mevent blue">下周计划</div><div class="mevent blue">本周回顾</div></div><div class="mday"><strong>8</strong></div><div class="mday"><strong>9</strong><div class="mevent">客户访谈</div></div><div class="mday"><strong>10</strong></div><div class="mday"><strong>11</strong><div class="mevent blue">健身</div></div><div class="mday"><strong>12</strong><div class="mevent">复盘会议</div></div><div class="mday"><strong>13</strong></div><div class="mday"><strong>14</strong></div></div></div></div><div class="view" id="year"><div class="year"><div class="legend"><span class="sq"></span>无 <span class="sq s1"></span>轻松 <span class="sq s2"></span>充实 <span class="sq s3"></span>高负载</div><div class="yeargrid" id="yeargrid"></div></div></div></section><aside class="sidepanels"><section class="panel card"><h3>本周节奏</h3><div class="stats"><div class="stat"><strong>14</strong><span>计划事项</span></div><div class="stat"><strong>7</strong><span>已完成</span></div><div class="stat warn"><strong>3</strong><span>待恢复</span></div><div class="stat"><strong>50%</strong><span>完成进度</span></div></div></section><section class="panel card recovery-panel"><h3>需要你决定</h3><div class="recovery"><span class="status overdue">已逾期</span><div><b>提交方案初稿</b><small>截止于昨天 18:00 · 工作</small></div></div><div class="recovery"><span class="status missed">错过计划</span><div><b>预约牙医</b><small>原计划周一 15:00 · 生活</small></div></div><button class="link" data-page="overdue">查看全部恢复事项 →</button></section></aside></div><section class="tasks"><div class="section-head"><div><h2>今天的待办</h2><div class="crumb" style="margin-top:4px">周二 · 9 月 2 日</div></div><div class="filters"><button class="filter active">全部</button><button class="filter">工作</button><button class="filter">高优先级</button></div></div><div class="tasklist"><article class="task card" data-task="整理客户反馈"><input class="check" type="checkbox" aria-label="完成整理客户反馈"><div class="taskmain"><div class="tasktitle">整理客户反馈</div><div class="meta"><span>◷ 今天 10:00</span><span class="badge">工作</span><span class="badge priority">高优先级</span></div></div></article><article class="task card" data-task="提交方案初稿"><input class="check" type="checkbox" aria-label="完成提交方案初稿"><div class="taskmain"><div class="tasktitle">提交方案初稿</div><div class="meta"><span>! 昨天 18:00 截止</span><span class="badge">工作</span><span class="badge priority">高优先级</span></div></div></article><article class="task card" data-task="健身"><input class="check" type="checkbox" aria-label="完成健身"><div class="taskmain"><div class="tasktitle">健身</div><div class="meta"><span>◷ 今天 18:30</span><span class="badge">生活</span><span class="badge repeat">↻ 每周二、四、六</span></div></div></article><article class="task card" data-task="给妈妈打电话"><input class="check" type="checkbox" aria-label="完成给妈妈打电话"><div class="taskmain"><div class="tasktitle">给妈妈打电话</div><div class="meta"><span>无计划时间</span><span class="badge">生活</span></div></div></article></div></section></section><section class="browser" id="browser"></section></main></div><div class="overlay" id="overlay"></div><aside class="drawer" id="drawer" aria-label="任务详情" aria-hidden="true"><div class="drawer-top"><span class="crumb">任务详情</span><button class="close" data-close aria-label="关闭">×</button></div><h2 id="detail-title">整理客户反馈</h2><div class="notice" id="notice">计划执行时间已过。保留原时间，选择完成、跳过或重新安排。</div><div class="detail-actions"><button class="complete" id="complete">✓ 完成</button><button class="skip">跳过</button><button class="button">重新安排</button></div><div class="details"><div class="detailrow"><label>计划执行</label><span>今天 10:00</span></div><div class="detailrow"><label>截止时间</label><span>今天 18:00</span></div><div class="detailrow"><label>清单</label><span>● 工作</span></div><div class="detailrow"><label>标签</label><span><span class="badge">客户</span> <span class="badge">沟通</span></span></div><div class="detailrow"><label>优先级</label><span>高</span></div></div><button class="link">编辑任务</button></aside><section class="modal" id="form" role="dialog" aria-modal="true"><div class="drawer-top"><h2>添加一件事</h2><button class="close" data-close>×</button></div><label class="field"><span>任务标题 *</span><input id="task-input" placeholder="例如：给妈妈打电话"></label><div class="formgrid"><label class="field"><span>计划执行（可选）</span><input type="datetime-local" value="2026-09-02T10:00"></label><label class="field"><span>截止时间（可选）</span><input type="datetime-local"></label></div><div class="formgrid"><label class="field"><span>清单</span><select><option>收件箱</option><option>工作</option><option>生活</option><option>学习</option></select></label><label class="field"><span>优先级</span><select><option>无</option><option>低</option><option>中</option><option>高</option></select></label></div><div class="modal-actions"><button class="secondary" data-close>取消</button><button class="save" id="save">添加任务</button></div></section><div class="toast" id="toast">任务已完成</div>
-<script>
-const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s),overlay=$('#overlay'),drawer=$('#drawer'),form=$('#form'),toast=$('#toast'),shell=$('#calendar-shell'),browser=$('#browser'),tabs=$('#tabs'),title=$('#title'),crumb=$('#crumb');
-const navIcons={today:'◷',upcoming:'↗',inbox:'▣',missed:'↺',overdue:'!'};$$('.nav').forEach(button=>{button.dataset.icon=navIcons[button.dataset.page];button.childNodes[0].nodeValue=button.childNodes[0].nodeValue.replace(/^[^\u4e00-\u9fff]+\s*/,'')});
-$('.brand').insertAdjacentHTML('beforeend','<button class="sidebar-toggle" id="sidebar-toggle" aria-label="收起侧栏" aria-expanded="true">‹</button>');$('#sidebar-toggle').addEventListener('click',()=>{const collapsed=$('.app').classList.toggle('collapsed');const toggle=$('#sidebar-toggle');toggle.textContent=collapsed?'›':'‹';toggle.setAttribute('aria-label',collapsed?'展开侧栏':'收起侧栏');toggle.setAttribute('aria-expanded',String(!collapsed))});
-const goalsTab=$('[data-view="year"]');goalsTab.dataset.view='goals';goalsTab.textContent='长期目标';$('#year').id='goals';
-$('#save').closest('.modal-actions').insertAdjacentHTML('beforebegin','<label class="field"><span>归属长期目标（可选）</span><select><option>不关联长期目标</option><option>完成首次半程马拉松</option><option>建立稳定的阅读习惯</option><option>完成产品设计作品集</option></select></label>');
-const pages={upcoming:['即将到来','未来 14 天','提前看见已经安排和即将到期的事项。',[['明天 17:30','去超市采购','生活 · 已安排'],['周四 全天','团队同步','工作 · 全天事项'],['周五 16:00','周报整理','工作 · 本周截止'],['下周二','客户访谈','工作 · 已安排']]],inbox:['收件箱','4 项待整理','先记录，再决定何时做。',[['无计划','续费家庭网络','生活 · 需要安排'],['无计划','整理会议笔记','工作 · 需要分类'],['无计划','购买护眼灯','生活 · 想法'],['无计划','阅读产品报告','学习 · 稍后处理']]],missed:['错过计划','2 项需要重新安排','计划已过，但截止时间尚未到。原计划会被完整保留。',[['周一 15:00','预约牙医','生活 · 可完成、跳过或改期'],['今天 09:00','回复物业电话','生活 · 可完成、跳过或改期']]],overdue:['已逾期','2 项需要决定','截止时间已过。请明确完成、跳过或重新安排。',[['昨天 18:00','提交方案初稿','工作 · 已逾期'],['8 月 29 日','报销停车费','工作 · 已逾期']]],work:['工作','8 项待处理','工作清单中的任务与日历安排。',[['今天 10:00','整理客户反馈','高优先级 · 已安排'],['昨天 18:00','提交方案初稿','高优先级 · 已逾期'],['周四 14:00','产品评审','已安排'],['周五 16:00','周报整理','已安排']]],life:['生活','5 项待处理','生活清单中的任务与日历安排。',[['今天 18:30','健身','固定重复'],['周三 17:30','去超市采购','已安排'],['周六 19:00','和朋友吃饭','已安排'],['无计划','给妈妈打电话','收件箱']]],study:['学习','3 项待处理','学习清单中的任务与日历安排。',[['今天 12:00','阅读 30 分钟','固定重复'],['周三 20:00','英语练习','固定重复'],['无计划','阅读产品报告','收件箱']]]};
-function close(){overlay.classList.remove('show');drawer.classList.remove('show');form.classList.remove('show');drawer.setAttribute('aria-hidden','true')}function openTask(name){$('#detail-title').textContent=name;$('#notice').style.display=name==='提交方案初稿'?'block':'none';drawer.classList.add('show');overlay.classList.add('show');drawer.setAttribute('aria-hidden','false')}function say(text){toast.textContent=text;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2200)}
-function showView(name){$$('.view').forEach(v=>v.classList.toggle('active',v.id===name));$$('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));$('#heading').textContent={agenda:'议程 · 未来安排',day:'9 月 2 日 · 周二',week:'9 月 1 日 — 9 月 7 日',month:'2026 年 9 月',goals:'长期目标 · 让每天的行动汇成方向'}[name]}
-function showPage(name){$$('.nav,.list').forEach(b=>b.classList.toggle('active',b.dataset.page===name));if(name==='today'){shell.style.display='block';browser.classList.remove('active');tabs.style.display='flex';title.textContent='本周，稳稳地过好每一天';crumb.innerHTML='2026 年 9 月 · <b>第 36 周</b>';return}const d=pages[name];shell.style.display='none';tabs.style.display='none';browser.classList.add('active');title.textContent=d[0];crumb.textContent=d[1];browser.innerHTML='<div class="intro"><h2>'+d[0]+'</h2><p>'+d[2]+'</p></div><div class="browsergrid"><div class="listcard card">'+d[3].map(i=>'<div class="listrow" data-task="'+i[1]+'"><input class="check" type="checkbox"><div class="rowmain"><b>'+i[1]+'</b><small>'+i[0]+' · '+i[2]+'</small></div><span class="badge">查看</span></div>').join('')+'</div><aside class="tips card"><h3>清晰地恢复节奏</h3><p>任务始终保留原始计划或截止信息。你可以在详情中完成、跳过或重新安排。</p><div class="note">当前展示为交互原型，点击任意任务可查看详情。</div></aside></div>'}
-$$('[data-task]').forEach(x=>x.addEventListener('click',e=>{if(!e.target.matches('.check'))openTask(x.dataset.task)}));$$('[data-form]').forEach(x=>x.addEventListener('click',()=>{form.classList.add('show');overlay.classList.add('show');setTimeout(()=>$('#task-input').focus(),100)}));$$('[data-close]').forEach(x=>x.addEventListener('click',close));overlay.addEventListener('click',close);$$('[data-view]').forEach(x=>x.addEventListener('click',()=>showView(x.dataset.view)));$$('[data-page]').forEach(x=>x.addEventListener('click',()=>showPage(x.dataset.page)));$$('.filter').forEach(x=>x.addEventListener('click',()=>{$('.filter.active').classList.remove('active');x.classList.add('active')}));document.addEventListener('change',e=>{if(e.target.matches('.check')&&e.target.checked){const name=e.target.closest('[data-task],.listrow')?.dataset.task||'任务';say('已完成「'+name+'」')}});$('#complete').addEventListener('click',()=>{say('任务已完成，已保留完成记录');close()});$('#save').addEventListener('click',()=>{const v=$('#task-input').value.trim();if(!v)return $('#task-input').focus();say('已添加「'+v+'」到收件箱');close()});browser.addEventListener('click',e=>{const row=e.target.closest('[data-task]');if(row&&!e.target.matches('.check'))openTask(row.dataset.task)});setTimeout(()=>{$('#goals').innerHTML='<div class="goal-grid"><article class="goal-card" data-task="完成首次半程马拉松"><div class="goal-top"><span class="goal-icon">◉</span><span class="badge">进行中</span></div><h3>完成首次半程马拉松</h3><p>每周完成 3 次训练，让身体和节奏慢慢准备好。</p><div class="progress"><span style="width:62%"></span></div><div class="goal-meta"><span>6 个关联事项</span><b>62%</b></div></article><article class="goal-card" data-task="建立稳定的阅读习惯"><div class="goal-top"><span class="goal-icon">▤</span><span class="badge">进行中</span></div><h3>建立稳定的阅读习惯</h3><p>在一年中读完 24 本书，并留下关键想法。</p><div class="progress"><span style="width:38%"></span></div><div class="goal-meta"><span>4 个关联事项</span><b>38%</b></div></article><article class="goal-card" data-task="完成产品设计作品集"><div class="goal-top"><span class="goal-icon">✦</span><span class="badge">计划中</span></div><h3>完成产品设计作品集</h3><p>整理三个真实项目，形成完整的设计叙事。</p><div class="progress"><span style="width:20%"></span></div><div class="goal-meta"><span>3 个关联事项</span><b>20%</b></div></article><article class="goal-card" data-form><div class="goal-top"><span class="goal-icon">＋</span><span class="badge">新建</span></div><h3>添加长期目标</h3><p>将日常待办关联到更长远、可持续的方向。</p></article></div><p class="goal-empty">长期目标不会替你自动排程；它们只让每一个计划中的行动，都有清晰的去处。</p>';$$('#goals [data-task]').forEach(x=>x.addEventListener('click',()=>openTask(x.dataset.task)));$('#goals [data-form]').addEventListener('click',()=>{$('#form').classList.add('show');overlay.classList.add('show')})},0);
-</script></body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>One Day · 交互原型</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #fafafa;
+        --card: #fff;
+        --ink: #18181b;
+        --muted: #71717a;
+        --line: #e4e4e7;
+        --soft: #f4f4f5;
+        --accent: #18181b;
+        --on-accent: #fff;
+        --red: #b42318;
+        --red-bg: #fff1f0;
+        --amber: #975d12;
+        --amber-bg: #fff8e6;
+        --blue: #365da8;
+        --blue-bg: #eff5ff;
+        font-family: Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      }
+      :root.dark {
+        color-scheme: dark;
+        --bg: #151517;
+        --card: #202023;
+        --ink: #f4f4f5;
+        --muted: #a1a1aa;
+        --line: #36363b;
+        --soft: #2b2b30;
+        --accent: #f4f4f5;
+        --on-accent: #18181b;
+        --red: #fda29b;
+        --red-bg: #3b2427;
+        --amber: #f1c675;
+        --amber-bg: #352e22;
+        --blue: #a6c3ff;
+        --blue-bg: #242d40;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+      button,
+      input,
+      select,
+      textarea {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--card);
+        color: var(--ink);
+      }
+      button {
+        padding: 8px 12px;
+        min-height: 38px;
+      }
+      button:hover {
+        background: var(--soft);
+      }
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid var(--blue);
+        outline-offset: 3px;
+      }
+      input,
+      select,
+      textarea {
+        padding: 9px 10px;
+        min-width: 0;
+        width: 100%;
+      }
+      textarea {
+        resize: vertical;
+      }
+      input[type='checkbox'] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+      }
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+      h1 {
+        font-size: 28px;
+        letter-spacing: -0.04em;
+      }
+      h2 {
+        font-size: 17px;
+      }
+      h3 {
+        font-size: 15px;
+      }
+      small,
+      .muted {
+        color: var(--muted);
+      }
+      .primary {
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: var(--accent);
+      }
+      .primary:hover {
+        opacity: 0.88;
+        background: var(--accent);
+      }
+      .ghost {
+        background: transparent;
+        border-color: transparent;
+      }
+      .danger {
+        color: var(--red);
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 232px minmax(0, 1fr);
+        min-height: 100dvh;
+      }
+      .sidebar {
+        position: sticky;
+        top: 0;
+        height: 100dvh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding: 24px 14px;
+        border-right: 1px solid var(--line);
+        background: var(--card);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 8px;
+        font-size: 19px;
+        font-weight: 750;
+      }
+      .brand img {
+        width: 28px;
+        height: 28px;
+      }
+      .brand button {
+        margin-left: auto;
+      }
+      .nav {
+        display: grid;
+        gap: 4px;
+      }
+      .nav button {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-align: left;
+        border: 0;
+        background: transparent;
+      }
+      .nav button[aria-current='page'] {
+        background: var(--soft);
+        font-weight: 700;
+      }
+      .nav-icon {
+        width: 22px;
+        text-align: center;
+        font-size: 19px;
+      }
+      .count {
+        margin-left: auto;
+        background: var(--soft);
+        border-radius: 5px;
+        padding: 0 5px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .nav-heading {
+        padding: 16px 12px 6px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .sidebar-foot {
+        margin-top: auto;
+        padding: 12px 8px 0;
+        border-top: 1px solid var(--line);
+        font-size: 11px;
+        color: var(--muted);
+      }
+      main {
+        min-width: 0;
+        max-width: 1400px;
+        width: 100%;
+        margin: auto;
+        padding: 32px 40px 56px;
+        align-self: start;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 26px;
+      }
+      .eyebrow {
+        color: var(--muted);
+        font-size: 12px;
+        margin-bottom: 5px;
+      }
+      .top-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .prototype-label {
+        font-size: 11px;
+        color: var(--muted);
+        border: 1px solid var(--line);
+        padding: 3px 7px;
+        border-radius: 5px;
+      }
+      .stack {
+        display: grid;
+        gap: 16px;
+      }
+      .card {
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--card);
+      }
+      .quick {
+        display: flex;
+        gap: 8px;
+        padding: 10px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      .quick input {
+        border: 0;
+        background: transparent;
+      }
+      .quick button {
+        flex-shrink: 0;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .between {
+        justify-content: space-between;
+      }
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .toolbar .search {
+        max-width: 280px;
+      }
+      .filter-panel {
+        padding: 14px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .filter-panel label,
+      .field {
+        display: grid;
+        gap: 5px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .chip,
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border-radius: 5px;
+        font-size: 11px;
+        padding: 3px 7px;
+        background: var(--soft);
+        color: var(--muted);
+      }
+      .badge.overdue {
+        background: var(--red-bg);
+        color: var(--red);
+      }
+      .badge.missed {
+        background: var(--amber-bg);
+        color: var(--amber);
+      }
+      .badge.repeat {
+        background: var(--blue-bg);
+        color: var(--blue);
+      }
+      .badge.done {
+        color: var(--ink);
+      }
+      .task-list {
+        display: grid;
+        gap: 8px;
+      }
+      .task {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--card);
+      }
+      .task.overdue {
+        border-left: 3px solid var(--red);
+      }
+      .task.missed {
+        border-left: 3px solid var(--amber);
+      }
+      .task-check {
+        width: 28px;
+        height: 28px;
+        min-height: 28px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        padding: 0;
+        font-size: 15px;
+      }
+      .task-copy {
+        min-width: 0;
+        flex: 1;
+        display: grid;
+        gap: 5px;
+      }
+      .task-title {
+        text-align: left;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        min-height: 24px;
+        font-weight: 650;
+        overflow-wrap: anywhere;
+      }
+      .task-title:hover {
+        background: transparent;
+        text-decoration: underline;
+      }
+      .task-meta {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .task-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .task-actions button {
+        font-size: 12px;
+      }
+      .task.completed .task-title {
+        color: var(--muted);
+      }
+      .section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .section-title small {
+        font-weight: 400;
+      }
+      .empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--muted);
+      }
+      .empty h2 {
+        color: var(--ink);
+        margin-bottom: 8px;
+      }
+      .empty button {
+        margin-top: 14px;
+      }
+      .summary {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .summary strong {
+        color: var(--ink);
+      }
+      .recovery-link {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        text-align: left;
+        padding: 12px 16px;
+        background: var(--amber-bg);
+        border-color: transparent;
+      }
+      .segmented {
+        display: flex;
+        gap: 3px;
+        padding: 3px;
+        background: var(--soft);
+        border-radius: 9px;
+        max-width: 100%;
+      }
+      .segmented button {
+        border: 0;
+        background: transparent;
+        min-height: 34px;
+        padding: 6px 13px;
+        white-space: nowrap;
+      }
+      .segmented button[aria-pressed='true'] {
+        background: var(--card);
+        box-shadow: 0 1px 3px #0001;
+      }
+      .calendar-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .date-nav {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .date-nav input {
+        width: 145px;
+      }
+      .agenda-day {
+        display: grid;
+        grid-template-columns: 100px minmax(0, 1fr);
+        gap: 20px;
+      }
+      .agenda-date {
+        font-size: 13px;
+        font-weight: 650;
+        padding-top: 14px;
+      }
+      .week-scroll {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--card);
+      }
+      .week-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(115px, 1fr));
+        min-width: 805px;
+      }
+      .week-col {
+        border-right: 1px solid var(--line);
+        padding: 10px;
+        min-height: 320px;
+      }
+      .week-col:last-child {
+        border-right: 0;
+      }
+      .day-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .day-label button {
+        border: 0;
+        padding: 3px 8px;
+      }
+      .is-today {
+        background: var(--accent) !important;
+        color: var(--on-accent) !important;
+        border-radius: 50%;
+      }
+      .calendar-item {
+        display: grid;
+        gap: 4px;
+        width: 100%;
+        text-align: left;
+        margin-bottom: 6px;
+        font-size: 12px;
+        padding: 8px;
+        background: var(--soft);
+        border-color: transparent;
+        overflow-wrap: anywhere;
+      }
+      .calendar-item small {
+        font-size: 10px;
+      }
+      .calendar-item.deadline {
+        border-left: 2px solid var(--red);
+      }
+      .calendar-item.future {
+        border: 1px dashed var(--line);
+      }
+      .month {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .weekday {
+        text-align: center;
+        padding: 12px;
+        font-size: 12px;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line);
+      }
+      .month-cell {
+        padding: 8px;
+        min-height: 120px;
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        min-width: 0;
+      }
+      .month-cell.outside {
+        background: var(--bg);
+      }
+      .month-date {
+        padding: 2px 7px;
+        min-height: 28px;
+        border: 0;
+        background: transparent;
+        margin-bottom: 6px;
+      }
+      .month .calendar-item {
+        font-size: 11px;
+        padding: 4px;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .month .calendar-item small {
+        display: none;
+      }
+      .month .more {
+        padding: 2px 5px;
+        min-height: 26px;
+        font-size: 11px;
+      }
+      .timeline {
+        display: grid;
+        gap: 16px;
+      }
+      .time-slot {
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr);
+        gap: 12px;
+      }
+      .time-slot time {
+        padding-top: 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .time-slot-items {
+        display: grid;
+        gap: 6px;
+        border-left: 1px solid var(--line);
+        padding-left: 14px;
+      }
+      .time-point {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 8px 10px;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+      }
+      .time-point small {
+        display: block;
+        margin-top: 4px;
+      }
+      .goals {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .goal {
+        display: grid;
+        gap: 12px;
+      }
+      .goal progress {
+        width: 100%;
+        height: 8px;
+        accent-color: var(--accent);
+      }
+      .goal .goal-tasks {
+        display: grid;
+        gap: 4px;
+      }
+      .goal-tasks button {
+        text-align: left;
+        border: 0;
+        font-size: 12px;
+      }
+      .metric {
+        font-size: 30px;
+        font-weight: 700;
+      }
+      .review-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      .mobile-nav {
+        display: none;
+      }
+      .collapsed {
+        grid-template-columns: 76px minmax(0, 1fr);
+      }
+      .collapsed .sidebar {
+        padding-inline: 10px;
+      }
+      .collapsed .nav-text,
+      .collapsed .count,
+      .collapsed .brand strong,
+      .collapsed .nav-heading,
+      .collapsed .sidebar-foot,
+      .collapsed .side-add {
+        display: none;
+      }
+      .collapsed .brand {
+        padding: 0;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .collapsed .nav button {
+        justify-content: center;
+      }
+      .notice {
+        padding: 12px;
+        border-radius: 8px;
+        background: var(--soft);
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .error {
+        color: var(--red);
+        font-size: 12px;
+      }
+      .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .dialog-form {
+        display: grid;
+        gap: 16px;
+      }
+      .dialog-form details {
+        border-top: 1px solid var(--line);
+        padding-top: 12px;
+      }
+      .dialog-form summary {
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
+      .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+      }
+      dialog {
+        width: min(540px, calc(100% - 28px));
+        max-height: calc(100dvh - 32px);
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 24px;
+        background: var(--card);
+        color: var(--ink);
+        box-shadow: 0 20px 70px #0003;
+      }
+      dialog::backdrop {
+        background: #0006;
+      }
+      .dialog-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+      .dialog-head button {
+        border: 0;
+        font-size: 20px;
+      }
+      .detail-grid {
+        display: grid;
+        grid-template-columns: 80px minmax(0, 1fr);
+        gap: 14px;
+        font-size: 13px;
+      }
+      .detail-grid dt {
+        color: var(--muted);
+      }
+      .detail-grid dd {
+        margin: 0;
+        overflow-wrap: anywhere;
+      }
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        background: var(--ink);
+        color: var(--card);
+        padding: 12px 16px;
+        border-radius: 10px;
+        box-shadow: 0 8px 28px #0002;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        width: max-content;
+        max-width: calc(100% - 28px);
+      }
+      .toast button {
+        color: inherit;
+        background: transparent;
+        border-color: currentColor;
+        padding: 3px 8px;
+        min-height: 28px;
+        white-space: nowrap;
+      }
+      .toast[hidden] {
+        display: none;
+      }
+      .more-menu {
+        display: grid;
+        gap: 8px;
+      }
+      .more-menu button {
+        text-align: left;
+      }
+      .prototype-note {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 28px;
+      }
+      .mobile-month-count {
+        display: none;
+      }
+      @media (max-width: 1000px) {
+        main {
+          padding: 26px 24px;
+        }
+        .layout {
+          grid-template-columns: 200px minmax(0, 1fr);
+        }
+        .collapsed {
+          grid-template-columns: 76px minmax(0, 1fr);
+        }
+        .task-actions {
+          flex-basis: 100%;
+          padding-left: 40px;
+        }
+        .task {
+          flex-wrap: wrap;
+        }
+        .goals {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 720px) {
+        .layout,
+        .layout.collapsed {
+          display: block;
+        }
+        .sidebar {
+          display: none;
+        }
+        main {
+          padding: 22px 16px 110px;
+        }
+        .topbar {
+          margin-bottom: 20px;
+        }
+        h1 {
+          font-size: 25px;
+        }
+        .top-actions .desktop-add {
+          display: none;
+        }
+        .prototype-label {
+          font-size: 10px;
+        }
+        .mobile-nav {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          position: fixed;
+          inset: auto 0 0;
+          z-index: 30;
+          background: var(--card);
+          border-top: 1px solid var(--line);
+          padding: 7px 6px calc(7px + env(safe-area-inset-bottom));
+        }
+        .mobile-nav button {
+          border: 0;
+          background: transparent;
+          display: grid;
+          justify-items: center;
+          gap: 3px;
+          padding: 4px;
+          min-height: 46px;
+          font-size: 11px;
+        }
+        .mobile-nav button[aria-current='page'] {
+          font-weight: 700;
+          background: var(--soft);
+        }
+        .mobile-nav .nav-icon {
+          font-size: 19px;
+        }
+        .quick {
+          flex-wrap: wrap;
+        }
+        .quick input {
+          flex-basis: calc(100% - 72px);
+          width: 0;
+          flex-grow: 1;
+        }
+        .quick .date-shortcut {
+          width: 100%;
+          text-align: left;
+          order: 3;
+          font-size: 12px;
+        }
+        .filter-panel {
+          grid-template-columns: 1fr;
+        }
+        .toolbar .search {
+          max-width: none;
+          flex: 1;
+          width: 0;
+        }
+        .card {
+          padding: 16px;
+        }
+        .task {
+          padding: 13px;
+          gap: 10px;
+        }
+        .task-actions {
+          padding-left: 38px;
+        }
+        .agenda-day {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+        .agenda-date {
+          padding: 0;
+        }
+        .date-nav {
+          width: 100%;
+          justify-content: space-between;
+        }
+        .date-nav input {
+          flex: 1;
+          width: 0;
+        }
+        .calendar-head h2 {
+          font-size: 15px;
+        }
+        .month-cell {
+          min-height: 70px;
+          padding: 4px;
+        }
+        .month-cell .calendar-item {
+          display: none;
+        }
+        .month-cell .more {
+          display: none;
+        }
+        .mobile-month-count {
+          display: block;
+          font-size: 10px;
+          color: var(--muted);
+        }
+        .weekday {
+          padding: 8px 2px;
+        }
+        .month-date {
+          padding: 2px 5px;
+        }
+        .summary {
+          gap: 8px 12px;
+        }
+        .split {
+          grid-template-columns: 1fr;
+        }
+        .review-stats {
+          gap: 6px;
+        }
+        .review-stats .card {
+          padding: 10px;
+        }
+        .review-stats h3 {
+          font-size: 12px;
+        }
+        .metric {
+          font-size: 25px;
+        }
+        .toast {
+          bottom: calc(78px + env(safe-area-inset-bottom));
+          font-size: 12px;
+        }
+        .time-point {
+          font-size: 11px;
+          left: 8px;
+        }
+        .dialog-actions {
+          position: sticky;
+          bottom: -24px;
+          background: var(--card);
+          padding-bottom: 12px;
+        }
+        dialog {
+          padding: 20px;
+        }
+        .top-actions {
+          gap: 5px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout" id="layout">
+      <aside class="sidebar" aria-label="主要导航">
+        <div class="brand">
+          <img src="../logo/concentric-ring-master-metal.svg" alt="" /><strong
+            >One Day</strong
+          ><button id="collapse" aria-label="收起侧栏" aria-expanded="true">‹</button>
+        </div>
+        <button class="primary side-add" data-action="new">＋ 添加任务</button>
+        <nav class="nav" id="desktop-nav"></nav>
+        <p class="sidebar-foot">交互原型 · 演示数据<br />修改仅在当前页面生效</p>
+      </aside>
+      <main>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="eyebrow"></p>
+            <h1 id="page-title">今天</h1>
+          </div>
+          <div class="top-actions">
+            <span class="prototype-label">原型</span
+            ><button id="theme" aria-label="切换深色模式">◐</button
+            ><button class="primary desktop-add" data-action="new">＋ 添加任务</button>
+          </div>
+        </header>
+        <div id="content"></div>
+        <p class="prototype-note">
+          演示基准：2026 年 9 月 9 日 12:00 ·
+          所有修改仅在当前页面生效，刷新后重置。未连接实际任务数据库。
+        </p>
+      </main>
+    </div>
+    <nav class="mobile-nav" id="mobile-nav" aria-label="手机主要导航"></nav>
+    <dialog id="modal" aria-labelledby="modal-title"></dialog>
+    <div class="toast" id="toast" role="status" hidden></div>
+    <script>
+      const TODAY = '2026-09-09',
+        NOW = '2026-09-09T12:00';
+      const $ = (s) => document.querySelector(s);
+      const escapeHtml = (value) =>
+        String(value ?? '').replace(
+          /[&<>"']/g,
+          (c) =>
+            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+        );
+      const dateOf = (value) => (value ? value.slice(0, 10) : '');
+      function addDays(date, n) {
+        const d = new Date(date + 'T12:00:00Z');
+        d.setUTCDate(d.getUTCDate() + n);
+        return d.toISOString().slice(0, 10);
+      }
+      function weekday(date) {
+        return new Intl.DateTimeFormat('zh-CN', {
+          weekday: 'short',
+          timeZone: 'UTC',
+        }).format(new Date(date + 'T12:00:00Z'));
+      }
+      function shortDate(date) {
+        return `${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日`;
+      }
+      function formatTime(value) {
+        if (!value) return '未安排';
+        const day = dateOf(value);
+        const relative =
+          day === TODAY
+            ? '今天'
+            : day === addDays(TODAY, 1)
+              ? '明天'
+              : day === addDays(TODAY, -1)
+                ? '昨天'
+                : shortDate(day);
+        return `${relative} ${value.includes('T') ? value.slice(11, 16) : '全天'}`;
+      }
+      function past(value) {
+        return value && (value.includes('T') ? value < NOW : value < TODAY);
+      }
+      function status(task) {
+        if (task.state !== 'pending') return task.state;
+        if (past(task.deadline)) return 'overdue';
+        if (past(task.plan)) return 'missed';
+        return 'pending';
+      }
+      const stateCopy = {
+        pending: '待处理',
+        completed: '已完成',
+        skipped: '已跳过',
+        overdue: '已逾期',
+        missed: '错过计划',
+      };
+      const lists = ['收件箱', '工作', '生活', '学习'];
+      let goals = [
+        {
+          id: 'g1',
+          title: '完成产品设计作品集',
+          description: '整理三个真实项目，完成案例与复盘。',
+          state: '进行中',
+        },
+        {
+          id: 'g2',
+          title: '建立稳定的阅读节奏',
+          description: '为每天保留一小段阅读时间。',
+          state: '计划中',
+        },
+      ];
+      let tasks = [
+        {
+          id: 't1',
+          title: '整理客户反馈',
+          list: '工作',
+          plan: TODAY + 'T14:00',
+          deadline: TODAY + 'T18:00',
+          priority: '高',
+          state: 'pending',
+          goal: 'g1',
+          notes: '整理三类高频问题，补充具体案例。',
+        },
+        {
+          id: 't2',
+          title: '提交方案初稿',
+          list: '工作',
+          plan: '2026-09-07T15:00',
+          deadline: '2026-09-08T18:00',
+          priority: '高',
+          state: 'pending',
+          goal: 'g1',
+        },
+        {
+          id: 't3',
+          title: '预约牙医',
+          list: '生活',
+          plan: '2026-09-08T15:00',
+          deadline: '',
+          priority: '无',
+          state: 'pending',
+        },
+        {
+          id: 't4',
+          title: '健身',
+          list: '生活',
+          plan: TODAY + 'T18:30',
+          deadline: '',
+          priority: '中',
+          state: 'pending',
+          repeat: '每周三、五',
+          series: 'fitness',
+        },
+        {
+          id: 't5',
+          title: '阅读 30 分钟',
+          list: '学习',
+          plan: TODAY + 'T08:00',
+          deadline: '',
+          priority: '无',
+          state: 'completed',
+          completedAt: TODAY + 'T08:35',
+          goal: 'g2',
+        },
+        {
+          id: 't6',
+          title: '给妈妈打电话',
+          list: '收件箱',
+          plan: '',
+          deadline: '',
+          priority: '无',
+          state: 'pending',
+        },
+        {
+          id: 't7',
+          title: '回复物业电话',
+          list: '生活',
+          plan: TODAY + 'T09:00',
+          deadline: TODAY + 'T17:00',
+          priority: '低',
+          state: 'pending',
+        },
+        {
+          id: 't8',
+          title: '团队同步',
+          list: '工作',
+          plan: '2026-09-10',
+          deadline: '',
+          priority: '中',
+          state: 'pending',
+        },
+        {
+          id: 't9',
+          title: '报销停车费',
+          list: '工作',
+          plan: '',
+          deadline: '2026-09-07',
+          priority: '中',
+          state: 'pending',
+        },
+        {
+          id: 't10',
+          title: '健身',
+          list: '生活',
+          plan: '2026-09-11T18:30',
+          deadline: '',
+          priority: '中',
+          state: 'pending',
+          repeat: '每周三、五',
+          series: 'fitness',
+          future: true,
+        },
+        {
+          id: 't11',
+          title: '确认案例结构',
+          list: '工作',
+          plan: '2026-09-08',
+          deadline: '',
+          priority: '中',
+          state: 'completed',
+          completedAt: TODAY + 'T10:20',
+          goal: 'g1',
+        },
+        {
+          id: 't12',
+          title: '晨间拉伸',
+          list: '生活',
+          plan: TODAY + 'T07:30',
+          deadline: '',
+          priority: '无',
+          state: 'completed',
+          completedAt: TODAY + 'T07:45',
+          repeat: '每天',
+          series: 'stretch',
+        },
+        {
+          id: 't13',
+          title: '购买护眼灯',
+          list: '收件箱',
+          plan: '',
+          deadline: '',
+          priority: '低',
+          state: 'pending',
+        },
+        {
+          id: 't14',
+          title: '去超市采购',
+          list: '生活',
+          plan: '2026-09-10T17:30',
+          deadline: '',
+          priority: '无',
+          state: 'pending',
+        },
+        {
+          id: 't15',
+          title: '缴纳网络费用',
+          list: '生活',
+          plan: '',
+          deadline: TODAY + 'T18:00',
+          priority: '高',
+          state: 'pending',
+        },
+        {
+          id: 't16',
+          title: '整理旧参考资料',
+          list: '工作',
+          plan: '2026-09-08',
+          deadline: '',
+          priority: '低',
+          state: 'skipped',
+          completedAt: TODAY + 'T09:40',
+        },
+      ];
+      let page = 'today',
+        view = 'week',
+        anchor = TODAY,
+        filters = { q: '', list: '', priority: '', state: '' },
+        showFilters = false,
+        toastTimer,
+        returnFocus;
+      const navItems = [
+        ['today', '今天', '◷'],
+        ['calendar', '日历', '▦'],
+        ['inbox', '收件箱', '▣'],
+        ['recovery', '待恢复', '↺'],
+        ['upcoming', '即将到来', '↗'],
+        ['history', '已处理', '✓'],
+        ['goals', '长期目标', '◎'],
+        ['review', '回顾', '◴'],
+        ['settings', '设置', '⚙'],
+      ];
+      function recoveryTasks() {
+        return tasks.filter(
+          (t) => ['overdue', 'missed'].includes(status(t)) && !t.future,
+        );
+      }
+      function navButton(key, label, icon) {
+        let count =
+          key === 'recovery'
+            ? recoveryTasks().length
+            : key === 'inbox'
+              ? tasks.filter((t) => t.list === '收件箱' && t.state === 'pending').length
+              : null;
+        return `<button data-page="${key}" ${page === key ? 'aria-current="page"' : ''} title="${label}"><span class="nav-icon" aria-hidden="true">${icon}</span><span class="nav-text">${label}</span>${count !== null ? `<span class="count">${count}</span>` : ''}</button>`;
+      }
+      function renderNav() {
+        $('#desktop-nav').innerHTML =
+          navItems.map((x) => navButton(...x)).join('') +
+          '<p class="nav-heading">我的清单</p>' +
+          lists
+            .slice(1)
+            .map((l) => navButton('list:' + l, l, '·'))
+            .join('');
+        $('#mobile-nav').innerHTML =
+          navItems
+            .slice(0, 4)
+            .map((x) => navButton(...x))
+            .join('') +
+          `<button data-action="more" ${!['today', 'calendar', 'inbox', 'recovery'].includes(page) ? 'aria-current="page"' : ''}><span class="nav-icon" aria-hidden="true">···</span>更多</button>`;
+      }
+      function go(next) {
+        page = next;
+        filters = { q: '', list: '', priority: '', state: '' };
+        showFilters = false;
+        render();
+        window.scrollTo(0, 0);
+      }
+      function render() {
+        renderNav();
+        $('#page-title').textContent = page.startsWith('list:')
+          ? page.slice(5)
+          : navItems.find((x) => x[0] === page)?.[1] || '今天';
+        $('#eyebrow').textContent = `${shortDate(TODAY)} · ${weekday(TODAY)}`;
+        $('#content').innerHTML =
+          page === 'calendar'
+            ? calendarPage()
+            : page === 'goals'
+              ? goalsPage()
+              : page === 'settings'
+                ? settingsPage()
+                : page === 'review'
+                  ? reviewPage()
+                  : listPage();
+      }
+      function selected(value, current) {
+        return value === current ? 'selected' : '';
+      }
+      function filterControls() {
+        const active = Object.values(filters).filter(Boolean).length;
+        return `<div class="toolbar"><input class="search" id="search" type="search" placeholder="搜索标题或备注" aria-label="搜索任务" value="${escapeHtml(filters.q)}"><button data-action="filters" aria-expanded="${showFilters}">筛选${active ? ` · ${active}` : ''}</button>${active ? '<button class="ghost" data-action="clear">清除筛选</button>' : ''}</div>${showFilters ? `<div class="filter-panel"><label>清单<select data-filter="list"><option value="">全部清单</option>${lists.map((l) => `<option ${selected(l, filters.list)}>${l}</option>`).join('')}</select></label><label>优先级<select data-filter="priority"><option value="">全部优先级</option>${['无', '低', '中', '高'].map((x) => `<option ${selected(x, filters.priority)}>${x}</option>`).join('')}</select></label><label>状态<select data-filter="state"><option value="">${page === 'history' ? '全部已处理状态' : page === 'recovery' ? '全部待恢复状态' : '默认：待处理'}</option>${(page === 'recovery' ? ['overdue', 'missed'] : page === 'history' ? ['completed', 'skipped'] : ['all', 'pending', 'completed', 'skipped']).map((s) => `<option value="${s}" ${selected(s, filters.state)}>${s === 'all' ? '全部状态' : stateCopy[s]}</option>`).join('')}</select></label></div>` : ''}${
+          active
+            ? `<div class="chips">${Object.entries(filters)
+                .filter(([, v]) => v)
+                .map(
+                  ([k, v]) =>
+                    `<button class="chip" data-clear="${k}">${escapeHtml(k === 'q' ? '搜索：' + v : k === 'state' ? stateCopy[v] || '全部状态' : v)} ×</button>`,
+                )
+                .join('')}</div>`
+            : ''
+        }`;
+      }
+      function matches(t) {
+        return (
+          (!filters.q ||
+            (t.title + ' ' + (t.notes || ''))
+              .toLowerCase()
+              .includes(filters.q.toLowerCase())) &&
+          (!filters.list || t.list === filters.list) &&
+          (!filters.priority || t.priority === filters.priority) &&
+          (!filters.state ||
+            filters.state === 'all' ||
+            (page === 'recovery' ? status(t) : t.state) === filters.state)
+        );
+      }
+      function ordered(items) {
+        return [...items].sort(
+          (a, b) =>
+            (a.plan || a.deadline || '9999').localeCompare(
+              b.plan || b.deadline || '9999',
+            ) || a.id.localeCompare(b.id),
+        );
+      }
+      function empty(message) {
+        return `<div class="empty card"><h2>${message}</h2>${Object.values(filters).some(Boolean) ? '<p>试试减少条件，或清除全部筛选。</p><button data-action="clear">清除筛选</button>' : '<p>可以随时记录一件事，再决定什么时候做。</p><button data-action="new">＋ 添加任务</button>'}</div>`;
+      }
+      function taskRow(t, recover = false) {
+        const s = status(t);
+        return `<article class="task ${s}"><button class="task-check" data-complete="${t.id}" aria-label="${t.state === 'completed' ? '查看' : t.future ? '查看后续安排' : '完成'}${escapeHtml(t.title)}">${t.state === 'completed' ? '✓' : t.future ? '↻' : t.state === 'skipped' ? '–' : ''}</button><div class="task-copy"><button class="task-title" data-open="${t.id}">${escapeHtml(t.title)}</button><div class="task-meta">${t.plan ? `<span>计划 ${formatTime(t.plan)}</span>` : ''}${t.deadline ? `<span class="${past(t.deadline) && t.state === 'pending' ? 'danger' : ''}">${formatTime(t.deadline)} 截止</span>` : ''}${!t.plan && !t.deadline ? '<span>未安排日期</span>' : ''}</div><div class="task-meta"><span>${t.list}</span>${t.priority === '高' ? '<span class="badge missed">高优先级</span>' : ''}${['overdue', 'missed'].includes(s) ? `<span class="badge ${s}">${s === 'overdue' ? '!' : '◷'} ${stateCopy[s]}</span>` : ''}${t.repeat ? `<span class="badge repeat">↻ ${escapeHtml(t.repeat)} · ${t.future ? '后续安排' : t.state === 'pending' ? '当前待处理' : '已处理记录'}</span>` : ''}${t.state !== 'pending' ? `<span>${stateCopy[t.state]} · ${formatTime(t.completedAt)}</span>` : ''}${recover && s === 'overdue' && past(t.plan) ? '<span>计划也已错过</span>' : ''}</div></div>${recover ? `<div class="task-actions"><button data-skip="${t.id}">跳过${t.repeat ? '本次' : ''}</button><button class="primary" data-reschedule="${t.id}">${t.repeat ? '仅本次改期' : '重新安排'}</button></div>` : ''}</article>`;
+      }
+      function quickForm() {
+        return `<form class="quick" id="quick-form"><input name="title" required aria-label="快速新增任务标题" placeholder="添加一件事，按 Enter 保存" autocomplete="off"><button type="submit" class="primary">添加</button><button type="button" class="date-shortcut ghost" data-action="new">日期与更多选项…</button></form>`;
+      }
+      function listPage() {
+        let items = tasks.filter((t) =>
+          page === 'recovery'
+            ? ['overdue', 'missed'].includes(status(t)) && !t.future
+            : page === 'history'
+              ? t.state !== 'pending'
+              : page === 'today'
+                ? dateOf(t.plan) === TODAY || dateOf(t.deadline) === TODAY
+                : page === 'inbox'
+                  ? t.list === '收件箱'
+                  : page === 'upcoming'
+                    ? dateOf(t.plan) > TODAY || dateOf(t.deadline) > TODAY
+                    : page.startsWith('list:')
+                      ? t.list === page.slice(5)
+                      : true,
+        );
+        if (!filters.state && !['history', 'recovery'].includes(page))
+          items = items.filter((t) => t.state === 'pending');
+        items = ordered(items.filter(matches));
+        if (page === 'recovery')
+          items.sort(
+            (a, b) => Number(status(b) === 'overdue') - Number(status(a) === 'overdue'),
+          );
+        if (page === 'history')
+          items.sort((a, b) => (b.completedAt || '').localeCompare(a.completedAt || ''));
+        if (['inbox', 'upcoming'].includes(page)) {
+          const seen = new Set();
+          items = items.filter(
+            (t) => !t.series || (!seen.has(t.series) && seen.add(t.series)),
+          );
+        }
+        const recovery = recoveryTasks();
+        const todayDone = tasks.filter(
+          (t) => t.state === 'completed' && dateOf(t.completedAt) === TODAY && matches(t),
+        );
+        return `<div class="stack">${!['recovery', 'history'].includes(page) ? quickForm() : ''}${page === 'today' && recovery.length ? `<button class="recovery-link" data-page="recovery"><span>↺ ${recovery.length} 项待恢复 · 错过与逾期集中处理</span><span>查看 →</span></button>` : ''}${page === 'recovery' ? `<div class="summary"><strong>共 ${recovery.length} 项待恢复</strong><span>已逾期 ${recovery.filter((t) => status(t) === 'overdue').length} 项</span><span>错过计划 ${recovery.filter((t) => status(t) === 'missed').length} 项</span><span>逾期优先 · 原时间保留</span></div>` : ''}${filterControls()}<div class="section-title"><h2>${page === 'today' ? '今天的安排' : page === 'history' ? '处理记录' : page === 'recovery' ? '需要处理' : '任务'} <small>${items.length} 项</small></h2>${page === 'history' ? '<small>按实际处理时间排序</small>' : ''}</div><div class="task-list">${items.length ? items.map((t) => taskRow(t, page === 'recovery')).join('') : empty(page === 'recovery' ? '暂时没有需要恢复的任务' : '没有符合条件的任务')}</div>${page === 'today' && !filters.state ? `<details><summary>今天完成 · ${todayDone.length} 项</summary><div class="task-list" style="margin-top:12px">${todayDone.map((t) => taskRow(t)).join('') || '<p class="muted">完成后会在这里留下记录，包括今天补做的任务。</p>'}</div></details>` : ''}</div>`;
+      }
+      function dateItems(day) {
+        return ordered(
+          tasks.filter(
+            (t) =>
+              dateOf(t.plan || t.deadline) === day &&
+              matches(t) &&
+              (!filters.state ? t.state === 'pending' : true),
+          ),
+        );
+      }
+      function calendarItem(t) {
+        return `<button class="calendar-item ${!t.plan ? 'deadline' : ''} ${t.future ? 'future' : ''}" data-open="${t.id}"><span>${escapeHtml(t.title)}</span><small>${t.plan ? formatTime(t.plan) : formatTime(t.deadline) + ' 前截止'}${t.plan && t.deadline ? '<br>' + formatTime(t.deadline) + ' 前截止' : ''}${t.future ? '<br>↻ 后续安排 · 只读' : ''}</small></button>`;
+      }
+      function weekStart(d) {
+        const n = new Date(d + 'T12:00:00Z').getUTCDay();
+        return addDays(d, -((n + 6) % 7));
+      }
+      function calendarPage() {
+        let body = '';
+        if (view === 'agenda') {
+          body =
+            Array.from({ length: 14 }, (_, i) => addDays(anchor, i))
+              .filter((d) => dateItems(d).length)
+              .map(
+                (d) =>
+                  `<section class="agenda-day"><h2 class="agenda-date">${shortDate(d)}<br><small>${weekday(d)}</small></h2><div class="task-list">${dateItems(
+                    d,
+                  )
+                    .map((t) => taskRow(t))
+                    .join('')}</div></section>`,
+              )
+              .join('') || empty('这段时间没有安排');
+        } else if (view === 'day') {
+          const day = dateItems(anchor);
+          const allDay = day.filter((t) => (t.plan || t.deadline).length === 10);
+          const deadlines = day.filter((t) => !t.plan && t.deadline.includes('T'));
+          const timed = day.filter((t) => t.plan.includes('T'));
+          const times = [...new Set(timed.map((task) => task.plan.slice(11)))].sort();
+          body = `<div class="card stack"><h2>全天</h2>${allDay.map(calendarItem).join('') || '<small>无全天安排</small>'}${deadlines.length ? '<h2>当天截止</h2>' + deadlines.map(calendarItem).join('') : ''}<h2>具体时间 <small>· 按时间排序，不代表持续时长</small></h2><div class="timeline">${
+            times
+              .map(
+                (time) =>
+                  `<section class="time-slot"><time>${time}</time><div class="time-slot-items">${timed
+                    .filter((task) => task.plan.slice(11) === time)
+                    .map(
+                      (task) =>
+                        `<button class="time-point" data-open="${task.id}">${escapeHtml(task.title)}${task.deadline ? '<small>' + formatTime(task.deadline) + ' 截止</small>' : ''}${task.future ? '<small>后续安排 · 只读</small>' : ''}</button>`,
+                    )
+                    .join('')}</div></section>`,
+              )
+              .join('') || '<small>无定时计划</small>'
+          }</div></div>`;
+        } else if (view === 'week') {
+          const start = weekStart(anchor);
+          body = `<p class="muted">按日期与时间排序；数量为当前筛选下的计划事项。横向滑动查看完整一周。</p><div class="week-scroll"><div class="week-grid">${Array.from(
+            { length: 7 },
+            (_, i) => {
+              const d = addDays(start, i),
+                items = dateItems(d);
+              return `<section class="week-col"><header class="day-label"><small>${weekday(d)}</small><button data-day="${d}" class="${d === TODAY ? 'is-today' : ''}">${Number(d.slice(8))}</button></header><small>${items.filter((t) => t.plan).length} 项计划</small>${items.map(calendarItem).join('') || '<p class="muted" style="margin-top:15px">暂无安排</p>'}</section>`;
+            },
+          ).join('')}</div></div>`;
+        } else {
+          const start = weekStart(anchor.slice(0, 8) + '01');
+          body = `<div class="month">${['一', '二', '三', '四', '五', '六', '日'].map((d) => `<div class="weekday">${d}</div>`).join('')}${Array.from(
+            { length: 42 },
+            (_, i) => {
+              const d = addDays(start, i),
+                items = dateItems(d);
+              return `<div class="month-cell ${d.slice(0, 7) !== anchor.slice(0, 7) ? 'outside' : ''}"><button class="month-date ${d === TODAY ? 'is-today' : ''}" data-day="${d}" aria-label="查看${d}">${Number(d.slice(8))}</button>${items.slice(0, 3).map(calendarItem).join('')}${items.length > 3 ? `<button class="more" data-day="${d}">+${items.length - 3} 项</button>` : ''}${items.length ? `<button class="mobile-month-count ghost" data-day="${d}" aria-label="查看${d}的${items.length}项安排">${items.length} 项</button>` : ''}</div>`;
+            },
+          ).join('')}</div>`;
+        }
+        const rangeLabel =
+          view === 'month'
+            ? `${anchor.slice(0, 4)} 年 ${Number(anchor.slice(5, 7))} 月`
+            : view === 'week'
+              ? `${shortDate(weekStart(anchor))} — ${shortDate(addDays(weekStart(anchor), 6))}`
+              : view === 'agenda'
+                ? `${shortDate(anchor)} — ${shortDate(addDays(anchor, 13))}`
+                : `${shortDate(anchor)} · ${weekday(anchor)}`;
+        return `<div class="stack"><h2>${rangeLabel}</h2><div class="calendar-head"><div class="segmented" aria-label="日历视图">${[
+          ['agenda', '议程'],
+          ['day', '日'],
+          ['week', '周'],
+          ['month', '月'],
+        ]
+          .map(
+            ([v, l]) =>
+              `<button data-view="${v}" aria-pressed="${v === view}">${l}</button>`,
+          )
+          .join(
+            '',
+          )}</div><button data-action="new">＋ 在 ${shortDate(anchor)} 添加</button><div class="date-nav"><button data-shift="-1" aria-label="上一范围">‹</button><input id="calendar-date" type="date" value="${anchor}" aria-label="日历日期"><button data-action="calendar-today">今天</button><button data-shift="1" aria-label="下一范围">›</button></div></div>${filterControls()}${view === 'agenda' && recoveryTasks().length ? `<button class="recovery-link" data-page="recovery">另有 ${recoveryTasks().length} 项待恢复 · 查看全部 →</button>` : ''}${body}</div>`;
+      }
+      function goalsPage() {
+        return `<div class="stack"><div class="section-title"><small>目标状态由你决定，任务完成率自动计算。</small><button data-action="new-goal">＋ 新建目标</button></div><div class="goals">${goals
+          .map((g) => {
+            const linked = tasks.filter((t) => t.goal === g.id && !t.repeat),
+              done = linked.filter((t) => t.state === 'completed').length,
+              percent = linked.length ? Math.round((done / linked.length) * 100) : 0;
+            return `<article class="card goal"><div class="row between"><h2>${escapeHtml(g.title)}</h2><span class="badge">${g.state}</span></div><p class="muted">${escapeHtml(g.description)}</p><progress value="${percent}" max="100" aria-label="${escapeHtml(g.title)}任务完成率"></progress><div class="row between"><small>${done} / ${linked.length} 个任务完成</small><strong>${percent}%</strong></div><div class="goal-tasks">${
+              linked
+                .slice(0, 3)
+                .map(
+                  (t) =>
+                    `<button data-open="${t.id}">${t.state === 'completed' ? '✓' : '○'} ${escapeHtml(t.title)}</button>`,
+                )
+                .join('') || '<small>添加第一件事，让目标开始前进。</small>'
+            }</div>${
+              linked.length > 3
+                ? `<details><summary>其余 ${linked.length - 3} 项</summary><div class="goal-tasks">${linked
+                    .slice(3)
+                    .map(
+                      (t) =>
+                        `<button data-open="${t.id}">${escapeHtml(t.title)}</button>`,
+                    )
+                    .join('')}</div></details>`
+                : ''
+            }<div class="row">${g.state !== '已归档' ? `<button data-goal-add="${g.id}">＋ 添加关联任务</button>` : ''}<button class="ghost" data-goal-edit="${g.id}">编辑目标</button></div></article>`;
+          })
+          .join('')}</div></div>`;
+      }
+      function reviewPage() {
+        const done = tasks.filter(
+            (t) => t.state === 'completed' && dateOf(t.completedAt) === TODAY,
+          ),
+          skipped = tasks.filter(
+            (t) => t.state === 'skipped' && dateOf(t.completedAt) === TODAY,
+          );
+        return `<div class="stack"><p class="muted">${shortDate(TODAY)} · 按实际处理时间回顾</p><div class="review-stats">${[
+          ['已完成', done.length],
+          ['已跳过', skipped.length],
+          ['待恢复', recoveryTasks().length],
+        ]
+          .map(
+            ([l, n]) =>
+              `<div class="card"><h3>${l}</h3><div class="metric">${n}</div></div>`,
+          )
+          .join(
+            '',
+          )}</div><h2>今天完成</h2><div class="task-list">${done.map((t) => taskRow(t)).join('') || empty('今天还没有完成记录')}</div><button data-page="history">查看全部处理记录 →</button></div>`;
+      }
+      function settingsPage() {
+        return `<div class="stack"><section class="card stack"><h2>提醒与时区</h2><p class="muted">应用时区：Asia/Shanghai</p><p>页面可见且浏览器允许执行时提供提醒。关闭应用后不能保证准时送达。</p><div class="notice">原型不请求通知权限、不发送系统通知。正式应用中的全天默认时间和权限设置沿用现有实现。</div></section><section class="card stack"><h2>本地数据</h2><p>定期导出备份。恢复会替换全部本地数据，必须先预览并确认。</p><div class="row"><button data-info="备份导出使用正式应用的设置入口；本原型没有实际数据库。">导出备份流程说明</button><button data-info="恢复前先验证文件，再展示分类数量与时区，确认后原子替换；失败保留原数据。">恢复流程说明</button></div><div class="notice">清空数据属于独立危险操作，正式应用需二次确认。原型不提供对实际数据的清空操作。</div></section></div>`;
+      }
+      function showToast(message, action) {
+        clearTimeout(toastTimer);
+        $('#toast').innerHTML =
+          `<span>${escapeHtml(message)}</span>${action ? `<button data-open="${action}">查看任务</button>` : ''}`;
+        $('#toast').hidden = false;
+        toastTimer = setTimeout(() => ($('#toast').hidden = true), 8000);
+      }
+      function modal(title, body) {
+        if (!$('#modal').open) returnFocus = document.activeElement;
+        $('#modal').innerHTML =
+          `<div class="dialog-head"><h2 id="modal-title">${escapeHtml(title)}</h2><button data-action="close" aria-label="关闭弹窗">×</button></div>${body}`;
+        if (!$('#modal').open) $('#modal').showModal();
+        $('#modal').querySelector('[autofocus], button')?.focus();
+      }
+      $('#modal').addEventListener('close', () => {
+        if (returnFocus?.isConnected) returnFocus.focus();
+        else $('#page-title').focus();
+      });
+      function timeFields(prefix, value, label) {
+        const timed = value.includes('T');
+        return `<fieldset style="border:0;padding:0;margin:0;display:grid;gap:8px"><legend style="font-size:12px;color:var(--muted);margin-bottom:6px">${label}</legend><div class="split"><label class="field">日期<input type="date" name="${prefix}Date" value="${dateOf(value)}"></label><label class="field">具体时间（留空为全天）<input type="time" name="${prefix}Time" value="${timed ? value.slice(11) : ''}"></label></div></fieldset>`;
+      }
+      function taskForm(task, goal) {
+        const editing = !!task;
+        const defaultPlan = task ? task.plan : page === 'calendar' ? anchor : '';
+        const list = task?.list || (page.startsWith('list:') ? page.slice(5) : '收件箱');
+        modal(
+          editing ? (task.repeat ? '仅本次改期' : '编辑任务') : '添加一件事',
+          `<form id="task-form" class="dialog-form" data-id="${task?.id || ''}"><label class="field">任务标题<input name="title" required autofocus value="${escapeHtml(task?.title || '')}" ${task?.repeat ? 'readonly' : ''} placeholder="例如：给妈妈打电话"></label>${task?.repeat ? '<div class="notice">仅修改本次计划与截止，保留原具体时间。固定重复周期不变。</div>' : ''}${timeFields('plan', defaultPlan, '计划执行')}${timeFields('deadline', task?.deadline || '', '截止时间')}<div class="row"><button type="button" data-plan-day="${TODAY}">计划今天</button><button type="button" data-plan-day="${addDays(TODAY, 1)}">计划明天</button><button type="button" data-action="clear-plan">清除计划</button></div><details ${goal || editing ? 'open' : ''}><summary>清单、优先级与更多选项</summary><div class="stack"><div class="split"><label class="field">清单<select name="list" ${task?.repeat ? 'disabled' : ''}>${lists.map((l) => `<option ${selected(l, list)}>${l}</option>`).join('')}</select></label><label class="field">优先级<select name="priority" ${task?.repeat ? 'disabled' : ''}>${['无', '低', '中', '高'].map((l) => `<option ${selected(l, task?.priority || '无')}>${l}</option>`).join('')}</select></label></div><label class="field">关联长期目标<select name="goal" ${task?.repeat ? 'disabled' : ''}><option value="">不关联</option>${goals
+            .filter((g) => g.state !== '已归档' || g.id === task?.goal)
+            .map(
+              (g) =>
+                `<option value="${g.id}" ${selected(g.id, task?.goal || goal)}>${escapeHtml(g.title)}</option>`,
+            )
+            .join(
+              '',
+            )}</select></label><label class="field">备注<textarea name="notes" rows="2" ${task?.repeat ? 'readonly' : ''}>${escapeHtml(task?.notes || '')}</textarea></label></div></details><p id="form-error" class="error" role="alert"></p><div class="dialog-actions"><button type="button" data-action="close">取消</button><button class="primary" type="submit">${editing ? '保存修改' : '添加任务'}</button></div></form>`,
+        );
+      }
+      function openTask(id) {
+        const t = tasks.find((x) => x.id === id);
+        if (!t) return;
+        const s = status(t);
+        modal(
+          t.title,
+          `<div class="stack"><div class="row"><span class="badge ${s}">${stateCopy[s]}</span>${t.repeat ? `<span class="badge repeat">↻ ${escapeHtml(t.repeat)}</span>` : ''}</div>${t.future ? '<div class="notice">这是后续安排，暂不能完成或单次改期。需要调整周期时，请管理整个系列。</div>' : ''}<dl class="detail-grid"><dt>计划执行</dt><dd>${formatTime(t.plan)}</dd><dt>截止时间</dt><dd>${formatTime(t.deadline)}</dd><dt>清单</dt><dd>${t.list}</dd><dt>优先级</dt><dd>${t.priority}</dd>${t.goal ? '<dt>长期目标</dt><dd>' + escapeHtml(goals.find((g) => g.id === t.goal)?.title) + '</dd>' : ''}<dt>备注</dt><dd>${escapeHtml(t.notes || '无')}</dd></dl>${t.state !== 'pending' ? `<p class="muted">${stateCopy[s]}于 ${formatTime(t.completedAt)}</p>` : ''}<div class="dialog-actions">${!t.future && t.state === 'pending' ? `<button data-skip="${id}">跳过${t.repeat ? '本次' : ''}</button><button data-reschedule="${id}">${t.repeat ? '仅本次改期' : '编辑 / 改期'}</button><button class="primary" data-complete="${id}">完成${t.repeat ? '本次' : ''}</button>` : t.future ? '<button data-info="系列编辑将统一展示规则预览、影响范围与确认。这一轮原型暂未模拟规则修改。">管理整个系列 · 流程说明</button>' : !t.repeat && t.state === 'completed' ? `<button data-undo="${id}">撤销完成</button>` : ''}</div></div>`,
+        );
+      }
+      function processTask(id, state) {
+        const t = tasks.find((x) => x.id === id);
+        if (!t || t.future || t.state !== 'pending') return;
+        t.state = state;
+        t.completedAt = NOW;
+        if (t.series) {
+          const next = ordered(tasks.filter((x) => x.series === t.series && x.future))[0];
+          if (next) next.future = false;
+        }
+        $('#modal').close();
+        render();
+        showToast(`${t.title} · ${stateCopy[state]}`, id);
+      }
+      function goalForm(id) {
+        const g = goals.find((x) => x.id === id);
+        modal(
+          g ? '编辑长期目标' : '新建长期目标',
+          `<form id="goal-form" data-id="${g?.id || ''}" class="dialog-form"><label class="field">目标名称<input name="title" value="${escapeHtml(g?.title || '')}" required autofocus></label><label class="field">说明<textarea name="description">${escapeHtml(g?.description || '')}</textarea></label><label class="field">目标状态<select name="state">${['计划中', '进行中', '已完成', '已归档'].map((s) => `<option ${selected(s, g?.state || '计划中')}>${s}</option>`).join('')}</select></label><p class="muted">状态由你决定，任务完成率单独计算。</p><div class="dialog-actions"><button type="button" data-action="close">取消</button><button type="submit" class="primary">保存目标</button></div></form>`,
+        );
+      }
+      document.addEventListener('click', (event) => {
+        const b = event.target.closest('button');
+        if (!b) return;
+        if (b.dataset.page) {
+          $('#modal').close();
+          go(b.dataset.page);
+        } else if (b.dataset.open) openTask(b.dataset.open);
+        else if (b.dataset.complete) {
+          const t = tasks.find((t) => t.id === b.dataset.complete);
+          if (t?.future || t?.state !== 'pending') openTask(t.id);
+          else processTask(t.id, 'completed');
+        } else if (b.dataset.skip) processTask(b.dataset.skip, 'skipped');
+        else if (b.dataset.undo) {
+          const t = tasks.find((t) => t.id === b.dataset.undo);
+          t.state = 'pending';
+          delete t.completedAt;
+          $('#modal').close();
+          render();
+          showToast('已撤销完成', t.id);
+        } else if (b.dataset.reschedule)
+          taskForm(tasks.find((t) => t.id === b.dataset.reschedule));
+        else if (b.dataset.goalAdd) taskForm(null, b.dataset.goalAdd);
+        else if (b.dataset.goalEdit) goalForm(b.dataset.goalEdit);
+        else if (b.dataset.view) {
+          view = b.dataset.view;
+          render();
+        } else if (b.dataset.day) {
+          anchor = b.dataset.day;
+          view = 'day';
+          render();
+        } else if (b.dataset.shift) {
+          if (view === 'month') {
+            const d = new Date(anchor.slice(0, 7) + '-01T12:00:00Z');
+            d.setUTCMonth(d.getUTCMonth() + Number(b.dataset.shift));
+            anchor = d.toISOString().slice(0, 10);
+          } else
+            anchor = addDays(
+              anchor,
+              Number(b.dataset.shift) *
+                (view === 'week' ? 7 : view === 'agenda' ? 14 : 1),
+            );
+          render();
+        } else if (b.dataset.clear) {
+          filters[b.dataset.clear] = '';
+          render();
+        } else if (b.dataset.planDay) {
+          $('#task-form').elements.planDate.value = b.dataset.planDay;
+        } else if (b.dataset.info) {
+          modal(
+            '流程说明',
+            `<div class="stack"><p>${escapeHtml(b.dataset.info)}</p><button data-action="close">知道了</button></div>`,
+          );
+        } else {
+          switch (b.dataset.action) {
+            case 'new':
+              taskForm();
+              break;
+            case 'new-goal':
+              goalForm();
+              break;
+            case 'close':
+              $('#modal').close();
+              break;
+            case 'filters':
+              showFilters = !showFilters;
+              render();
+              break;
+            case 'clear':
+              filters = { q: '', list: '', priority: '', state: '' };
+              render();
+              break;
+            case 'calendar-today':
+              anchor = TODAY;
+              render();
+              break;
+            case 'clear-plan':
+              $('#task-form').elements.planDate.value = '';
+              $('#task-form').elements.planTime.value = '';
+              break;
+            case 'more':
+              modal(
+                '更多',
+                `<nav class="more-menu">${navItems
+                  .slice(4)
+                  .map((x) => navButton(...x))
+                  .join('')}<h3>我的清单</h3>${lists
+                  .slice(1)
+                  .map((l) => navButton('list:' + l, l, '·'))
+                  .join('')}</nav>`,
+              );
+              break;
+          }
+        }
+      });
+      function updateSearch(event) {
+        if (event.target.id === 'search' && !event.isComposing) {
+          const position = event.target.selectionStart;
+          filters.q = event.target.value;
+          render();
+          $('#search').focus();
+          try {
+            $('#search').setSelectionRange(position, position);
+          } catch {}
+        }
+      }
+      document.addEventListener('input', updateSearch);
+      document.addEventListener('compositionend', updateSearch);
+      document.addEventListener('change', (event) => {
+        if (event.target.dataset.filter) {
+          filters[event.target.dataset.filter] = event.target.value;
+          render();
+        } else if (
+          event.target.id === 'calendar-date' &&
+          /^\d{4}-\d{2}-\d{2}$/.test(event.target.value)
+        ) {
+          anchor = event.target.value;
+          render();
+        }
+      });
+      document.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const form = event.target;
+        const data = new FormData(form);
+        if (form.id === 'quick-form') {
+          const title = String(data.get('title')).trim();
+          if (!title) return;
+          const id = 't' + crypto.randomUUID();
+          tasks.push({
+            id,
+            title,
+            list: page.startsWith('list:') ? page.slice(5) : '收件箱',
+            plan: '',
+            deadline: '',
+            priority: '无',
+            state: 'pending',
+          });
+          render();
+          showToast('已添加，无日期任务可从收件箱或所属清单查看', id);
+          $('#quick-form input')?.focus();
+        } else if (form.id === 'task-form') {
+          const old = tasks.find((t) => t.id === form.dataset.id);
+          const title = String(data.get('title')).trim();
+          if (!title) {
+            $('#form-error').textContent = '请输入任务标题。';
+            return;
+          }
+          const point = (p) =>
+            data.get(p + 'Date')
+              ? String(data.get(p + 'Date')) +
+                (data.get(p + 'Time') ? 'T' + data.get(p + 'Time') : '')
+              : '';
+          const plan = point('plan'),
+            deadline = point('deadline');
+          if (
+            (data.get('planTime') && !plan) ||
+            (data.get('deadlineTime') && !deadline)
+          ) {
+            $('#form-error').textContent = '填写具体时间时，请同时选择日期。';
+            return;
+          }
+          if (
+            plan &&
+            deadline &&
+            (dateOf(deadline) < dateOf(plan) ||
+              (plan.includes('T') && deadline.includes('T') && deadline < plan))
+          ) {
+            $('#form-error').textContent =
+              '截止不能早于计划。请调整日期或时间，原任务尚未修改。';
+            return;
+          }
+          const task = {
+            ...(old || {}),
+            id: old?.id || 't' + crypto.randomUUID(),
+            title,
+            plan,
+            deadline,
+            list: old?.repeat ? old.list : String(data.get('list')),
+            priority: old?.repeat ? old.priority : String(data.get('priority')),
+            notes: old?.repeat ? old.notes : String(data.get('notes')),
+            goal: old?.repeat ? old.goal : String(data.get('goal') || ''),
+            state: old?.state || 'pending',
+          };
+          if (old) tasks = tasks.map((t) => (t.id === old.id ? task : t));
+          else tasks.push(task);
+          $('#modal').close();
+          render();
+          showToast(old ? '修改已保存' : '任务已添加', task.id);
+        } else if (form.id === 'goal-form') {
+          const title = String(data.get('title')).trim();
+          if (!title) return;
+          const goal = {
+            id: form.dataset.id || 'g' + crypto.randomUUID(),
+            title,
+            description: String(data.get('description')),
+            state: String(data.get('state')),
+          };
+          const old = goals.find((g) => g.id === goal.id);
+          if (old) goals = goals.map((g) => (g.id === goal.id ? goal : g));
+          else goals.push(goal);
+          $('#modal').close();
+          render();
+          showToast('目标已保存');
+        }
+      });
+      $('#collapse').addEventListener('click', () => {
+        const collapsed = $('#layout').classList.toggle('collapsed');
+        $('#collapse').textContent = collapsed ? '›' : '‹';
+        $('#collapse').setAttribute('aria-expanded', String(!collapsed));
+        $('#collapse').setAttribute('aria-label', collapsed ? '展开侧栏' : '收起侧栏');
+      });
+      $('#theme').addEventListener('click', () => {
+        const dark = document.documentElement.classList.toggle('dark');
+        $('#theme').setAttribute('aria-label', dark ? '切换浅色模式' : '切换深色模式');
+      });
+      $('#page-title').tabIndex = -1;
+      render();
+    </script>
+  </body>
+</html>

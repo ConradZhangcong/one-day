@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -5,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CalendarItemView, TodoSnapshot } from '../../src/application';
 import {
   decodeLocalDate,
+  decodeSchedulePoint,
   decodeTimeZoneId,
   recurrenceSeriesSchema,
   taskListSchema,
@@ -100,11 +102,17 @@ describe('recurrence UI scope', () => {
 
   it('keeps quick add ordinary by default and routes expanded recurrence directly to createSeries', async () => {
     const user = userEvent.setup();
-    render(<QuickAdd defaultListId="system:inbox" today="2026-09-02" goals={[]} />);
+    render(
+      <MemoryRouter>
+        <QuickAdd defaultListId="system:inbox" today="2026-09-02" goals={[]} />
+      </MemoryRouter>,
+    );
 
     await user.type(screen.getByRole('textbox', { name: '任务标题' }), '晨间复盘');
     expect(screen.queryByText('未来预览')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '日期与更多' }));
     await user.click(screen.getByRole('button', { name: '重复' }));
+    await user.selectOptions(screen.getByLabelText('快速计划类型'), 'allDay');
     fireEvent.change(screen.getByLabelText('快速计划日期'), {
       target: { value: '2026-09-02' },
     });
@@ -122,6 +130,54 @@ describe('recurrence UI scope', () => {
           interval: 1,
           end: { kind: 'never' },
         },
+      }),
+    );
+  });
+
+  it('keeps the selected time when quick add moves the plan to tomorrow', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <QuickAdd defaultListId="system:inbox" today="2026-09-10" goals={[]} />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByRole('button', { name: '日期与更多' }));
+    await user.selectOptions(screen.getByLabelText('快速计划类型'), 'timed');
+    fireEvent.change(screen.getByLabelText('快速计划时间'), {
+      target: { value: '2026-09-10T18:30' },
+    });
+    await user.click(screen.getByRole('button', { name: '明天' }));
+    expect(screen.getByLabelText('快速计划时间')).toHaveValue('2026-09-11T18:30');
+  });
+
+  it('preserves the precise plan and deadline when rescheduling one occurrence', async () => {
+    const user = userEvent.setup();
+    const item = {
+      ...occurrenceItem(false),
+      schedule: decodeSchedulePoint({ kind: 'timed', localDateTime: '2026-08-14T18:30' }),
+      deadlineAt: decodeSchedulePoint({
+        kind: 'timed',
+        localDateTime: '2026-08-14T20:00',
+      }),
+    };
+    if (item.schedule.kind === 'none') throw new Error('Expected schedule');
+    render(
+      <OccurrenceDetailsDrawer
+        item={{ ...item, schedule: item.schedule }}
+        snapshot={snapshot()}
+        onClose={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: '仅本次改期' }));
+    expect(screen.getByLabelText('仅本次计划时间')).toHaveValue('2026-08-14T18:30');
+    fireEvent.change(screen.getByLabelText('仅本次计划时间'), {
+      target: { value: '2026-08-14T19:00' },
+    });
+    await user.click(screen.getByRole('button', { name: '保存仅本次改期' }));
+    await waitFor(() =>
+      expect(serviceMocks.rescheduleOccurrence).toHaveBeenCalledWith(item.ownerId, {
+        plannedAt: { kind: 'timed', localDateTime: '2026-08-14T19:00' },
+        deadlineAt: { kind: 'timed', localDateTime: '2026-08-14T20:00' },
       }),
     );
   });

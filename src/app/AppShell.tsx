@@ -1,5 +1,5 @@
+import { AddTaskButton } from '@/features/todos/AddTaskButton';
 import {
-  AlertTriangle,
   CalendarDays,
   CheckCircle2,
   ChevronLeft,
@@ -9,15 +9,16 @@ import {
   History,
   Inbox,
   ListTodo,
-  Plus,
+  MoreHorizontal,
   RotateCcw,
   Settings,
   Target,
 } from 'lucide-react';
 import { useState, type ComponentType } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router';
+import { NavLink, Outlet, useLocation } from 'react-router';
 
 import logoUrl from '../../logo/concentric-ring-master-metal.svg';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { SYSTEM_INBOX_ID } from '@/domain';
 import { useTodoSnapshot } from '@/features/todos/useTodoSnapshot';
@@ -36,24 +37,24 @@ interface NavigationItem {
 
 export function AppShell() {
   const snapshot = useTodoSnapshot();
-  const navigate = useNavigate();
+  const location = useLocation();
+  const [moreOpen, setMoreOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const pending = snapshot?.tasks.filter((task) => task.state === 'pending') ?? [];
   const primaryNavigation: readonly NavigationItem[] = [
     { label: '今天', to: '/today', icon: CircleDot },
-    { label: '即将到来', to: '/upcoming', icon: Clock3 },
+    { label: '日历', to: '/calendar/agenda', icon: CalendarDays },
     {
       label: '收件箱',
       to: '/inbox',
       icon: Inbox,
       count: pending.filter((task) => task.listId === SYSTEM_INBOX_ID).length,
     },
-    { label: '错过计划', to: '/recovery?kind=missed', icon: RotateCcw },
-    { label: '已逾期', to: '/recovery?kind=overdue', icon: AlertTriangle },
+    { label: '待恢复', to: '/recovery', icon: RotateCcw },
   ];
   const secondaryNavigation: readonly NavigationItem[] = [
-    { label: '已完成', to: '/completed', icon: CheckCircle2 },
-    { label: '日历', to: '/calendar/agenda', icon: CalendarDays },
+    { label: '即将到来', to: '/upcoming', icon: Clock3 },
+    { label: '已处理', to: '/completed', icon: CheckCircle2 },
     { label: '长期目标', to: '/goals', icon: Target },
     { label: '回顾', to: '/review?period=day', icon: History },
     { label: '设置', to: '/settings', icon: Settings },
@@ -63,10 +64,19 @@ export function AppShell() {
     const Icon = item.icon;
     return (
       <NavLink
+        onClick={() => setMoreOpen(false)}
         key={item.label}
         to={item.to}
         title={collapsed ? item.label : undefined}
-        className={({ isActive }) => cn('nav-link', isActive && 'active')}
+        className={({ isActive }) =>
+          cn(
+            'nav-link',
+            (isActive ||
+              (item.to.startsWith('/calendar') &&
+                location.pathname.startsWith('/calendar/'))) &&
+              'active',
+          )
+        }
       >
         <span className="nav-icon" aria-hidden="true">
           <Icon />
@@ -99,10 +109,7 @@ export function AppShell() {
           </Button>
         </div>
 
-        <Button className="quick-add-button" onClick={() => navigate('/inbox?quick=1')}>
-          <Plus data-icon="inline-start" />
-          <span>快速新增</span>
-        </Button>
+        <AddTaskButton className="quick-add-button" />
 
         <nav className="nav-list">
           <div className="nav-section">
@@ -132,10 +139,45 @@ export function AppShell() {
               ))}
           </div>
         </nav>
+        <p className="sidebar-footer">One Day · 本地优先</p>
       </aside>
       <main className="main-panel">
         <Outlet />
       </main>
+      <nav className="mobile-navigation" aria-label="手机导航">
+        {primaryNavigation.map(renderNavigationItem)}
+        <Button
+          variant="ghost"
+          className="nav-link"
+          aria-expanded={moreOpen}
+          onClick={() => setMoreOpen(true)}
+        >
+          <MoreHorizontal className="size-5" />
+          <span>更多</span>
+        </Button>
+      </nav>
+      <Dialog open={moreOpen} onOpenChange={setMoreOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>更多</DialogTitle>
+          </DialogHeader>
+          <nav className="mobile-more-menu">
+            {secondaryNavigation.map(renderNavigationItem)}
+            <h2>我的清单</h2>
+            {snapshot?.lists
+              .filter((list) => !list.isSystem && !list.archived)
+              .map((list) => (
+                <NavLink
+                  key={list.id}
+                  to={`/lists/${encodeURIComponent(list.id)}`}
+                  onClick={() => setMoreOpen(false)}
+                >
+                  {list.name}
+                </NavLink>
+              ))}
+          </nav>
+        </DialogContent>
+      </Dialog>
       <TimeZoneChangePrompt />
       <ReminderRuntimeHost />
       <PwaUpdatePrompt />

@@ -24,13 +24,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import {
-  decodeSchedulePoint,
-  occurrenceKeySchema,
-  schedulePointLocalDate,
-  type RecurrenceSeries,
-} from '@/domain';
+import { ScheduleFields } from './ScheduleFields';
+import { useCurrentLocalDate } from './useCurrentLocalDate';
+import { type SchedulePoint, occurrenceKeySchema, type RecurrenceSeries } from '@/domain';
 
 import { SeriesEditForm } from './SeriesEditForm';
 
@@ -52,13 +48,12 @@ export function OccurrenceDetailsDrawer({
   const [editingSeries, setEditingSeries] = useState(false);
   const [pendingSeriesDraft, setPendingSeriesDraft] = useState<RecurrenceDraft>();
   const [confirmingStop, setConfirmingStop] = useState(false);
-  const [plannedDate, setPlannedDate] = useState(
-    item.kind === 'planned' ? (schedulePointLocalDate(item.schedule) ?? '') : '',
+  const today = useCurrentLocalDate(snapshot?.timeZone);
+  const [plannedAt, setPlannedAt] = useState<SchedulePoint>(
+    item.kind === 'planned' ? item.schedule : { kind: 'none' },
   );
-  const [deadlineDate, setDeadlineDate] = useState(
-    schedulePointLocalDate(
-      item.deadlineAt ?? (item.kind === 'deadline' ? item.schedule : { kind: 'none' }),
-    ) ?? '',
+  const [deadlineAt, setDeadlineAt] = useState<SchedulePoint>(
+    item.deadlineAt ?? (item.kind === 'deadline' ? item.schedule : { kind: 'none' }),
   );
 
   const run = async (action: 'complete' | 'skip' | 'pause' | 'stop') => {
@@ -82,7 +77,7 @@ export function OccurrenceDetailsDrawer({
       );
       onClose();
     } catch {
-      toast.error('操作失败，原实例保持不变。');
+      toast.error('操作失败，原安排保持不变。');
     } finally {
       setBusy(false);
     }
@@ -93,12 +88,8 @@ export function OccurrenceDetailsDrawer({
     try {
       const recurrence = (await getApplicationServices()).recurrence;
       await recurrence.rescheduleOccurrence(occurrenceKeySchema.parse(item.ownerId), {
-        plannedAt: plannedDate
-          ? decodeSchedulePoint({ kind: 'allDay', date: plannedDate })
-          : { kind: 'none' },
-        deadlineAt: deadlineDate
-          ? decodeSchedulePoint({ kind: 'allDay', date: deadlineDate })
-          : { kind: 'none' },
+        plannedAt,
+        deadlineAt,
       });
       toast.success('仅本次时间已更新');
       onClose();
@@ -135,20 +126,16 @@ export function OccurrenceDetailsDrawer({
           </DialogTitle>
           <DialogDescription>
             {item.virtual
-              ? '未来只读：此 occurrence 尚未物化，不能完成、跳过或仅本次改期。'
+              ? '这是后续安排，暂不能完成、跳过或单次改期。调整周期请管理整个系列。'
               : item.readonly
                 ? '历史只读：已处理的重复实例不能再次完成、跳过或改期。'
-                : '当前实例操作标记为“仅本次”；暂停和停止作用于整个系列。'}
+                : '本次完成、跳过和改期只影响这一次；暂停和停止作用于整个系列。'}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 px-6 pb-2">
           <div className="flex flex-wrap gap-2">
             <Badge variant={item.readonly ? 'outline' : 'secondary'}>
-              {item.virtual
-                ? '未来只读'
-                : item.readonly
-                  ? '历史只读'
-                  : '当前实例 · 仅本次'}
+              {item.virtual ? '未来只读' : item.readonly ? '历史只读' : '本次安排'}
             </Badge>
             <Badge variant="outline">整个系列可单独管理</Badge>
           </div>
@@ -163,22 +150,22 @@ export function OccurrenceDetailsDrawer({
           ) : null}
           {!item.virtual && editingSchedule && !editingSeries ? (
             <div className="grid grid-cols-2 gap-3">
-              <label className="grid gap-1 text-sm">
-                仅本次计划
-                <Input
-                  type="date"
-                  value={plannedDate}
-                  onChange={(event) => setPlannedDate(event.target.value)}
-                />
-              </label>
-              <label className="grid gap-1 text-sm">
-                仅本次截止
-                <Input
-                  type="date"
-                  value={deadlineDate}
-                  onChange={(event) => setDeadlineDate(event.target.value)}
-                />
-              </label>
+              {today ? (
+                <>
+                  <ScheduleFields
+                    label="仅本次计划"
+                    value={plannedAt}
+                    defaultDate={today}
+                    onChange={setPlannedAt}
+                  />
+                  <ScheduleFields
+                    label="仅本次截止"
+                    value={deadlineAt}
+                    defaultDate={today}
+                    onChange={setDeadlineAt}
+                  />
+                </>
+              ) : null}
               <Button
                 disabled={busy}
                 className="col-span-2"

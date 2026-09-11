@@ -6,6 +6,7 @@ import { AppProviders } from '@/app/AppProviders';
 import { router } from '@/app/router';
 
 import '@/app/styles.css';
+import '@/app/prototype-theme.css';
 
 const root = document.getElementById('root');
 

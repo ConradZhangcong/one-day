@@ -9,13 +9,13 @@ import { Button } from '@/components/ui/button';
 import { SimpleSelect } from '@/components/ui/compat';
 import { Input } from '@/components/ui/input';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import type { Priority, SchedulePoint, SingleTask } from '@/domain';
 
@@ -102,12 +102,14 @@ export function TaskDetailsDrawer({ onClose, snapshot, task }: Props) {
   };
 
   return (
-    <Sheet open onOpenChange={(value) => !value && !saving && onClose()}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-[520px]">
-        <SheetHeader className="border-b">
-          <SheetTitle>任务详情</SheetTitle>
-          <SheetDescription>编辑组织与时间信息；保存前不会修改原任务。</SheetDescription>
-        </SheetHeader>
+    <Dialog open onOpenChange={(value) => !value && !saving && onClose()}>
+      <DialogContent className="task-detail-dialog max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader className="border-b">
+          <DialogTitle>任务详情</DialogTitle>
+          <DialogDescription>
+            编辑组织与时间信息；保存前不会修改原任务。
+          </DialogDescription>
+        </DialogHeader>
         <div className="detail-form px-4 pb-4">
           {taskChanged ? (
             <Alert>
@@ -135,74 +137,6 @@ export function TaskDetailsDrawer({ onClose, snapshot, task }: Props) {
               }}
             />
           </label>
-          <label>
-            备注
-            <Textarea
-              value={notes}
-              rows={5}
-              onChange={(event) => setNotes(event.target.value)}
-              placeholder="纯文本备注"
-            />
-          </label>
-          <label>
-            清单
-            <SimpleSelect
-              ariaLabel="清单"
-              className="w-full"
-              value={listId}
-              options={snapshot.lists
-                .filter((list) => !list.archived)
-                .map((list) => ({ value: list.id, label: list.name }))}
-              onChange={(value) => {
-                if (typeof value === 'string') setListId(value);
-              }}
-            />
-          </label>
-          <label>
-            标签
-            <Input
-              value={draftTags.join('，')}
-              onChange={(event) =>
-                setDraftTags(
-                  event.target.value
-                    .split(/[,，]/)
-                    .map((value) => value.trim())
-                    .filter(Boolean),
-                )
-              }
-              placeholder="用逗号分隔多个标签"
-            />
-          </label>
-          <label>
-            优先级
-            <SimpleSelect
-              ariaLabel="优先级"
-              value={priority}
-              options={[
-                { value: 'none', label: '无' },
-                { value: 'low', label: '低' },
-                { value: 'medium', label: '中' },
-                { value: 'high', label: '高' },
-              ]}
-              onChange={(value) => {
-                if (typeof value === 'string') setPriority(value);
-              }}
-            />
-          </label>
-          <label>
-            长期目标
-            <SimpleSelect
-              allowClear
-              ariaLabel="长期目标"
-              className="w-full"
-              placeholder="不关联目标"
-              value={goalId || undefined}
-              options={snapshot.goals
-                .filter((goal) => goal.status !== 'archived' || goal.id === task.goalId)
-                .map((goal) => ({ value: goal.id, label: goal.title }))}
-              onChange={(value) => setGoalId(typeof value === 'string' ? value : '')}
-            />
-          </label>
           <ScheduleFields
             label="计划"
             value={plannedAt}
@@ -217,9 +151,85 @@ export function TaskDetailsDrawer({ onClose, snapshot, task }: Props) {
             timeZone={snapshot.timeZone}
             onChange={setDeadlineAt}
           />
+          <details className="detail-more">
+            <summary>更多信息 · 清单、优先级与备注</summary>
+            <div className="detail-more-fields">
+              {' '}
+              <label>
+                备注
+                <Textarea
+                  value={notes}
+                  rows={5}
+                  onChange={(event) => setNotes(event.target.value)}
+                  placeholder="纯文本备注"
+                />
+              </label>
+              <label>
+                清单
+                <SimpleSelect
+                  ariaLabel="清单"
+                  className="w-full"
+                  value={listId}
+                  options={snapshot.lists
+                    .filter((list) => !list.archived)
+                    .map((list) => ({ value: list.id, label: list.name }))}
+                  onChange={(value) => {
+                    if (typeof value === 'string') setListId(value);
+                  }}
+                />
+              </label>
+              <label>
+                标签
+                <Input
+                  value={draftTags.join('，')}
+                  onChange={(event) =>
+                    setDraftTags(
+                      event.target.value
+                        .split(/[,，]/)
+                        .map((value) => value.trim())
+                        .filter(Boolean),
+                    )
+                  }
+                  placeholder="用逗号分隔多个标签"
+                />
+              </label>
+              <label>
+                优先级
+                <SimpleSelect
+                  ariaLabel="优先级"
+                  value={priority}
+                  options={[
+                    { value: 'none', label: '无' },
+                    { value: 'low', label: '低' },
+                    { value: 'medium', label: '中' },
+                    { value: 'high', label: '高' },
+                  ]}
+                  onChange={(value) => {
+                    if (typeof value === 'string') setPriority(value);
+                  }}
+                />
+              </label>
+              <label>
+                长期目标
+                <SimpleSelect
+                  allowClear
+                  ariaLabel="长期目标"
+                  className="w-full"
+                  placeholder="不关联目标"
+                  value={goalId || undefined}
+                  options={snapshot.goals
+                    .filter(
+                      (goal) => goal.status !== 'archived' || goal.id === task.goalId,
+                    )
+                    .map((goal) => ({ value: goal.id, label: goal.title }))}
+                  onChange={(value) => setGoalId(typeof value === 'string' ? value : '')}
+                />
+              </label>
+            </div>
+          </details>
           <TaskReminderEditor task={task} />
         </div>
-        <SheetFooter className="border-t bg-background">
+        <DialogFooter className="border-t bg-background">
           <div className="flex flex-wrap justify-end gap-2">
             {task.state === 'pending' ? (
               <>
@@ -249,8 +259,8 @@ export function TaskDetailsDrawer({ onClose, snapshot, task }: Props) {
               {saving ? '正在保存…' : '保存更改'}
             </Button>
           </div>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
