@@ -35,7 +35,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Vite 默认会在 [http://localhost:5173](http://localhost:5173) 启动应用；如果端口已占用，终端会显示实际地址。
+开发服务器固定使用 [http://localhost:53028](http://localhost:53028)；如果端口已占用，启动会报错，不会自动切换端口。
 
 ## 生产构建与预览
 
