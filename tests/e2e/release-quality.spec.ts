@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './account-fixture';
 
 test('键盘、200% 字号和响应式布局不阻断快速新增', async ({ page }, testInfo) => {
   await page.goto('/inbox');

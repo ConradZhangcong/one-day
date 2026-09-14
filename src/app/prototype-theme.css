@@ -683,3 +683,51 @@ h3 {
   padding: 40px 20px;
   min-height: 160px;
 }
+
+/* Account entry shares the app's neutral desktop/mobile visual language. */
+.auth-screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--background);
+}
+.auth-card {
+  display: grid;
+  gap: 20px;
+  width: min(100%, 420px);
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: 0 16px 48px #00000008;
+}
+.account-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+}
+.account-controls > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+.account-controls > p {
+  flex-basis: 100%;
+}
+.account-connection {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 8px 20px;
+  text-align: center;
+  background: var(--muted);
+  font-size: 13px;
+}
+@media (max-width: 720px) {
+  .auth-card {
+    padding: 24px;
+  }
+}

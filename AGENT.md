@@ -38,3 +38,9 @@ React 页面通过应用服务读写数据，不直接操作 Dexie 表。原型�
 - 交付时说明实际改动、同步文件和验证结果。不要将原型演示写成已实现功能，不要将未运行的检查写成已通过。
 
 项目结构、文档入口或共用组件变化后，也应同步更新本文件中的路径与约定。用户在当前任务中的明确要求优先。
+
+## 账号与服务端联动
+
+- 登录、会话或数据归属变化时，同步 `server/api.ts`、`src/features/auth/`、`src/app/application.ts`、`src/application/services.ts`、`src/infrastructure/account/` 和 `tests/server/`；不得只按前端用户标识筛选数据。
+- 新增应用服务方法时同步 HTTP 方法白名单；备份、清空、提醒及旧数据导入都必须限定当前会话用户。
+- 部署配置变化同步 `server/main.ts`、`server/vite-plugin.ts`、`vite.server.config.ts`、README 和发布清单；严禁提交 `data/` 内账号数据库。

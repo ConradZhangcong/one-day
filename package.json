@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && vite build --config vite.server.config.ts",
     "preview": "vite preview",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -21,7 +21,8 @@
     "test:e2e": "playwright test",
     "test:performance": "vitest run --config vitest.performance.config.ts",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
-    "test:pwa": "pnpm build && node scripts/verify-pwa-build.mjs"
+    "test:pwa": "pnpm build && node scripts/verify-pwa-build.mjs",
+    "start": "node dist-server/main.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

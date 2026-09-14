@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './account-fixture';
 
-test('受 Service Worker 控制后可离线重启并读写 IndexedDB', async ({
+test('离线重启显示连接失败，恢复网络后读取账号数据', async ({
   context,
   page,
 }, testInfo) => {
@@ -34,32 +34,16 @@ test('受 Service Worker 控制后可离线重启并读写 IndexedDB', async ({
   await page.close();
   const offlinePage = await context.newPage();
   await offlinePage.goto('/today', { waitUntil: 'domcontentloaded' });
-  await expect(offlinePage.getByRole('heading', { name: '今天' })).toBeVisible();
   await expect(
-    offlinePage.getByRole('button', { name: `编辑${onlineTitle}`, exact: true }).first(),
+    offlinePage.getByRole('heading', { name: '暂时无法打开 One Day' }),
   ).toBeVisible();
-
-  const offlineTitle = '断网时创建的任务';
-  await offlinePage.goto('/inbox');
-  const offlineQuickAdd = offlinePage.locator('form.quick-add');
-  await offlineQuickAdd.getByRole('textbox', { name: '任务标题' }).fill(offlineTitle);
-  await offlineQuickAdd.getByRole('button', { name: '今天', exact: true }).click();
-  await offlineQuickAdd.getByRole('textbox', { name: '任务标题' }).press('Enter');
-  await expect(
-    offlinePage.getByRole('button', { name: `编辑${offlineTitle}`, exact: true }).first(),
-  ).toBeVisible();
-  await offlinePage.goto('/calendar/agenda', { waitUntil: 'domcontentloaded' });
-  await expect(
-    offlinePage.getByRole('button', { name: new RegExp(onlineTitle) }),
-  ).toBeVisible();
+  await expect(offlinePage.getByRole('button', { name: '重新连接' })).toBeVisible();
+  await expect(offlinePage.getByRole('textbox', { name: '任务标题' })).toHaveCount(0);
 
   await context.setOffline(false);
   await offlinePage.reload();
   await offlinePage.goto('/today');
   await expect(
     offlinePage.getByRole('button', { name: `编辑${onlineTitle}`, exact: true }).first(),
-  ).toHaveCount(1);
-  await expect(
-    offlinePage.getByRole('button', { name: `编辑${offlineTitle}`, exact: true }).first(),
   ).toHaveCount(1);
 });

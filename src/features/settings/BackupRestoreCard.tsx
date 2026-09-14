@@ -9,6 +9,7 @@ import {
 import { useState, type ChangeEvent } from 'react';
 import { toast } from 'sonner';
 
+import { readLegacyBackup } from '@/features/auth/legacy-data';
 import { getApplicationServices } from '@/app/application';
 import type { BackupInspection, BackupSummary } from '@/application';
 import {
@@ -34,7 +35,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
 function backupErrorMessage(error: unknown): string {
-  if (!isDomainError(error)) return '备份操作失败，请重试。原有数据保持不变。';
+  if (!isDomainError(error))
+    return '备份操作未完成或结果未确认，请重新连接后检查账号数据。';
   const messages: Partial<Record<DomainError['code'], string>> = {
     [DomainErrorCode.BACKUP_INVALID_JSON]: '文件不是有效的 JSON。',
     [DomainErrorCode.BACKUP_INVALID_FORMAT]: '这不是 One Day 备份文件。',
@@ -135,6 +137,21 @@ export function BackupRestoreCard() {
     }
   };
 
+  const exportLegacyData = async () => {
+    setExporting(true);
+    try {
+      const backup = await readLegacyBackup();
+      if (backup) {
+        downloadBackup(backup);
+        toast.success('旧版数据已导出，原始数据保持不变。');
+      } else toast.info('此浏览器没有可导出的旧版数据。');
+    } catch {
+      toast.error('无法读取旧版数据，原始数据保持不变。');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const inspectFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = '';
@@ -186,10 +203,10 @@ export function BackupRestoreCard() {
       setFileName(undefined);
       setRestoreConfirmOpen(false);
       setClearConfirmOpen(false);
-      toast.success('本地数据已清空，One Day 已恢复为全新状态。');
+      toast.success('账号数据已清空，当前账号已恢复为空白状态。');
     } catch {
       setClearConfirmOpen(false);
-      toast.error('清空失败，原数据保持不变。');
+      toast.error('清空结果未确认，请重新连接后检查账号数据。');
     } finally {
       setClearing(false);
     }
@@ -199,7 +216,7 @@ export function BackupRestoreCard() {
     <Card className="sm:col-span-2">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <DatabaseBackup /> 本地数据
+          <DatabaseBackup /> 账号数据
         </CardTitle>
       </CardHeader>
       <CardContent className="grid gap-5">
@@ -207,17 +224,29 @@ export function BackupRestoreCard() {
           <TriangleAlert />
           <AlertTitle>备份文件包含你的个人内容</AlertTitle>
           <AlertDescription>
-            文件可能包含任务标题、备注、标签、时间和历史记录。One Day
-            不会上传备份，请把文件保存在可信位置。
+            文件可能包含任务标题、备注、标签、时间和历史记录。恢复时文件会上传到当前账号；导出文件请保存在可信位置。
           </AlertDescription>
         </Alert>
 
+        <section className="grid gap-2 rounded-lg border p-4">
+          <h2 className="font-medium">此浏览器的旧版数据</h2>
+          <p className="text-sm text-muted-foreground">
+            若首次登录时未导入，可先导出旧版备份，再通过下方恢复入口导入当前账号。导出不会修改原数据。
+          </p>
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() => void exportLegacyData()}
+          >
+            导出旧版浏览器数据
+          </Button>
+        </section>
         <div className="grid gap-3 sm:grid-cols-2">
           <section className="grid content-start gap-3 rounded-lg border p-4">
             <div>
               <h2 className="font-medium">导出完整备份</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                下载版本化 JSON，包含当前设备上的全部可恢复数据。
+                下载版本化 JSON，包含当前登录账号的全部可恢复数据。
               </p>
             </div>
             <Button disabled={busy} onClick={() => void exportData()}>
@@ -230,7 +259,7 @@ export function BackupRestoreCard() {
             <div>
               <h2 className="font-medium">从备份恢复</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                先检查文件并显示摘要，确认后才会替换当前数据。
+                先检查文件并显示摘要，确认后才会替换当前账号的数据，并同步到其他设备。
               </p>
             </div>
             <label className="grid gap-2 text-sm font-medium">
@@ -276,7 +305,7 @@ export function BackupRestoreCard() {
             <div>
               <h2 className="font-medium text-destructive">危险操作</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                清空会永久删除此设备上的任务、重复系列、历史、清单、标签、提醒、长期目标和应用偏好，且无法撤销。
+                清空会永久删除当前账号的任务、重复系列、历史、清单、标签、提醒、长期目标和应用偏好，且无法撤销。
               </p>
               <p className="mt-2 text-sm font-medium">建议先导出完整备份并妥善保存。</p>
             </div>
@@ -288,7 +317,7 @@ export function BackupRestoreCard() {
               onClick={() => setClearConfirmOpen(true)}
             >
               <Trash2 data-icon="inline-start" />
-              清空本地数据
+              清空账号数据
             </Button>
           </div>
         </section>
@@ -305,10 +334,9 @@ export function BackupRestoreCard() {
             <AlertDialogMedia>
               <TriangleAlert aria-hidden />
             </AlertDialogMedia>
-            <AlertDialogTitle>替换当前设备上的全部数据？</AlertDialogTitle>
+            <AlertDialogTitle>替换当前账号的全部数据？</AlertDialogTitle>
             <AlertDialogDescription>
-              当前 One Day
-              数据将被所选备份完整替换，操作无法撤销。若恢复失败，原数据会保持不变。
+              当前账号数据将被所选备份完整替换，并影响该账号的所有设备，操作无法撤销。服务端校验失败会保留原数据；若网络中断，请重连后检查结果。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -335,7 +363,7 @@ export function BackupRestoreCard() {
             <AlertDialogMedia>
               <TriangleAlert aria-hidden />
             </AlertDialogMedia>
-            <AlertDialogTitle>确认清空此设备上的全部数据？</AlertDialogTitle>
+            <AlertDialogTitle>确认清空当前账号的全部数据？</AlertDialogTitle>
             <AlertDialogDescription>
               所有任务、重复系列、历史、清单、标签、提醒、长期目标和应用偏好都将永久删除。浏览器通知权限不会改变。此操作无法撤销。
             </AlertDialogDescription>

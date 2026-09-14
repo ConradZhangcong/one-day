@@ -120,7 +120,7 @@ describe('BackupRestoreCard', () => {
     await screen.findByText('备份摘要');
 
     await user.click(screen.getByRole('button', { name: '恢复此备份' }));
-    expect(screen.getByText('替换当前设备上的全部数据？')).toBeVisible();
+    expect(screen.getByText('替换当前账号的全部数据？')).toBeVisible();
     expect(serviceMocks.restore).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: '确认替换并恢复' }));
 
@@ -159,9 +159,9 @@ describe('BackupRestoreCard', () => {
 
     expect(screen.getByText('危险操作')).toBeVisible();
     expect(screen.getByText(/建议先导出完整备份/)).toBeVisible();
-    await user.click(screen.getByRole('button', { name: '清空本地数据' }));
+    await user.click(screen.getByRole('button', { name: '清空账号数据' }));
 
-    expect(screen.getByText('确认清空此设备上的全部数据？')).toBeVisible();
+    expect(screen.getByText('确认清空当前账号的全部数据？')).toBeVisible();
     expect(serviceMocks.clearLocalData).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: '取消，保留数据' }));
     expect(serviceMocks.clearLocalData).not.toHaveBeenCalled();
@@ -179,7 +179,7 @@ describe('BackupRestoreCard', () => {
     render(<BackupRestoreCard />);
     await user.upload(screen.getByLabelText('选择 One Day JSON 备份'), backupFile());
     await screen.findByText('备份摘要');
-    await user.click(screen.getByRole('button', { name: '清空本地数据' }));
+    await user.click(screen.getByRole('button', { name: '清空账号数据' }));
     const confirm = screen.getByRole('button', { name: '确认清空全部数据' });
     await user.dblClick(confirm);
 
@@ -188,7 +188,7 @@ describe('BackupRestoreCard', () => {
     resolveClear?.();
     await waitFor(() =>
       expect(toastMocks.success).toHaveBeenCalledWith(
-        '本地数据已清空，One Day 已恢复为全新状态。',
+        '账号数据已清空，当前账号已恢复为空白状态。',
       ),
     );
     expect(screen.queryByText('备份摘要')).not.toBeInTheDocument();
@@ -198,14 +198,16 @@ describe('BackupRestoreCard', () => {
     serviceMocks.clearLocalData.mockRejectedValue(new Error('storage failed'));
     const user = userEvent.setup();
     render(<BackupRestoreCard />);
-    await user.click(screen.getByRole('button', { name: '清空本地数据' }));
+    await user.click(screen.getByRole('button', { name: '清空账号数据' }));
     await user.click(screen.getByRole('button', { name: '确认清空全部数据' }));
 
     await waitFor(() =>
-      expect(toastMocks.error).toHaveBeenCalledWith('清空失败，原数据保持不变。'),
+      expect(toastMocks.error).toHaveBeenCalledWith(
+        '清空结果未确认，请重新连接后检查账号数据。',
+      ),
     );
     expect(toastMocks.success).not.toHaveBeenCalledWith(
-      '本地数据已清空，One Day 已恢复为全新状态。',
+      '账号数据已清空，当前账号已恢复为空白状态。',
     );
   });
 });

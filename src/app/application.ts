@@ -1,65 +1,98 @@
 import {
-  RecoveryService,
-  ReminderRuntime,
-  ReminderService,
-  TimeZoneSettingsService,
-  TodoService,
-  GoalService,
-  CalendarService,
-  OccurrenceQueryService,
-  RecurrenceService,
-  BackupService,
-} from '@/application';
-import { DexieUnitOfWork, openOneDayDatabase } from '@/infrastructure/db';
+  AccountUnitOfWork,
+  emptyAccountData,
+} from '@/infrastructure/account/unit-of-work';
+import {
+  createServices,
+  accountMethods,
+  type AccountServices,
+} from '@/application/services';
+import { decodeTimeZoneId } from '@/domain';
+import type { ReminderDelivery } from '@/application';
 import { deliverBrowserReminder } from '@/infrastructure/notifications';
+import { apiRequest, getSession } from '@/features/auth/session';
 
-import { notifyApplicationChanged } from './application-change';
+export type ApplicationServices = AccountServices & {
+  reminderRuntime: {
+    start(): void;
+    stop(): void;
+    reconcile(): Promise<void>;
+    applicationTimeZoneChanged(): Promise<void>;
+  };
+};
+let services: ApplicationServices | undefined;
+let servicesOwner: string | undefined;
 
-export interface ApplicationServices {
-  readonly timeZoneSettings: TimeZoneSettingsService;
-  readonly todos: TodoService;
-  readonly recovery: RecoveryService;
-  readonly reminders: ReminderService;
-  readonly reminderRuntime: ReminderRuntime;
-  readonly goals: GoalService;
-  readonly calendar: CalendarService;
-  readonly occurrences: OccurrenceQueryService;
-  readonly recurrence: RecurrenceService;
-  readonly backup: BackupService;
-}
-
-let servicesPromise: Promise<ApplicationServices> | undefined;
-
-/** Composition root shared by the React tree for the lifetime of the page. */
+/** HTTP services are bound to an authenticated owner; the server checks that owner on every call. */
 export function getApplicationServices(): Promise<ApplicationServices> {
-  servicesPromise ??= openOneDayDatabase().then((database) => {
-    const unitOfWork = new DexieUnitOfWork(database, notifyApplicationChanged);
-    const reminderRuntime = new ReminderRuntime(unitOfWork, {
-      deliver: deliverBrowserReminder,
-    });
-    const todos = new TodoService(unitOfWork, {
-      onScheduleChanged: () => void reminderRuntime.reconcile(),
-    });
-    const recurrence = new RecurrenceService(unitOfWork, {
-      onScheduleChanged: () => void reminderRuntime.reconcile(),
-    });
-    const backup = new BackupService(unitOfWork, {
-      onRestored: () => void reminderRuntime.reconcile(),
-      onCleared: () => void reminderRuntime.reconcile(),
-    });
-    return {
-      timeZoneSettings: new TimeZoneSettingsService(unitOfWork),
-      todos,
-      recovery: new RecoveryService(unitOfWork, todos, {}, recurrence),
-      reminders: new ReminderService(unitOfWork),
-      reminderRuntime,
-      goals: new GoalService(unitOfWork),
-      calendar: new CalendarService(unitOfWork),
-      occurrences: new OccurrenceQueryService(unitOfWork),
-      recurrence,
-      backup,
-    };
-  });
-
-  return servicesPromise;
+  const owner = getSession()?.user.id;
+  if (!owner) return Promise.reject(new Error('请先登录'));
+  if (services && owner === servicesOwner) return Promise.resolve(services);
+  services?.reminderRuntime.stop();
+  // Only synchronous preview/backup validation runs here. Account reads/writes all use the API.
+  const pure = createServices(
+    new AccountUnitOfWork(emptyAccountData(decodeTimeZoneId('UTC'))),
+  );
+  const remote = {} as AccountServices;
+  for (const [name, methods] of Object.entries(accountMethods)) {
+    const entries = Object.fromEntries(
+      methods.map((method) => [
+        method,
+        async (...args: unknown[]) => {
+          if (getSession()?.user.id !== owner) throw new Error('账号已切换，请重新登录');
+          const response = await apiRequest<{ result: unknown }>(
+            'rpc',
+            { service: name, method, args },
+            owner,
+          );
+          return response.result;
+        },
+      ]),
+    );
+    Object.assign(remote, { [name]: entries });
+  }
+  remote.recurrence.preview = pure.recurrence.preview.bind(pure.recurrence);
+  remote.backup.inspect = pure.backup.inspect.bind(pure.backup);
+  let timer: number | undefined;
+  let pending: Promise<void> | undefined;
+  let active = false;
+  const reconcile = (): Promise<void> => {
+    if (getSession()?.user.id !== owner || document.visibilityState !== 'visible')
+      return Promise.resolve();
+    pending ??= apiRequest<{ deliveries: ReminderDelivery[] }>(
+      'reminders/poll',
+      {},
+      owner,
+    )
+      .then(({ deliveries }) => {
+        if (!active || getSession()?.user.id !== owner) return;
+        for (const delivery of deliveries) deliverBrowserReminder(delivery);
+      })
+      .finally(() => {
+        pending = undefined;
+      });
+    return pending;
+  };
+  const wake = () => {
+    void reconcile().catch(() => undefined);
+  };
+  const reminderRuntime = {
+    start() {
+      if (active) return;
+      active = true;
+      wake();
+      timer = window.setInterval(wake, 15000);
+      window.addEventListener('focus', wake);
+    },
+    stop() {
+      active = false;
+      if (timer !== undefined) window.clearInterval(timer);
+      window.removeEventListener('focus', wake);
+    },
+    reconcile,
+    applicationTimeZoneChanged: reconcile,
+  };
+  servicesOwner = owner;
+  services = { ...remote, reminderRuntime };
+  return Promise.resolve(services);
 }

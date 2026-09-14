@@ -8,9 +8,13 @@ import { getApplicationServices } from './application';
 export function ReminderRuntimeHost() {
   useEffect(() => {
     let active = true;
-    void getApplicationServices().then(({ reminderRuntime }) => {
-      if (active) reminderRuntime.start();
-    });
+    let stop: (() => void) | undefined;
+    void getApplicationServices()
+      .then(({ reminderRuntime }) => {
+        stop = () => reminderRuntime.stop();
+        if (active) reminderRuntime.start();
+      })
+      .catch(() => undefined);
     const show = (event: Event) => {
       const delivery = (event as CustomEvent<ReminderDelivery>).detail;
       toast.info(delivery.title, {
@@ -33,7 +37,8 @@ export function ReminderRuntimeHost() {
     return () => {
       active = false;
       window.removeEventListener('one-day:reminder', show);
-      void getApplicationServices().then(({ reminderRuntime }) => reminderRuntime.stop());
+      stop?.();
+      toast.dismiss();
     };
   }, []);
 

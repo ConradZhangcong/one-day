@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { getApplicationServices } from '@/app/application';
 import { useApplicationRevision } from '@/app/application-change';
 
-/** Dexie tracks the repository reads performed by the service and reruns this query after commits. */
+/** Reload the account snapshot when the server revision changes. */
 export function useTodoSnapshot() {
   const revision = useApplicationRevision();
   return useLiveQuery(async () => {

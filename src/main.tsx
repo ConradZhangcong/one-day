@@ -1,3 +1,4 @@
+import { AuthGate } from '@/features/auth/AuthGate';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router/dom';
@@ -17,7 +18,9 @@ if (!root) {
 createRoot(root).render(
   <StrictMode>
     <AppProviders>
-      <RouterProvider router={router} />
+      <AuthGate>
+        <RouterProvider router={router} />
+      </AuthGate>
     </AppProviders>
   </StrictMode>,
 );

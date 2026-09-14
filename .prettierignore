@@ -11,3 +11,6 @@ test-results
 docs/prototype.html
 pnpm-lock.yaml
 .trellis/workspace
+
+dist-server
+data

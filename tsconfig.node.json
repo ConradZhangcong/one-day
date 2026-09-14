@@ -3,7 +3,7 @@
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2023",
-    "lib": ["ES2023"],
+    "lib": ["ES2023", "DOM"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "strict": true,
@@ -18,6 +18,11 @@
     "vite.config.ts",
     "vitest.config.ts",
     "vitest.performance.config.ts",
-    "playwright.config.ts"
+    "playwright.config.ts",
+    "server",
+    "src/domain",
+    "src/application",
+    "src/infrastructure/account",
+    "vite.server.config.ts"
   ]
 }

@@ -1,3 +1,4 @@
+import { AccountButton } from '@/features/auth/AuthGate';
 import { AddTaskButton } from '@/features/todos/AddTaskButton';
 import {
   CalendarDays,
@@ -139,7 +140,9 @@ export function AppShell() {
               ))}
           </div>
         </nav>
-        <p className="sidebar-footer">One Day · 本地优先</p>
+        <div className="sidebar-footer">
+          <AccountButton />
+        </div>
       </aside>
       <main className="main-panel">
         <Outlet />
@@ -163,6 +166,7 @@ export function AppShell() {
           </DialogHeader>
           <nav className="mobile-more-menu">
             {secondaryNavigation.map(renderNavigationItem)}
+            <AccountButton />
             <h2>我的清单</h2>
             {snapshot?.lists
               .filter((list) => !list.isSystem && !list.archived)

@@ -978,9 +978,32 @@
           gap: 5px;
         }
       }
+      #account-demo [hidden] { display: none; }
+      #account-demo input { display:block; width:100%; margin-top:8px; }
     </style>
   </head>
   <body>
+    <dialog id="account-demo" aria-labelledby="account-demo-title" style="width:min(420px,calc(100% - 32px));padding:28px;border:1px solid #ddd;border-radius:20px">
+      <form id="account-demo-form" class="stack">
+        <img src="../logo/concentric-ring-master-metal.svg" alt="One Day" width="48" />
+        <p class="muted">ONE DAY · 每一天，井然有序</p>
+        <h1 id="account-demo-title">欢迎回来</h1>
+        <p>登录后，待办与计划随账号保存，在不同设备继续使用。</p>
+        <label>账号<input name="account" autocomplete="off" placeholder="原型演示，无需真实账号" /></label>
+        <label>密码<input type="password" autocomplete="off" placeholder="请勿输入真实密码" /></label>
+        <button class="primary" type="submit" id="account-demo-submit">登录</button>
+        <button type="button" id="account-demo-toggle">还没有账号？创建账号</button>
+        <p class="muted">交互原型：仅演示流程，不创建真实账号，不上传或保存输入。</p>
+      </form>
+      <section id="legacy-demo" class="stack" hidden>
+        <h2>导入这台设备的旧数据？</h2>
+        <p>检测到 8 个待办、2 个重复系列。</p>
+        <p>导入后保存到当前账号，原始浏览器数据保留。仅支持导入到空账号。</p>
+        <button class="primary" data-demo-choice="import">导入当前账号</button>
+        <button data-demo-choice="skip">不导入，继续使用</button>
+        <p class="muted">此处数量为演示数据，不执行实际导入。</p>
+      </section>
+    </dialog>
     <div class="layout" id="layout">
       <aside class="sidebar" aria-label="主要导航">
         <div class="brand">
@@ -990,7 +1013,7 @@
         </div>
         <button class="primary side-add" data-action="new">＋ 添加任务</button>
         <nav class="nav" id="desktop-nav"></nav>
-        <p class="sidebar-foot">交互原型 · 演示数据<br />修改仅在当前页面生效</p>
+        <div class="sidebar-foot"><span>demo_user</span><button data-demo-logout>退出登录</button><p>交互原型 · 演示数据</p></div>
       </aside>
       <main>
         <header class="topbar">
@@ -1545,7 +1568,7 @@
           )}</div><h2>今天完成</h2><div class="task-list">${done.map((t) => taskRow(t)).join('') || empty('今天还没有完成记录')}</div><button data-page="history">查看全部处理记录 →</button></div>`;
       }
       function settingsPage() {
-        return `<div class="stack"><section class="card stack"><h2>提醒与时区</h2><p class="muted">应用时区：Asia/Shanghai</p><p>页面可见且浏览器允许执行时提供提醒。关闭应用后不能保证准时送达。</p><div class="notice">原型不请求通知权限、不发送系统通知。正式应用中的全天默认时间和权限设置沿用现有实现。</div></section><section class="card stack"><h2>本地数据</h2><p>定期导出备份。恢复会替换全部本地数据，必须先预览并确认。</p><div class="row"><button data-info="备份导出使用正式应用的设置入口；本原型没有实际数据库。">导出备份流程说明</button><button data-info="恢复前先验证文件，再展示分类数量与时区，确认后原子替换；失败保留原数据。">恢复流程说明</button></div><div class="notice">清空数据属于独立危险操作，正式应用需二次确认。原型不提供对实际数据的清空操作。</div></section></div>`;
+        return `<div class="stack"><section class="card stack"><h2>提醒与时区</h2><p class="muted">应用时区：Asia/Shanghai</p><p>页面可见且浏览器允许执行时提供提醒。关闭应用后不能保证准时送达。</p><div class="notice">原型不请求通知权限、不发送系统通知。正式应用中的全天默认时间和权限设置沿用现有实现。</div></section><section class="card stack"><h2>账号数据</h2><p>此浏览器的旧版数据可先导出，再确认恢复到当前账号。</p><button data-info="正式应用可导出此浏览器旧版备份；本原型没有实际数据库。">导出旧版浏览器数据</button><p>定期导出备份。恢复会替换当前账号在所有设备上的数据，必须先预览并确认。</p><button data-demo-logout>退出登录</button><div class="row"><button data-info="备份导出使用正式应用的设置入口；本原型没有实际数据库。">导出备份流程说明</button><button data-info="恢复前先验证文件，再展示分类数量与时区，确认后原子替换；失败保留原数据。">恢复流程说明</button></div><div class="notice">清空数据属于独立危险操作，正式应用需二次确认。原型不提供对实际数据的清空操作。</div></section></div>`;
       }
       function showToast(message, action) {
         clearTimeout(toastTimer);
@@ -1831,6 +1854,23 @@
       });
       $('#page-title').tabIndex = -1;
       render();
+      const accountDemo = document.querySelector('#account-demo');
+      const loginDemo = document.querySelector('#account-demo-form');
+      const legacyDemo = document.querySelector('#legacy-demo');
+      let registerDemo = false;
+      document.querySelector('#account-demo-toggle').onclick = () => {
+        registerDemo = !registerDemo;
+        document.querySelector('#account-demo-title').textContent = registerDemo ? '创建你的账号' : '欢迎回来';
+        document.querySelector('#account-demo-submit').textContent = registerDemo ? '注册并登录' : '登录';
+        document.querySelector('#account-demo-toggle').textContent = registerDemo ? '已有账号？返回登录' : '还没有账号？创建账号';
+      };
+      loginDemo.onsubmit = event => { event.preventDefault(); loginDemo.hidden = true; legacyDemo.hidden = false; };
+      document.addEventListener('click', event => {
+        if (event.target.closest('[data-demo-choice]')) { accountDemo.close(); loginDemo.reset(); }
+        if (event.target.closest('[data-demo-logout]')) { loginDemo.hidden = false; legacyDemo.hidden = true; accountDemo.showModal(); }
+      });
+      accountDemo.addEventListener('cancel', event => event.preventDefault());
+      accountDemo.showModal();
     </script>
   </body>
 </html>

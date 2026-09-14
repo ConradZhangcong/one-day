@@ -9,3 +9,7 @@ test-results/
 *.log
 .DS_Store
 Thumbs.db
+
+# Account storage (contains private user data)
+data/
+dist-server/

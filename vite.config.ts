@@ -1,3 +1,4 @@
+import { accountApiPlugin } from './server/vite-plugin';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
@@ -8,8 +9,20 @@ export default defineConfig({
   server: {
     port: 53028,
     strictPort: true,
+    fs: {
+      deny: [
+        '.env',
+        '.env.*',
+        '*.{crt,pem}',
+        '**/.git/**',
+        '**/data/**',
+        '**/*.sqlite*',
+        '**/*.db*',
+      ],
+    },
   },
   plugins: [
+    accountApiPlugin(),
     react(),
     tailwindcss(),
     VitePWA({
@@ -19,7 +32,7 @@ export default defineConfig({
         id: '/',
         name: 'One Day · 轻量规划',
         short_name: 'One Day',
-        description: '本地优先的个人待办与多维日历应用',
+        description: '按账号同步的个人待办与多维日历应用',
         lang: 'zh-CN',
         scope: '/',
         start_url: '/',
@@ -49,6 +62,7 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api(?:\/|$)/],
         cleanupOutdatedCaches: true,
       },
     }),
