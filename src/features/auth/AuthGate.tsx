@@ -7,6 +7,7 @@ import {
 } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Field, FieldLabel, FieldError } from '@/components/ui/field';
 import type { OneDayBackupV1 } from '@/domain';
 import {
   apiRequest,
@@ -18,15 +19,37 @@ import {
 import { readLegacyBackup } from './legacy-data';
 import logoUrl from '../../../logo/concentric-ring-master-metal.svg';
 
-function LoginForm() {
+export function LoginForm() {
+  const [fieldErrors, setFieldErrors] = useState({ username: '', password: '' });
+  const validate = (name: 'username' | 'password', value: string) => {
+    if (!value.trim() && name === 'username') return '请输入账号';
+    if (!value) return '请输入密码';
+    if (name === 'username')
+      return /^[a-zA-Z0-9_]{3,32}$/.test(value.trim())
+        ? ''
+        : '账号需为 3–32 位字母、数字或下划线';
+    return value.length >= 10 && value.length <= 128 ? '' : '密码需为 10–128 位';
+  };
   const [register, setRegister] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    setBusy(true);
+    const username = data.get('username');
+    const password = data.get('password');
+    const errors = {
+      username: validate('username', typeof username === 'string' ? username : ''),
+      password: validate('password', typeof password === 'string' ? password : ''),
+    };
+    setFieldErrors(errors);
     setError('');
+    if (errors.username || errors.password) {
+      const name = errors.username ? 'username' : 'password';
+      event.currentTarget.querySelector<HTMLInputElement>(`[name="${name}"]`)?.focus();
+      return;
+    }
+    setBusy(true);
     try {
       await apiRequest(register ? 'register' : 'login', {
         username: data.get('username'),
@@ -47,11 +70,28 @@ function LoginForm() {
       <p className="text-sm text-muted-foreground">
         登录后，待办与计划随账号保存，在不同设备继续使用。
       </p>
-      <form onSubmit={submit} className="grid gap-4">
-        <label className="grid gap-2 text-sm font-medium">
-          账号
+      <form onSubmit={submit} noValidate className="grid gap-4">
+        <Field data-invalid={!!fieldErrors.username}>
+          <FieldLabel htmlFor="auth-username">账号</FieldLabel>
           <Input
+            id="auth-username"
             name="username"
+            aria-invalid={!!fieldErrors.username}
+            aria-describedby={fieldErrors.username ? 'auth-username-error' : undefined}
+            onBlur={(event) =>
+              setFieldErrors((errors) => ({
+                ...errors,
+                username: validate('username', event.target.value),
+              }))
+            }
+            onChange={(event) => {
+              const value = event.target.value;
+              setError('');
+              setFieldErrors((errors) => ({
+                ...errors,
+                username: errors.username ? validate('username', value) : '',
+              }));
+            }}
             autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
@@ -62,11 +102,29 @@ function LoginForm() {
             placeholder="3–32 位字母、数字或下划线"
             disabled={busy}
           />
-        </label>
-        <label className="grid gap-2 text-sm font-medium">
-          密码
+          <FieldError id="auth-username-error">{fieldErrors.username}</FieldError>
+        </Field>
+        <Field data-invalid={!!fieldErrors.password}>
+          <FieldLabel htmlFor="auth-password">密码</FieldLabel>
           <Input
+            id="auth-password"
             name="password"
+            aria-invalid={!!fieldErrors.password}
+            aria-describedby={fieldErrors.password ? 'auth-password-error' : undefined}
+            onBlur={(event) =>
+              setFieldErrors((errors) => ({
+                ...errors,
+                password: validate('password', event.target.value),
+              }))
+            }
+            onChange={(event) => {
+              const value = event.target.value;
+              setError('');
+              setFieldErrors((errors) => ({
+                ...errors,
+                password: errors.password ? validate('password', value) : '',
+              }));
+            }}
             type="password"
             autoComplete={register ? 'new-password' : 'current-password'}
             required
@@ -75,7 +133,8 @@ function LoginForm() {
             placeholder="至少 10 位"
             disabled={busy}
           />
-        </label>
+          <FieldError id="auth-password-error">{fieldErrors.password}</FieldError>
+        </Field>
         {error && (
           <p role="alert" className="text-sm text-destructive">
             {error}
@@ -90,6 +149,7 @@ function LoginForm() {
         disabled={busy}
         onClick={() => {
           setRegister(!register);
+          setFieldErrors({ username: '', password: '' });
           setError('');
         }}
       >

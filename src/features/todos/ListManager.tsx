@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogBody,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -100,127 +101,132 @@ export function ListManager({ lists, onClose, open }: Props) {
   return (
     <>
       <Dialog open={open} onOpenChange={(value) => !value && !saving && onClose()}>
-        <DialogContent className="max-h-[86vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent className="max-h-[86vh] sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>管理清单</DialogTitle>
             <DialogDescription>
               创建、排序或归档一级清单；系统收件箱始终保留。
             </DialogDescription>
           </DialogHeader>
-          <form
-            className="inline-create"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void create();
-            }}
-          >
-            <Input
-              value={newName}
-              onChange={(event) => setNewName(event.target.value)}
-              placeholder="新清单名称"
-              aria-label="新清单名称"
-            />
-            <Button type="submit" disabled={saving}>
-              <Plus data-icon="inline-start" /> 创建
-            </Button>
-          </form>
-          <div className="divide-y rounded-xl border">
-            {[...lists]
-              .sort((a, b) => a.order - b.order)
-              .map((list) => (
-                <article className="flex items-center gap-3 p-3" key={list.id}>
-                  <span className="grid size-9 place-items-center rounded-lg bg-muted">
-                    <Inbox className="size-4" aria-hidden="true" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2 font-medium">
-                      {list.name}
-                      {list.isSystem ? <Badge variant="secondary">系统</Badge> : null}
-                      {list.archived ? <Badge variant="outline">已归档</Badge> : null}
+          <DialogBody>
+            <form
+              className="inline-create"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void create();
+              }}
+            >
+              <Input
+                value={newName}
+                onChange={(event) => setNewName(event.target.value)}
+                placeholder="新清单名称"
+                aria-label="新清单名称"
+              />
+              <Button type="submit" disabled={saving}>
+                <Plus data-icon="inline-start" /> 创建
+              </Button>
+            </form>
+            <div className="divide-y rounded-xl border">
+              {[...lists]
+                .sort((a, b) => a.order - b.order)
+                .map((list) => (
+                  <article className="flex items-center gap-3 p-3" key={list.id}>
+                    <span className="grid size-9 place-items-center rounded-lg bg-muted">
+                      <Inbox className="size-4" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 font-medium">
+                        {list.name}
+                        {list.isSystem ? <Badge variant="secondary">系统</Badge> : null}
+                        {list.archived ? <Badge variant="outline">已归档</Badge> : null}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {list.isSystem ? '默认清单，不可删除或归档' : '一级清单'}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {list.isSystem ? '默认清单，不可删除或归档' : '一级清单'}
-                    </p>
-                  </div>
-                  {!list.isSystem ? (
-                    <div className="flex flex-wrap justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={`上移${list.name}`}
-                        onClick={() =>
-                          void run(
-                            async () =>
-                              (await getApplicationServices()).todos.reorderList(
-                                list.id,
-                                -1,
-                              ),
-                            '顺序已更新',
-                          )
-                        }
-                      >
-                        <ArrowUp />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={`下移${list.name}`}
-                        onClick={() =>
-                          void run(
-                            async () =>
-                              (await getApplicationServices()).todos.reorderList(
-                                list.id,
-                                1,
-                              ),
-                            '顺序已更新',
-                          )
-                        }
-                      >
-                        <ArrowDown />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={`重命名${list.name}`}
-                        onClick={() => {
-                          setRenameValue(list.name);
-                          setRenaming(list);
-                        }}
-                      >
-                        <Pencil />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={`${list.archived ? '恢复' : '归档'}${list.name}`}
-                        onClick={() =>
-                          void run(
-                            async () =>
-                              (await getApplicationServices()).todos.updateList(list.id, {
-                                archived: !list.archived,
-                              }),
-                            list.archived ? '清单已恢复' : '清单已归档',
-                          )
-                        }
-                      >
-                        {list.archived ? <ArchiveRestore /> : <FolderArchive />}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="icon-sm"
-                        aria-label={`删除${list.name}`}
-                        onClick={() => setRemoving(list)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  ) : null}
-                </article>
-              ))}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            归档清单会从导航和新任务选择中隐藏，但保留其中任务。
-          </p>
+                    {!list.isSystem ? (
+                      <div className="flex flex-wrap justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`上移${list.name}`}
+                          onClick={() =>
+                            void run(
+                              async () =>
+                                (await getApplicationServices()).todos.reorderList(
+                                  list.id,
+                                  -1,
+                                ),
+                              '顺序已更新',
+                            )
+                          }
+                        >
+                          <ArrowUp />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`下移${list.name}`}
+                          onClick={() =>
+                            void run(
+                              async () =>
+                                (await getApplicationServices()).todos.reorderList(
+                                  list.id,
+                                  1,
+                                ),
+                              '顺序已更新',
+                            )
+                          }
+                        >
+                          <ArrowDown />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`重命名${list.name}`}
+                          onClick={() => {
+                            setRenameValue(list.name);
+                            setRenaming(list);
+                          }}
+                        >
+                          <Pencil />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`${list.archived ? '恢复' : '归档'}${list.name}`}
+                          onClick={() =>
+                            void run(
+                              async () =>
+                                (await getApplicationServices()).todos.updateList(
+                                  list.id,
+                                  {
+                                    archived: !list.archived,
+                                  },
+                                ),
+                              list.archived ? '清单已恢复' : '清单已归档',
+                            )
+                          }
+                        >
+                          {list.archived ? <ArchiveRestore /> : <FolderArchive />}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon-sm"
+                          aria-label={`删除${list.name}`}
+                          onClick={() => setRemoving(list)}
+                        >
+                          <Trash2 />
+                        </Button>
+                      </div>
+                    ) : null}
+                  </article>
+                ))}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              归档清单会从导航和新任务选择中隐藏，但保留其中任务。
+            </p>
+          </DialogBody>
         </DialogContent>
       </Dialog>
 
@@ -233,12 +239,14 @@ export function ListManager({ lists, onClose, open }: Props) {
             <DialogTitle>重命名清单</DialogTitle>
             <DialogDescription>输入一个便于识别的新名称。</DialogDescription>
           </DialogHeader>
-          <Input
-            autoFocus
-            value={renameValue}
-            aria-label="清单名称"
-            onChange={(event) => setRenameValue(event.target.value)}
-          />
+          <DialogBody>
+            <Input
+              autoFocus
+              value={renameValue}
+              aria-label="清单名称"
+              onChange={(event) => setRenameValue(event.target.value)}
+            />
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRenaming(undefined)}>
               取消

@@ -26,7 +26,24 @@ const taskOrganizationShape = {
   deadlineAt: schedulePointSchema,
 } as const;
 
+export const subtaskSchema = z
+  .object({
+    id: nonEmptyIdSchema,
+    title: z.string().trim().min(1),
+    completed: z.boolean(),
+  })
+  .strict();
+export type Subtask = z.infer<typeof subtaskSchema>;
+export const subtasksSchema = z
+  .array(subtaskSchema)
+  .refine(
+    (items) => new Set(items.map((item) => item.id)).size === items.length,
+    'Subtask IDs must be unique within a task.',
+  );
+
 const singleTaskGoalShape = {
+  paused: z.boolean().optional(),
+  subtasks: subtasksSchema.optional(),
   goalId: nonEmptyIdSchema.optional(),
 } as const;
 
@@ -40,6 +57,7 @@ export const taskDraftSchema = z
     plannedAt: taskOrganizationShape.plannedAt,
     deadlineAt: taskOrganizationShape.deadlineAt,
     goalId: singleTaskGoalShape.goalId,
+    subtasks: singleTaskGoalShape.subtasks,
   })
   .strict();
 

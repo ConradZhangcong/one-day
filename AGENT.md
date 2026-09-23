@@ -44,3 +44,11 @@ React 页面通过应用服务读写数据，不直接操作 Dexie 表。原型�
 - 登录、会话或数据归属变化时，同步 `server/api.ts`、`src/features/auth/`、`src/app/application.ts`、`src/application/services.ts`、`src/infrastructure/account/` 和 `tests/server/`；不得只按前端用户标识筛选数据。
 - 新增应用服务方法时同步 HTTP 方法白名单；备份、清空、提醒及旧数据导入都必须限定当前会话用户。
 - 部署配置变化同步 `server/main.ts`、`server/vite-plugin.ts`、`vite.server.config.ts`、README 和发布清单；严禁提交 `data/` 内账号数据库。
+
+## 共用弹框布局
+
+`src/components/ui/dialog.tsx` 提供 `DialogHeader`、`DialogBody`、`DialogFooter`。长弹框内容放入 `DialogBody`，标题与底部操作作为其同级节点，避免在 `DialogContent` 上增加整体滚动。底部提交按钮可通过 `form` 属性关联正文表单。
+
+## 统一任务与旧目标兼容
+
+当前界面使用任务统一模型，无计划和截止时间即长期任务，入口为 `/long-term`；旧 `/goals` 保留跳转。`TodoService.unifiedSnapshot` 在事务中将旧目标按原 ID 合并进任务，关联字段 `goalId` 保留兼容；`task-parent.ts` 负责旧目标和任务关联读取。涉及该模型时同步暂停/恢复、关联循环校验、删除解除关联、HTTP 白名单和备份图校验，禁止丢弃旧目标说明或关联。

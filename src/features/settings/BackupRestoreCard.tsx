@@ -99,7 +99,7 @@ function Summary({ summary }: { readonly summary: BackupSummary }) {
           <dd>{counts.reminders}</dd>
         </div>
         <div>
-          <dt className="text-muted-foreground">长期目标</dt>
+          <dt className="text-muted-foreground">旧版长期任务</dt>
           <dd>{counts.longTermGoals}</dd>
         </div>
         <div>
@@ -305,7 +305,7 @@ export function BackupRestoreCard() {
             <div>
               <h2 className="font-medium text-destructive">危险操作</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                清空会永久删除当前账号的任务、重复系列、历史、清单、标签、提醒、长期目标和应用偏好，且无法撤销。
+                清空会永久删除当前账号的任务、重复系列、历史、清单、标签、提醒和应用偏好，且无法撤销。
               </p>
               <p className="mt-2 text-sm font-medium">建议先导出完整备份并妥善保存。</p>
             </div>
@@ -365,7 +365,7 @@ export function BackupRestoreCard() {
             </AlertDialogMedia>
             <AlertDialogTitle>确认清空当前账号的全部数据？</AlertDialogTitle>
             <AlertDialogDescription>
-              所有任务、重复系列、历史、清单、标签、提醒、长期目标和应用偏好都将永久删除。浏览器通知权限不会改变。此操作无法撤销。
+              所有任务、重复系列、历史、清单、标签、提醒和应用偏好都将永久删除。浏览器通知权限不会改变。此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

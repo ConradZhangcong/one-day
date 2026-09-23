@@ -55,6 +55,7 @@ function AddTaskForm({
       {...defaults}
       today={today}
       goals={snapshot.goals}
+      inDialog
       initiallyExpanded
       onCreated={onCreated}
     />

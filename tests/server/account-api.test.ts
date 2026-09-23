@@ -89,6 +89,40 @@ afterAll(async () => {
 });
 
 describe('account authentication and ownership', () => {
+  it('unifies legacy goals, persists pause/resume and isolates task ownership', async () => {
+    const owner = await register('unified_owner');
+    const other = await register('unified_other');
+    const goal = await rpc(owner, 'goals', 'create', {
+      title: '长期学习',
+      description: '原有说明',
+      status: 'active',
+    });
+    const id = goal.body.result.id as string;
+    const child = await rpc(owner, 'todos', 'createTask', {
+      ...draft('关联学习'),
+      goalId: id,
+    });
+    const snapshot = await rpc(owner, 'todos', 'unifiedSnapshot');
+    expect(snapshot.status).toBe(200);
+    expect(snapshot.body.result.tasks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id, title: '长期学习', notes: '原有说明' }),
+      ]),
+    );
+    expect((await rpc(owner, 'todos', 'setTaskPaused', id, true)).status).toBe(200);
+    expect((await rpc(other, 'todos', 'setTaskPaused', id, false)).status).not.toBe(200);
+    expect((await rpc(owner, 'todos', 'snapshot')).body.result.tasks).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id, paused: true })]),
+    );
+    expect((await rpc(owner, 'todos', 'setTaskPaused', id, false)).status).toBe(200);
+    expect((await rpc(other, 'todos', 'unifiedSnapshot')).body.result.tasks).toEqual([]);
+    expect((await rpc(owner, 'todos', 'snapshot')).body.result.tasks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: child.body.result.id, goalId: id }),
+      ]),
+    );
+  });
+
   it('requires login, rejects foreign origins, private methods and forged owners', async () => {
     expect((await request('session')).status).toBe(401);
     expect(
@@ -147,6 +181,70 @@ describe('account authentication and ownership', () => {
     expect((await request('logout', {}, a)).status).toBe(200);
     expect((await rpc(a, 'todos', 'snapshot')).status).toBe(401);
     expect((await rpc(second, 'todos', 'snapshot')).status).toBe(200);
+  });
+  it('persists subitems over HTTP and keeps them private to their owner', async () => {
+    const owner = await register('subtask_owner');
+    const other = await register('subtask_other');
+    const subtasks = [{ id: 's1', title: '没有独立时间', completed: false }];
+    const created = await rpc(owner, 'todos', 'createTask', {
+      ...draft('清单任务'),
+      subtasks,
+    });
+    expect(created.status).toBe(200);
+    const id = created.body.result.id;
+    expect((await rpc(owner, 'todos', 'snapshot')).body.result.tasks[0].subtasks).toEqual(
+      subtasks,
+    );
+    expect(
+      (await rpc(other, 'todos', 'updateTask', id, { ...draft('越权'), subtasks: [] }))
+        .status,
+    ).not.toBe(200);
+    await rpc(owner, 'todos', 'updateTask', id, {
+      ...draft('清单任务'),
+      subtasks: [{ ...subtasks[0], completed: true }],
+    });
+    const saved = (await rpc(owner, 'backup', 'createExport')).body.result.data
+      .singleTasks[0];
+    expect(saved.subtasks[0].completed).toBe(true);
+    expect(saved.state).toBe('pending');
+    expect((await rpc(other, 'todos', 'snapshot')).body.result.tasks).toEqual([]);
+  });
+  it('isolates recurring subitem writes and resets the next occurrence over HTTP', async () => {
+    const owner = await register('recurring_sub_owner');
+    const other = await register('recurring_sub_other');
+    const subtasks = [{ id: 's1', title: '检查', completed: false }];
+    const response = await rpc(owner, 'recurrence', 'createSeries', {
+      ...draft('重复检查'),
+      plannedAt: { kind: 'allDay', date: '2026-09-22' },
+      rule: { frequency: 'daily', interval: 1 },
+      subtasks,
+    });
+    expect(response.status).toBe(200);
+    const key = response.body.result.activeOccurrenceKey;
+    expect(
+      (await rpc(other, 'recurrence', 'updateOccurrenceSubtasks', key, [])).status,
+    ).toBe(400);
+    expect(
+      (
+        await rpc(owner, 'recurrence', 'updateOccurrenceSubtasks', key, [
+          { ...subtasks[0], completed: true },
+        ])
+      ).status,
+    ).toBe(200);
+    await rpc(owner, 'recurrence', 'completeOccurrence', key);
+    expect(
+      (await rpc(owner, 'recurrence', 'updateOccurrenceSubtasks', key, [])).status,
+    ).toBe(400);
+    const backup = (await rpc(owner, 'backup', 'createExport')).body.result;
+    expect(
+      (
+        backup.data.occurrenceRecords as {
+          state: string;
+          subtasks: { completed: boolean }[];
+        }[]
+      ).find((item) => item.state === 'completed')?.subtasks[0]?.completed,
+    ).toBe(true);
+    expect(backup.data.recurrenceSeries[0].template.subtasks).toEqual(subtasks);
   });
   it('imports legacy data only on explicit choice into an empty account, once', async () => {
     const source = await register('legacy_source');

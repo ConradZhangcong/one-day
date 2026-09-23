@@ -260,12 +260,17 @@ export class RecoveryService {
       )
         return [];
       const schedule = projectOccurrenceRecordSchedule(owner, occurrence);
-      const template = occurrence.templateSnapshot ?? owner.template;
+      // Snapshot metadata is not part of a task; keep it out of the strict schema.
+      const { capturedAt, ...template } = occurrence.templateSnapshot ?? {
+        ...owner.template,
+        capturedAt: owner.updatedAt,
+      };
       return [
         singleTaskSchema.parse({
           id: occurrence.occurrenceKey,
           ...template,
           ...schedule,
+          ...(occurrence.subtasks !== undefined ? { subtasks: occurrence.subtasks } : {}),
           state: occurrence.state,
           ...(occurrence.completedAt !== undefined
             ? { completedAt: occurrence.completedAt }
@@ -274,7 +279,7 @@ export class RecoveryService {
             ? { skippedAt: occurrence.skippedAt }
             : {}),
           createdAt: owner.createdAt,
-          updatedAt: occurrence.templateSnapshot?.capturedAt ?? owner.updatedAt,
+          updatedAt: capturedAt,
         }),
       ];
     });

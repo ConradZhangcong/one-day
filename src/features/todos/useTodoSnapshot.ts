@@ -8,6 +8,6 @@ export function useTodoSnapshot() {
   const revision = useApplicationRevision();
   return useLiveQuery(async () => {
     const services = await getApplicationServices();
-    return services.todos.snapshot();
+    return services.todos.unifiedSnapshot();
   }, [revision]);
 }

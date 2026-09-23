@@ -1,3 +1,4 @@
+import { findTaskParent, taskParentReference } from './task-parent';
 import { Temporal } from 'temporal-polyfill';
 
 import {
@@ -12,6 +13,7 @@ import {
   reviseReminderSchedule,
   schedulePointSchema,
   singleTaskSchema,
+  SYSTEM_INBOX_ID,
   tagSchema,
   taskListSchema,
   type SingleTask,
@@ -87,6 +89,63 @@ export class TodoService {
     this.onScheduleChanged = dependencies.onScheduleChanged ?? (() => undefined);
   }
 
+  /** Atomically absorb legacy goals into the same task records, preserving IDs and links. */
+  async unifiedSnapshot(): Promise<TodoSnapshot> {
+    if ((await this.unitOfWork.repositories.longTermGoals.getAll()).length > 0) {
+      await this.unitOfWork.write(async ({ longTermGoals, singleTasks }) => {
+        for (const goal of await longTermGoals.getAll()) {
+          if (await singleTasks.get(goal.id)) {
+            throw new Error('长期任务合并遇到重复标识，原数据已保留');
+          }
+          await singleTasks.save(
+            singleTaskSchema.parse({
+              id: goal.id,
+              title: goal.title,
+              notes: goal.description,
+              listId: SYSTEM_INBOX_ID,
+              tagIds: [],
+              priority: 'none',
+              plannedAt: { kind: 'none' },
+              deadlineAt: { kind: 'none' },
+              state: goal.status === 'completed' ? 'completed' : 'pending',
+              ...(goal.status === 'completed' ? { completedAt: goal.updatedAt } : {}),
+              ...(goal.status === 'archived' ? { paused: true } : {}),
+              createdAt: goal.createdAt,
+              updatedAt: goal.updatedAt,
+            }),
+          );
+          await longTermGoals.remove(goal.id);
+        }
+      });
+    }
+    return this.snapshot();
+  }
+
+  async setTaskPaused(taskId: string, paused: boolean): Promise<SingleTask> {
+    if (typeof paused !== 'boolean')
+      throw new DomainError(DomainErrorCode.INVALID_TASK, '暂停状态无效');
+    return this.unitOfWork.write(async ({ singleTasks }) => {
+      const task = await singleTasks.get(taskId);
+      if (
+        task?.state !== 'pending' ||
+        task.plannedAt.kind !== 'none' ||
+        task.deadlineAt.kind !== 'none'
+      ) {
+        throw new DomainError(
+          DomainErrorCode.INVALID_TASK,
+          '只有待处理的长期任务可以暂停或恢复',
+        );
+      }
+      const updated = singleTaskSchema.parse({
+        ...task,
+        paused,
+        updatedAt: decodeInstant(this.now()),
+      });
+      await singleTasks.save(updated);
+      return updated;
+    });
+  }
+
   async snapshot(): Promise<TodoSnapshot> {
     const { lists, settings, singleTasks, tags, longTermGoals, recurrenceSeries } =
       this.unitOfWork.repositories;
@@ -123,7 +182,17 @@ export class TodoService {
       lists: allLists,
       tags: allTags,
       timeZone,
-      goals,
+      goals: [
+        ...goals,
+        ...tasks
+          .filter(
+            (task) =>
+              (task.plannedAt.kind === 'none' && task.deadlineAt.kind === 'none') ||
+              tasks.some((child) => child.goalId === task.id) ||
+              series.some((item) => item.template.goalId === task.id),
+          )
+          .map(taskParentReference),
+      ],
       occurrences: [...occurrencesByKey.values()],
       occurrenceWindowEnd,
       series,
@@ -193,7 +262,7 @@ export class TodoService {
         repositories.tags.getAll(),
         decoded.goalId === undefined
           ? undefined
-          : repositories.longTermGoals.get(decoded.goalId),
+          : findTaskParent(repositories, decoded.goalId),
       ]);
       const timeZone = this.resolveTimeZone(storedTimeZone);
       assertValidSchedulePair(decoded, timeZone);
@@ -230,7 +299,7 @@ export class TodoService {
         repositories.tags.getAll(),
         decoded.goalId === undefined
           ? undefined
-          : repositories.longTermGoals.get(decoded.goalId),
+          : findTaskParent(repositories, decoded.goalId),
       ]);
       if (existing === undefined)
         throw new DomainError(DomainErrorCode.TASK_NOT_FOUND, 'Task does not exist.');
@@ -238,6 +307,17 @@ export class TodoService {
       assertValidSchedulePair(decoded, timeZone);
       this.assertListCanOwnTask(list, existing.listId);
       this.assertGoalCanOwnTask(goal, decoded.goalId, existing.goalId);
+      const visited = new Set([taskId]);
+      let parentId = decoded.goalId;
+      while (parentId) {
+        if (visited.has(parentId))
+          throw new DomainError(
+            DomainErrorCode.INVALID_TASK,
+            '任务不能关联自己或形成循环关联',
+          );
+        visited.add(parentId);
+        parentId = (await repositories.singleTasks.get(parentId))?.goalId;
+      }
       const { tagNames: _tagNames, ...details } = decoded;
       void _tagNames;
       const { goalId: _existingGoalId, ...existingWithoutGoal } = existing;
@@ -245,6 +325,9 @@ export class TodoService {
       const baseTask = singleTaskSchema.parse({
         ...existingWithoutGoal,
         ...details,
+        ...(decoded.plannedAt.kind !== 'none' || decoded.deadlineAt.kind !== 'none'
+          ? { paused: false }
+          : {}),
         tagIds: [],
         updatedAt: decodeInstant(this.now()),
       });
@@ -289,8 +372,14 @@ export class TodoService {
       const instant = decodeInstant(this.now());
       const updated = singleTaskSchema.parse(
         state === 'completed'
-          ? { ...existing, state, completedAt: instant, updatedAt: instant }
-          : { ...existing, state, skippedAt: instant, updatedAt: instant },
+          ? {
+              ...existing,
+              paused: false,
+              state,
+              completedAt: instant,
+              updatedAt: instant,
+            }
+          : { ...existing, paused: false, state, skippedAt: instant, updatedAt: instant },
       );
       await singleTasks.save(updated);
       return updated;
@@ -323,10 +412,22 @@ export class TodoService {
   }
 
   async deleteTask(taskId: string): Promise<void> {
-    await this.unitOfWork.write(async ({ reminders, singleTasks }) => {
+    await this.unitOfWork.write(async ({ reminders, singleTasks, recurrenceSeries }) => {
       const ownedReminders = await reminders.findByOwner('task', taskId);
       for (const reminder of ownedReminders) {
         await reminders.remove(reminder.id);
+      }
+      for (const linked of await singleTasks.getAll()) {
+        if (linked.goalId !== taskId) continue;
+        const { goalId, ...rest } = linked;
+        void goalId;
+        await singleTasks.save(rest);
+      }
+      for (const series of await recurrenceSeries.getAll()) {
+        if (series.template.goalId !== taskId) continue;
+        const { goalId, ...template } = series.template;
+        void goalId;
+        await recurrenceSeries.save({ ...series, template });
       }
       await singleTasks.remove(taskId);
     });
@@ -374,6 +475,9 @@ export class TodoService {
         ...existing,
         plannedAt,
         deadlineAt,
+        ...(plannedAt.kind !== 'none' || deadlineAt.kind !== 'none'
+          ? { paused: false }
+          : {}),
         updatedAt: decodeInstant(this.now()),
       });
       const schedulingChanged =

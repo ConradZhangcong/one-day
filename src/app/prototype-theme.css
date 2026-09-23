@@ -519,7 +519,7 @@ h3 {
   width: min(640px, calc(100vw - 32px));
   max-width: 640px;
   max-height: 90dvh;
-  overflow-y: auto;
+  overflow: hidden;
 }
 .task-composer-dialog .quick-add {
   display: flex;
@@ -729,5 +729,51 @@ h3 {
 @media (max-width: 720px) {
   .auth-card {
     padding: 24px;
+  }
+}
+
+.subtask-editor {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.subtask-editor-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.subtask-editor-row > input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  accent-color: var(--primary);
+}
+.subtask-editor-row > input:not([type='checkbox']) {
+  flex: 1;
+  min-width: 0;
+}
+.subtask-editor-row > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.subtask-editor-row > button {
+  flex-shrink: 0;
+}
+
+.task-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+@media (max-width: 760px) {
+  .task-card-actions {
+    grid-column: 2 / -1;
+    justify-content: flex-start;
   }
 }

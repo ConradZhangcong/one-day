@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogBody,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -56,7 +57,7 @@ export function SeriesManager({ onClose, open, snapshot }: SeriesManagerProps) {
       open={open}
       onOpenChange={(value) => !value && busyId === undefined && onClose()}
     >
-      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[85dvh] sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Repeat2 className="size-4" />
@@ -66,46 +67,48 @@ export function SeriesManager({ onClose, open, snapshot }: SeriesManagerProps) {
             暂停的系列不会出现在列表、恢复区、日历或提醒中，可随时从这里恢复原当前实例。
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3 px-6 pb-2" aria-live="polite">
-          {series.length === 0 ? (
-            <EmptyState description="还没有重复系列" />
-          ) : (
-            series.map((item) => (
-              <article
-                key={item.id}
-                className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <strong className="block truncate">{item.template.title}</strong>
-                  <div className="mt-1 flex flex-wrap gap-2">
-                    <Badge variant={item.status === 'paused' ? 'secondary' : 'outline'}>
-                      {STATUS_LABEL[item.status]}
-                    </Badge>
-                    <Badge variant="outline">第 {item.revision} 版规则</Badge>
+        <DialogBody>
+          <div className="grid gap-3 px-6 pb-2" aria-live="polite">
+            {series.length === 0 ? (
+              <EmptyState description="还没有重复系列" />
+            ) : (
+              series.map((item) => (
+                <article
+                  key={item.id}
+                  className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <strong className="block truncate">{item.template.title}</strong>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      <Badge variant={item.status === 'paused' ? 'secondary' : 'outline'}>
+                        {STATUS_LABEL[item.status]}
+                      </Badge>
+                      <Badge variant="outline">第 {item.revision} 版规则</Badge>
+                    </div>
                   </div>
-                </div>
-                {item.status === 'paused' ? (
-                  <Button
-                    disabled={busyId !== undefined}
-                    onClick={() => void changeStatus(item.id, 'resume')}
-                  >
-                    <Play data-icon="inline-start" />
-                    恢复整个系列
-                  </Button>
-                ) : item.status === 'active' ? (
-                  <Button
-                    variant="outline"
-                    disabled={busyId !== undefined}
-                    onClick={() => void changeStatus(item.id, 'pause')}
-                  >
-                    <Pause data-icon="inline-start" />
-                    暂停整个系列
-                  </Button>
-                ) : null}
-              </article>
-            ))
-          )}
-        </div>
+                  {item.status === 'paused' ? (
+                    <Button
+                      disabled={busyId !== undefined}
+                      onClick={() => void changeStatus(item.id, 'resume')}
+                    >
+                      <Play data-icon="inline-start" />
+                      恢复整个系列
+                    </Button>
+                  ) : item.status === 'active' ? (
+                    <Button
+                      variant="outline"
+                      disabled={busyId !== undefined}
+                      onClick={() => void changeStatus(item.id, 'pause')}
+                    >
+                      <Pause data-icon="inline-start" />
+                      暂停整个系列
+                    </Button>
+                  ) : null}
+                </article>
+              ))
+            )}
+          </div>
+        </DialogBody>
         <DialogFooter>
           <Button variant="outline" disabled={busyId !== undefined} onClick={onClose}>
             完成

@@ -23,6 +23,7 @@ const serviceMocks = vi.hoisted(() => ({
   completeOccurrence: vi.fn(),
   skipOccurrence: vi.fn(),
   rescheduleOccurrence: vi.fn(),
+  updateOccurrenceSubtasks: vi.fn(),
   pauseSeries: vi.fn(),
   resumeSeries: vi.fn(),
   stopSeries: vi.fn(),
@@ -38,6 +39,7 @@ vi.mock('@/app/application', () => ({
         completeOccurrence: serviceMocks.completeOccurrence,
         skipOccurrence: serviceMocks.skipOccurrence,
         rescheduleOccurrence: serviceMocks.rescheduleOccurrence,
+        updateOccurrenceSubtasks: serviceMocks.updateOccurrenceSubtasks,
         pauseSeries: serviceMocks.pauseSeries,
         resumeSeries: serviceMocks.resumeSeries,
         stopSeries: serviceMocks.stopSeries,
@@ -111,6 +113,8 @@ describe('recurrence UI scope', () => {
     await user.type(screen.getByRole('textbox', { name: '任务标题' }), '晨间复盘');
     expect(screen.queryByText('未来预览')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '日期与更多' }));
+    await user.click(screen.getByRole('button', { name: '添加子项' }));
+    await user.type(screen.getByRole('textbox', { name: '子项名称 1' }), '检查材料');
     await user.click(screen.getByRole('button', { name: '重复' }));
     await user.selectOptions(screen.getByLabelText('快速计划类型'), 'allDay');
     fireEvent.change(screen.getByLabelText('快速计划日期'), {
@@ -124,6 +128,9 @@ describe('recurrence UI scope', () => {
     expect(serviceMocks.createSeries).toHaveBeenCalledWith(
       expect.objectContaining({
         title: '晨间复盘',
+        subtasks: [
+          { id: expect.any(String) as string, title: '检查材料', completed: false },
+        ],
         plannedAt: { kind: 'allDay', date: '2026-09-02' },
         rule: {
           frequency: 'daily',
@@ -132,6 +139,90 @@ describe('recurrence UI scope', () => {
         },
       }),
     );
+  });
+
+  it('saves subitem checks immediately without closing and shows future items read-only', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const item = {
+      ...occurrenceItem(false),
+      subtasks: [{ id: 's1', title: '检查材料', completed: false }],
+    };
+    const view = render(<OccurrenceDetailsDrawer item={item} onClose={onClose} />);
+    await user.click(screen.getByRole('checkbox', { name: '完成子项：检查材料' }));
+    expect(
+      screen.queryByRole('button', { name: '保存本次子任务' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '取消' })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(serviceMocks.updateOccurrenceSubtasks).toHaveBeenCalledWith(item.ownerId, [
+        { id: 's1', title: '检查材料', completed: true },
+      ]),
+    );
+    expect(onClose).not.toHaveBeenCalled();
+    view.unmount();
+    render(
+      <OccurrenceDetailsDrawer
+        item={{ ...occurrenceItem(true), subtasks: item.subtasks }}
+        onClose={onClose}
+      />,
+    );
+    expect(screen.getByRole('checkbox', { name: '完成子项：检查材料' })).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: '保存本次子任务' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('automatically saves subitem names on blur and deletions', async () => {
+    const user = userEvent.setup();
+    const item = {
+      ...occurrenceItem(false),
+      subtasks: [{ id: 's1', title: '检查材料', completed: false }],
+    };
+    render(<OccurrenceDetailsDrawer item={item} onClose={vi.fn()} />);
+    const name = screen.getByRole('textbox', { name: '子项名称 1' });
+    await user.click(name);
+    await user.clear(name);
+    await user.type(name, '准备材料');
+    expect(serviceMocks.updateOccurrenceSubtasks).not.toHaveBeenCalled();
+    await user.tab();
+    await waitFor(() =>
+      expect(serviceMocks.updateOccurrenceSubtasks).toHaveBeenCalledWith(item.ownerId, [
+        { id: 's1', title: '准备材料', completed: false },
+      ]),
+    );
+    const remove = screen.getByRole('button', { name: '删除子项 1' });
+    await waitFor(() => expect(remove).toBeEnabled());
+    await user.click(remove);
+    await waitFor(() =>
+      expect(serviceMocks.updateOccurrenceSubtasks).toHaveBeenLastCalledWith(
+        item.ownerId,
+        [],
+      ),
+    );
+  });
+
+  it('restores the last saved subitems after a failed automatic save and permits retry', async () => {
+    const user = userEvent.setup();
+    serviceMocks.updateOccurrenceSubtasks.mockRejectedValueOnce(new Error('offline'));
+    render(
+      <OccurrenceDetailsDrawer
+        item={{
+          ...occurrenceItem(false),
+          subtasks: [{ id: 's1', title: '检查材料', completed: false }],
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+    const checkbox = screen.getByRole('checkbox', { name: '完成子项：检查材料' });
+    await user.click(checkbox);
+    await waitFor(() => expect(checkbox).not.toBeChecked());
+    await waitFor(() => expect(checkbox).toBeEnabled());
+    await user.click(checkbox);
+    await waitFor(() =>
+      expect(serviceMocks.updateOccurrenceSubtasks).toHaveBeenCalledTimes(2),
+    );
+    expect(checkbox).toBeChecked();
   });
 
   it('keeps the selected time when quick add moves the plan to tomorrow', async () => {

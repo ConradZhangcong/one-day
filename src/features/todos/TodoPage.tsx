@@ -6,6 +6,9 @@ import {
   ListTodo,
   MoreHorizontal,
   Pencil,
+  Pause,
+  Play,
+  Plus,
   Repeat2,
   RotateCcw,
   Trash2,
@@ -57,6 +60,7 @@ import { useTodoSnapshot } from './useTodoSnapshot';
 
 const VIEW_TITLES: Record<TodoViewKind, string> = {
   inbox: '收件箱',
+  'long-term': '长期任务',
   today: '今天',
   upcoming: '即将到来',
   completed: '已处理',
@@ -72,6 +76,7 @@ function toCalendarItem(item: TaskOccurrenceView): CalendarItemView | undefined 
     ownerId: item.ownerId,
     ...(item.seriesId !== undefined ? { seriesId: item.seriesId } : {}),
     title: item.title,
+    subtasks: item.subtasks,
     kind: item.plannedAt.kind !== 'none' ? 'planned' : 'deadline',
     schedule,
     ...(item.deadlineAt.kind !== 'none' ? { deadlineAt: item.deadlineAt } : {}),
@@ -180,6 +185,11 @@ export function TodoPage() {
         <div>
           <p className="page-eyebrow">{today}</p>
           <h1>{title}</h1>
+          {view === 'long-term' && (
+            <p className="text-sm text-muted-foreground">
+              没有计划或截止时间的任务，可暂停后恢复；设置时间后进入对应日期安排。
+            </p>
+          )}
           {currentList?.archived ? (
             <p className="text-muted-foreground">此清单已归档，任务仍保留。</p>
           ) : null}
@@ -374,6 +384,8 @@ export function TodoPage() {
               : []),
           ].map((group, index) => {
             const content = group.map((row: TodoRow) => {
+              const subtasks =
+                row.kind === 'task' ? row.task.subtasks : row.occurrence.subtasks;
               const task = row.kind === 'task' ? row.task : undefined;
               const completion = formatCompletedAt(row.completedAt, snapshot.timeZone);
               return (
@@ -381,38 +393,15 @@ export function TodoPage() {
                   className={`task-row state-${row.state}${row.kind === 'occurrence' ? ' task-row-recurring' : ''}`}
                   key={row.key}
                 >
-                  <button
-                    className="task-check"
-                    disabled={row.readonly || row.state !== 'pending'}
-                    aria-label={`完成${row.title}`}
-                    onClick={() => {
-                      if (task)
-                        void run(
-                          async () =>
-                            (await getApplicationServices()).todos.setTaskState(
-                              task.id,
-                              'completed',
-                            ),
-                          '已完成',
-                        );
-                      else if (row.kind === 'occurrence')
-                        void run(
-                          async () =>
-                            (
-                              await getApplicationServices()
-                            ).recurrence.completeOccurrence(
-                              occurrenceKeySchema.parse(row.occurrence.ownerId),
-                            ),
-                          '本次已完成',
-                        );
-                    }}
-                  >
+                  <span className="task-check" aria-hidden="true">
                     {row.state === 'completed' ? (
                       <Check size={15} />
                     ) : row.state === 'skipped' ? (
                       <Forward size={15} />
+                    ) : task?.paused ? (
+                      <Pause size={15} />
                     ) : null}
-                  </button>
+                  </span>
                   <button
                     className="task-main"
                     onClick={() => {
@@ -434,6 +423,31 @@ export function TodoPage() {
                       <small className="task-completion">{completion}</small>
                     ) : null}
                     <span className="task-meta">
+                      {task?.paused && <Badge variant="outline">已暂停</Badge>}
+                      {task &&
+                        snapshot.tasks.some((linked) => linked.goalId === task.id) && (
+                          <Badge variant="outline">
+                            关联任务{' '}
+                            {
+                              snapshot.tasks.filter(
+                                (linked) =>
+                                  linked.goalId === task.id &&
+                                  linked.state === 'completed',
+                              ).length
+                            }
+                            /
+                            {
+                              snapshot.tasks.filter((linked) => linked.goalId === task.id)
+                                .length
+                            }
+                          </Badge>
+                        )}
+                      {subtasks?.length ? (
+                        <Badge variant="outline">
+                          子任务 {subtasks?.filter((item) => item.completed).length}/
+                          {subtasks?.length}
+                        </Badge>
+                      ) : null}
                       <Badge variant="secondary">
                         {snapshot.lists.find((item) => item.id === row.listId)?.name ??
                           '未知清单'}
@@ -474,84 +488,155 @@ export function TodoPage() {
                     </span>
                   </button>
                   {task ? (
-                    <Popover>
-                      <PopoverTrigger
-                        className="task-more"
-                        aria-label={`更多操作：${task.title}`}
-                      >
-                        <MoreHorizontal size={18} />
-                      </PopoverTrigger>
-                      <PopoverContent align="end" className="task-action-menu">
-                        {task.state === 'pending' ? (
-                          <>
-                            <Button
-                              variant="outline"
-                              aria-label={`完成${task.title}`}
-                              onClick={() =>
-                                void run(
-                                  async () =>
-                                    (await getApplicationServices()).todos.setTaskState(
-                                      task.id,
-                                      'completed',
-                                    ),
-                                  '已完成',
-                                )
-                              }
-                            >
-                              <Check data-icon="inline-start" /> 完成
-                            </Button>
-                            <Button
-                              variant="outline"
-                              aria-label={`跳过${task.title}`}
-                              onClick={() =>
-                                void run(
-                                  async () =>
-                                    (await getApplicationServices()).todos.setTaskState(
-                                      task.id,
-                                      'skipped',
-                                    ),
-                                  '已跳过',
-                                )
-                              }
-                            >
-                              <Forward data-icon="inline-start" /> 跳过
-                            </Button>
-                          </>
-                        ) : null}
-                        {task.state === 'completed' ? (
+                    <div className="task-card-actions">
+                      {task.state === 'pending' &&
+                        task.plannedAt.kind === 'none' &&
+                        task.deadlineAt.kind === 'none' && (
                           <Button
                             variant="outline"
                             onClick={() =>
                               void run(
                                 async () =>
-                                  (
-                                    await getApplicationServices()
-                                  ).todos.undoTaskCompletion(task.id),
-                                '已撤销完成',
+                                  (await getApplicationServices()).todos.setTaskPaused(
+                                    task.id,
+                                    !task.paused,
+                                  ),
+                                task.paused ? '长期任务已恢复' : '长期任务已暂停',
                               )
                             }
                           >
-                            <RotateCcw data-icon="inline-start" /> 撤销完成
+                            {task.paused ? <Play /> : <Pause />}
+                            {task.paused ? '恢复' : '暂停'}
                           </Button>
-                        ) : null}
+                        )}
+                      {task.plannedAt.kind === 'none' &&
+                        task.deadlineAt.kind === 'none' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="添加关联任务"
+                            aria-label={`添加关联任务：${task.title}`}
+                            onClick={() =>
+                              navigate(`/inbox?goal=${encodeURIComponent(task.id)}`)
+                            }
+                          >
+                            <Plus />
+                          </Button>
+                        )}
+
+                      {task.state === 'pending' && !task.paused ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            aria-label={`完成${task.title}`}
+                            onClick={() =>
+                              void run(
+                                async () =>
+                                  (await getApplicationServices()).todos.setTaskState(
+                                    task.id,
+                                    'completed',
+                                  ),
+                                '已完成',
+                              )
+                            }
+                          >
+                            <Check data-icon="inline-start" /> 完成
+                          </Button>
+                          <Button
+                            variant="outline"
+                            aria-label={`跳过${task.title}`}
+                            onClick={() =>
+                              void run(
+                                async () =>
+                                  (await getApplicationServices()).todos.setTaskState(
+                                    task.id,
+                                    'skipped',
+                                  ),
+                                '已跳过',
+                              )
+                            }
+                          >
+                            <Forward data-icon="inline-start" /> 跳过
+                          </Button>
+                        </>
+                      ) : null}
+                      {task.state === 'completed' ? (
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`编辑${task.title}`}
-                          onClick={() => setEditingId(task.id)}
+                          variant="outline"
+                          onClick={() =>
+                            void run(
+                              async () =>
+                                (await getApplicationServices()).todos.undoTaskCompletion(
+                                  task.id,
+                                ),
+                              '已撤销完成',
+                            )
+                          }
                         >
-                          <Pencil />
+                          <RotateCcw data-icon="inline-start" /> 撤销完成
                         </Button>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          aria-label={`删除${task.title}`}
-                          onClick={() => setRemoving(task)}
-                        >
-                          <Trash2 />
-                        </Button>
-                      </PopoverContent>
-                    </Popover>
+                      ) : null}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="编辑"
+                        aria-label={`编辑任务：${task.title}`}
+                        onClick={() => setEditingId(task.id)}
+                      >
+                        <Pencil />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        title="删除"
+                        aria-label={`删除${task.title}`}
+                        onClick={() => setRemoving(task)}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  ) : row.kind === 'occurrence' && !row.readonly ? (
+                    <div className="task-card-actions">
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          void run(
+                            async () =>
+                              (
+                                await getApplicationServices()
+                              ).recurrence.completeOccurrence(
+                                occurrenceKeySchema.parse(row.occurrence.ownerId),
+                              ),
+                            '本次已完成',
+                          )
+                        }
+                      >
+                        <Check /> 完成
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          void run(
+                            async () =>
+                              (await getApplicationServices()).recurrence.skipOccurrence(
+                                occurrenceKeySchema.parse(row.occurrence.ownerId),
+                              ),
+                            '本次已跳过',
+                          )
+                        }
+                      >
+                        <Forward /> 跳过
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="编辑"
+                        aria-label={`编辑${row.title}`}
+                        onClick={() => setOpenedOccurrence(row.occurrence)}
+                      >
+                        <Pencil />
+                      </Button>
+                    </div>
                   ) : null}
                 </article>
               );
@@ -603,7 +688,7 @@ export function TodoPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>永久删除“{removing?.title}”？</AlertDialogTitle>
             <AlertDialogDescription>
-              此任务会从本设备明确删除，无法撤销。
+              此任务会从账号删除，无法撤销。关联任务会保留并解除关联。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

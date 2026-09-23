@@ -34,6 +34,8 @@ export function createServices(
 export const accountMethods = {
   todos: [
     'snapshot',
+    'unifiedSnapshot',
+    'setTaskPaused',
     'createList',
     'updateList',
     'reorderList',
@@ -50,6 +52,7 @@ export const accountMethods = {
     'completeOccurrence',
     'skipOccurrence',
     'rescheduleOccurrence',
+    'updateOccurrenceSubtasks',
     'pauseSeries',
     'resumeSeries',
     'stopSeries',

@@ -1,3 +1,4 @@
+import { findTaskParent } from '../todos/task-parent';
 import { Temporal } from 'temporal-polyfill';
 import { z } from 'zod';
 
@@ -22,6 +23,8 @@ import {
   recurrenceSeriesSchema,
   reviseReminderSchedule,
   schedulePointSchema,
+  subtasksSchema,
+  type Subtask,
   tagSchema,
   type Instant,
   type LongTermGoal,
@@ -49,6 +52,7 @@ const recurrenceDraftSchema = z
     plannedAt: schedulePointSchema,
     deadlineAt: schedulePointSchema,
     goalId: z.string().min(1).optional(),
+    subtasks: subtasksSchema.optional(),
     rule: fixedRecurrenceRuleSchema,
   })
   .strict();
@@ -175,7 +179,7 @@ export class RecurrenceService {
       const goal =
         draft.goalId === undefined
           ? undefined
-          : await repositories.longTermGoals.get(draft.goalId);
+          : await findTaskParent(repositories, draft.goalId);
       const context = this.prepareLoadedDraft(draft, storedZone, list, tags, goal);
       if (context.createdTags.length > 0) {
         await repositories.tags.saveMany(context.createdTags);
@@ -225,6 +229,24 @@ export class RecurrenceService {
 
   skipOccurrence(key: OccurrenceKey): Promise<OccurrenceRecord> {
     return this.handleOccurrence(key, 'skipped');
+  }
+
+  async updateOccurrenceSubtasks(
+    key: OccurrenceKey,
+    input: readonly Subtask[],
+  ): Promise<OccurrenceRecord> {
+    const subtasks = subtasksSchema.parse(input);
+    return this.unitOfWork.write(async (repositories) => {
+      const occurrence = await repositories.occurrenceRecords.get(key);
+      const series =
+        occurrence === undefined
+          ? undefined
+          : await repositories.recurrenceSeries.get(occurrence.seriesId);
+      const active = this.assertActive(series, occurrence, key);
+      const updated = occurrenceRecordSchema.parse({ ...active.occurrence, subtasks });
+      await repositories.occurrenceRecords.save(updated);
+      return updated;
+    });
   }
 
   async rescheduleOccurrence(
@@ -330,7 +352,7 @@ export class RecurrenceService {
       const goal =
         draft.goalId === undefined
           ? undefined
-          : await repositories.longTermGoals.get(draft.goalId);
+          : await findTaskParent(repositories, draft.goalId);
       const context = this.prepareLoadedDraft(
         draft,
         storedZone,
@@ -346,7 +368,13 @@ export class RecurrenceService {
       const revision = existing.revision + 1;
       const provisional = recurrenceSeriesSchema.parse({
         ...existing,
-        template: { ...this.taskDetails(draft), tagIds: context.tagIds },
+        template: {
+          ...this.taskDetails({
+            ...draft,
+            subtasks: draft.subtasks ?? existing.template.subtasks,
+          }),
+          tagIds: context.tagIds,
+        },
         anchor: anchor.kind,
         rule: draft.rule,
         status: 'active',
@@ -413,7 +441,11 @@ export class RecurrenceService {
       const storedZone = await repositories.settings.get(APPLICATION_TIME_ZONE_KEY);
       const active = this.assertActive(series, occurrence, key);
       const instant = decodeInstant(this.now());
-      const snapshot = { ...active.series.template, capturedAt: instant };
+      const snapshot = {
+        ...active.series.template,
+        subtasks: active.occurrence.subtasks ?? active.series.template.subtasks,
+        capturedAt: instant,
+      };
       const history = occurrenceRecordSchema.parse(
         state === 'completed'
           ? {
@@ -585,7 +617,12 @@ export class RecurrenceService {
     const { rule: _rule, tagNames: _tagNames, ...details } = draft;
     void _rule;
     void _tagNames;
-    return details;
+    return {
+      ...details,
+      ...(details.subtasks === undefined
+        ? {}
+        : { subtasks: details.subtasks.map((item) => ({ ...item, completed: false })) }),
+    };
   }
 
   private prepareTags(existing: readonly Tag[], names: readonly string[]) {

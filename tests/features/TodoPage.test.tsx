@@ -13,6 +13,12 @@ import {
 import { TodoPage } from '../../src/features/todos/TodoPage';
 import { createSingleTask } from '../infrastructure/db/fixtures';
 
+const taskActions = vi.hoisted(() => ({
+  setTaskState: vi.fn(),
+  setTaskPaused: vi.fn(),
+  undoTaskCompletion: vi.fn(),
+}));
+
 const hookMocks = vi.hoisted(() => ({
   useTodoSnapshot: vi.fn(),
   useCurrentLocalDate: vi.fn(),
@@ -27,7 +33,7 @@ vi.mock('../../src/features/todos/useCurrentLocalDate', () => ({
 }));
 
 vi.mock('@/app/application', () => ({
-  getApplicationServices: vi.fn(),
+  getApplicationServices: () => Promise.resolve({ todos: taskActions }),
 }));
 
 vi.mock('sonner', () => ({
@@ -147,15 +153,54 @@ describe('TodoPage rows', () => {
     expect(screen.queryByRole('button', { name: '仅本次改期' })).not.toBeInTheDocument();
   });
 
-  it('opens secondary task actions from the compact menu', async () => {
+  it('shows completion, skip and icon-only edit/delete directly on the card', async () => {
     const user = userEvent.setup();
     renderPage('/inbox', snapshot({ tasks: [createSingleTask({ title: '菜单任务' })] }));
     expect(screen.getByRole('button', { name: '完成菜单任务' })).toBeVisible();
-    expect(
-      screen.queryByRole('button', { name: '删除菜单任务' }),
-    ).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '更多操作：菜单任务' }));
+    expect(screen.getByRole('button', { name: '跳过菜单任务' })).toBeVisible();
     expect(screen.getByRole('button', { name: '删除菜单任务' })).toBeVisible();
+    expect(screen.getByRole('button', { name: '删除菜单任务' })).toHaveTextContent('');
+    expect(screen.getByRole('button', { name: '编辑任务：菜单任务' })).toHaveTextContent(
+      '',
+    );
+    expect(
+      screen.queryByRole('button', { name: '更多操作：菜单任务' }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '完成菜单任务' }));
+    expect(taskActions.setTaskState).toHaveBeenCalledWith(
+      expect.any(String),
+      'completed',
+    );
+  });
+
+  it('shows paused long-term tasks and restores them directly from their card', async () => {
+    const user = userEvent.setup();
+    const task = createSingleTask({
+      title: '长期练习',
+      plannedAt: { kind: 'none' },
+      deadlineAt: { kind: 'none' },
+      paused: true,
+    });
+    renderPage(
+      '/long-term',
+      snapshot({
+        tasks: [
+          task,
+          createSingleTask({
+            id: 'timed',
+            title: '定时事项',
+            plannedAt: { kind: 'allDay', date: today },
+          }),
+        ],
+      }),
+    );
+    expect(screen.getByRole('heading', { name: '长期任务' })).toBeVisible();
+    expect(screen.getByText('已暂停')).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: '编辑定时事项' }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '恢复' }));
+    expect(taskActions.setTaskPaused).toHaveBeenCalledWith(task.id, false);
   });
 
   it('opens a centered task composer without duplicating the quick input id', async () => {

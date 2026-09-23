@@ -15,6 +15,7 @@ import { EmptyState, LoadingState } from '@/components/ui/compat';
 import {
   Dialog,
   DialogContent,
+  DialogBody,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -100,77 +101,79 @@ function RescheduleDialog({ item, onCancel, onSaved, snapshot }: RescheduleDialo
               : '只有保存后才会修改原任务时间。'}
           </DialogDescription>
         </DialogHeader>
-        <div className="reschedule-form">
-          <Alert>
-            <Info />
-            <AlertTitle>原时间不会被静默移到今天</AlertTitle>
-            <AlertDescription>当前安排：{formatSchedule(item.task)}。</AlertDescription>
-          </Alert>
-          <div className="flex gap-2">
-            {[0, 1].map((offset) => (
-              <Button
-                key={offset}
-                variant="outline"
-                disabled={saving}
-                onClick={() => {
-                  const date = Temporal.PlainDate.from(snapshot.today)
-                    .add({ days: offset })
-                    .toString();
-                  setPlannedAt(
-                    decodeSchedulePoint(
-                      plannedAt.kind === 'timed'
-                        ? {
-                            kind: 'timed',
-                            localDateTime: `${date}T${plannedAt.localDateTime.slice(11)}`,
-                          }
-                        : { kind: 'allDay', date },
-                    ),
-                  );
-                  setSaveError(undefined);
-                }}
-              >
-                {offset === 0 ? '计划今天' : '计划明天'}
-              </Button>
-            ))}
-          </div>
-          <ScheduleFields
-            label="计划"
-            value={plannedAt}
-            defaultDate={snapshot.today}
-            timeZone={snapshot.timeZone}
-            onChange={(value) => {
-              setSaveError(undefined);
-              setPlannedAt(value);
-            }}
-          />
-          <ScheduleFields
-            label="截止"
-            value={deadlineAt}
-            defaultDate={snapshot.today}
-            timeZone={snapshot.timeZone}
-            onChange={(value) => {
-              setSaveError(undefined);
-              setDeadlineAt(value);
-            }}
-          />
-          {mixedSameDay ? (
+        <DialogBody>
+          <div className="reschedule-form">
             <Alert>
               <Info />
-              <AlertTitle>同一天的全天与具体时间可以同时保存</AlertTitle>
-              <AlertDescription>
-                {plannedAt.kind === 'allDay'
-                  ? '全天计划表示当天准备执行，具体截止时间表示当天最晚完成时刻。'
-                  : '具体计划时间表示当天开始执行，全天截止表示当天结束前完成。'}
-              </AlertDescription>
+              <AlertTitle>原时间不会被静默移到今天</AlertTitle>
+              <AlertDescription>当前安排：{formatSchedule(item.task)}。</AlertDescription>
             </Alert>
-          ) : null}
-          {!validation.ok || saveError !== undefined ? (
-            <Alert variant="destructive">
-              <TriangleAlert />
-              <AlertTitle>{saveError ?? '截止时间不能早于计划时间。'}</AlertTitle>
-            </Alert>
-          ) : null}
-        </div>
+            <div className="flex gap-2">
+              {[0, 1].map((offset) => (
+                <Button
+                  key={offset}
+                  variant="outline"
+                  disabled={saving}
+                  onClick={() => {
+                    const date = Temporal.PlainDate.from(snapshot.today)
+                      .add({ days: offset })
+                      .toString();
+                    setPlannedAt(
+                      decodeSchedulePoint(
+                        plannedAt.kind === 'timed'
+                          ? {
+                              kind: 'timed',
+                              localDateTime: `${date}T${plannedAt.localDateTime.slice(11)}`,
+                            }
+                          : { kind: 'allDay', date },
+                      ),
+                    );
+                    setSaveError(undefined);
+                  }}
+                >
+                  {offset === 0 ? '计划今天' : '计划明天'}
+                </Button>
+              ))}
+            </div>
+            <ScheduleFields
+              label="计划"
+              value={plannedAt}
+              defaultDate={snapshot.today}
+              timeZone={snapshot.timeZone}
+              onChange={(value) => {
+                setSaveError(undefined);
+                setPlannedAt(value);
+              }}
+            />
+            <ScheduleFields
+              label="截止"
+              value={deadlineAt}
+              defaultDate={snapshot.today}
+              timeZone={snapshot.timeZone}
+              onChange={(value) => {
+                setSaveError(undefined);
+                setDeadlineAt(value);
+              }}
+            />
+            {mixedSameDay ? (
+              <Alert>
+                <Info />
+                <AlertTitle>同一天的全天与具体时间可以同时保存</AlertTitle>
+                <AlertDescription>
+                  {plannedAt.kind === 'allDay'
+                    ? '全天计划表示当天准备执行，具体截止时间表示当天最晚完成时刻。'
+                    : '具体计划时间表示当天开始执行，全天截止表示当天结束前完成。'}
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {!validation.ok || saveError !== undefined ? (
+              <Alert variant="destructive">
+                <TriangleAlert />
+                <AlertTitle>{saveError ?? '截止时间不能早于计划时间。'}</AlertTitle>
+              </Alert>
+            ) : null}
+          </div>
+        </DialogBody>
         <DialogFooter>
           <Button variant="outline" disabled={saving} onClick={onCancel}>
             取消

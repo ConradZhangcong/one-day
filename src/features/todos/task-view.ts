@@ -16,10 +16,12 @@ import {
   type TimeZoneId,
 } from '@/domain';
 
-export type TodoViewKind = 'inbox' | 'today' | 'upcoming' | 'completed' | 'list';
+export type TodoViewKind =
+  'inbox' | 'today' | 'upcoming' | 'completed' | 'list' | 'long-term';
 
 export function getTodoView(pathname: string): TodoViewKind {
   const normalized = pathname.replace(/\/+$/, '') || '/';
+  if (normalized === '/long-term' || normalized === '/goals') return 'long-term';
   if (normalized === '/today') return 'today';
   if (normalized === '/upcoming') return 'upcoming';
   if (normalized === '/completed') return 'completed';
@@ -137,6 +139,7 @@ function matchesItem(
 ): boolean {
   const dates = itemDates(item);
   if (!matchesDefaultState(item.state, kind, filters.state)) return false;
+  if (kind === 'long-term' && dates.length > 0) return false;
   if (kind === 'inbox' && item.listId !== SYSTEM_INBOX_ID) return false;
   if (kind === 'list' && item.listId !== routeListId) return false;
   if (kind === 'today' && !dates.includes(today)) return false;
@@ -306,7 +309,7 @@ export function formatSchedule(
   if (task.deadlineAt.kind === 'allDay') parts.push(`截止 ${task.deadlineAt.date}`);
   if (task.deadlineAt.kind === 'timed')
     parts.push(`截止 ${task.deadlineAt.localDateTime.replace('T', ' ')}`);
-  return parts.join(' · ') || '未安排日期';
+  return parts.join(' · ') || '长期任务';
 }
 
 export function formatCompletedAt(

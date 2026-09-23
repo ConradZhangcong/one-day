@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
+  DialogBody,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -19,6 +20,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type { Priority, SchedulePoint, SingleTask } from '@/domain';
 
+import { SubtaskEditor } from './SubtaskEditor';
+import { cleanSubtasks } from './subtasks';
 import { ScheduleFields } from './ScheduleFields';
 import { TaskReminderEditor } from './TaskReminderEditor';
 import { todayInTimeZone } from './task-view';
@@ -34,6 +37,7 @@ export function TaskDetailsDrawer({ onClose, snapshot, task }: Props) {
     .map((id) => snapshot.tags.find((tag) => tag.id === id)?.name)
     .filter((name): name is string => name !== undefined);
   const [title, setTitle] = useState(task.title);
+  const [subtasks, setSubtasks] = useState(task.subtasks ?? []);
   const [notes, setNotes] = useState(task.notes);
   const [listId, setListId] = useState(task.listId);
   const [draftTags, setDraftTags] = useState<string[]>(tagNames);
@@ -67,6 +71,7 @@ export function TaskDetailsDrawer({ onClose, snapshot, task }: Props) {
       await services.todos.updateTask(task.id, {
         title,
         notes,
+        subtasks: cleanSubtasks(subtasks),
         listId,
         tagNames: draftTags,
         priority,
@@ -103,132 +108,165 @@ export function TaskDetailsDrawer({ onClose, snapshot, task }: Props) {
 
   return (
     <Dialog open onOpenChange={(value) => !value && !saving && onClose()}>
-      <DialogContent className="task-detail-dialog max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="task-detail-dialog max-h-[90dvh] sm:max-w-2xl">
         <DialogHeader className="border-b">
           <DialogTitle>任务详情</DialogTitle>
           <DialogDescription>
-            编辑组织与时间信息；保存前不会修改原任务。
+            无计划或截止时间时为长期任务；添加时间后按日期安排。
           </DialogDescription>
         </DialogHeader>
-        <div className="detail-form px-4 pb-4">
-          {taskChanged ? (
-            <Alert>
-              <TriangleAlert />
-              <AlertTitle>任务已更新</AlertTitle>
-              <AlertDescription>
-                为避免覆盖新内容，请关闭详情后重新打开。
-              </AlertDescription>
-            </Alert>
-          ) : null}
-          {invalidList ? (
-            <Alert>
-              <TriangleAlert />
-              <AlertTitle>原清单已不可用</AlertTitle>
-              <AlertDescription>请选择一个仍可用的清单后再保存。</AlertDescription>
-            </Alert>
-          ) : null}
-          <label>
-            标题
-            <Input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') void save();
-              }}
+        <DialogBody>
+          <div className="detail-form px-4 pb-4">
+            {taskChanged ? (
+              <Alert>
+                <TriangleAlert />
+                <AlertTitle>任务已更新</AlertTitle>
+                <AlertDescription>
+                  为避免覆盖新内容，请关闭详情后重新打开。
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {invalidList ? (
+              <Alert>
+                <TriangleAlert />
+                <AlertTitle>原清单已不可用</AlertTitle>
+                <AlertDescription>请选择一个仍可用的清单后再保存。</AlertDescription>
+              </Alert>
+            ) : null}
+            <label>
+              标题
+              <Input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') void save();
+                }}
+              />
+            </label>
+            <SubtaskEditor
+              value={subtasks}
+              onChange={setSubtasks}
+              disabled={saving}
+              readOnly={task.state !== 'pending'}
             />
-          </label>
-          <ScheduleFields
-            label="计划"
-            value={plannedAt}
-            defaultDate={today}
-            timeZone={snapshot.timeZone}
-            onChange={setPlannedAt}
-          />
-          <ScheduleFields
-            label="截止"
-            value={deadlineAt}
-            defaultDate={today}
-            timeZone={snapshot.timeZone}
-            onChange={setDeadlineAt}
-          />
-          <details className="detail-more">
-            <summary>更多信息 · 清单、优先级与备注</summary>
-            <div className="detail-more-fields">
-              {' '}
-              <label>
-                备注
-                <Textarea
-                  value={notes}
-                  rows={5}
-                  onChange={(event) => setNotes(event.target.value)}
-                  placeholder="纯文本备注"
-                />
-              </label>
-              <label>
-                清单
-                <SimpleSelect
-                  ariaLabel="清单"
-                  className="w-full"
-                  value={listId}
-                  options={snapshot.lists
-                    .filter((list) => !list.archived)
-                    .map((list) => ({ value: list.id, label: list.name }))}
-                  onChange={(value) => {
-                    if (typeof value === 'string') setListId(value);
-                  }}
-                />
-              </label>
-              <label>
-                标签
-                <Input
-                  value={draftTags.join('，')}
-                  onChange={(event) =>
-                    setDraftTags(
-                      event.target.value
-                        .split(/[,，]/)
-                        .map((value) => value.trim())
-                        .filter(Boolean),
-                    )
-                  }
-                  placeholder="用逗号分隔多个标签"
-                />
-              </label>
-              <label>
-                优先级
-                <SimpleSelect
-                  ariaLabel="优先级"
-                  value={priority}
-                  options={[
-                    { value: 'none', label: '无' },
-                    { value: 'low', label: '低' },
-                    { value: 'medium', label: '中' },
-                    { value: 'high', label: '高' },
-                  ]}
-                  onChange={(value) => {
-                    if (typeof value === 'string') setPriority(value);
-                  }}
-                />
-              </label>
-              <label>
-                长期目标
-                <SimpleSelect
-                  allowClear
-                  ariaLabel="长期目标"
-                  className="w-full"
-                  placeholder="不关联目标"
-                  value={goalId || undefined}
-                  options={snapshot.goals
-                    .filter(
-                      (goal) => goal.status !== 'archived' || goal.id === task.goalId,
-                    )
-                    .map((goal) => ({ value: goal.id, label: goal.title }))}
-                  onChange={(value) => setGoalId(typeof value === 'string' ? value : '')}
-                />
-              </label>
-            </div>
-          </details>
-          <TaskReminderEditor task={task} />
-        </div>
+            <ScheduleFields
+              label="计划"
+              value={plannedAt}
+              defaultDate={today}
+              timeZone={snapshot.timeZone}
+              onChange={setPlannedAt}
+            />
+            <ScheduleFields
+              label="截止"
+              value={deadlineAt}
+              defaultDate={today}
+              timeZone={snapshot.timeZone}
+              onChange={setDeadlineAt}
+            />
+            <details className="detail-more">
+              <summary>更多信息 · 清单、优先级与备注</summary>
+              <div className="detail-more-fields">
+                {' '}
+                <label>
+                  备注
+                  <Textarea
+                    value={notes}
+                    rows={5}
+                    onChange={(event) => setNotes(event.target.value)}
+                    placeholder="纯文本备注"
+                  />
+                </label>
+                <label>
+                  清单
+                  <SimpleSelect
+                    ariaLabel="清单"
+                    className="w-full"
+                    value={listId}
+                    options={snapshot.lists
+                      .filter((list) => !list.archived)
+                      .map((list) => ({ value: list.id, label: list.name }))}
+                    onChange={(value) => {
+                      if (typeof value === 'string') setListId(value);
+                    }}
+                  />
+                </label>
+                <label>
+                  标签
+                  <Input
+                    value={draftTags.join('，')}
+                    onChange={(event) =>
+                      setDraftTags(
+                        event.target.value
+                          .split(/[,，]/)
+                          .map((value) => value.trim())
+                          .filter(Boolean),
+                      )
+                    }
+                    placeholder="用逗号分隔多个标签"
+                  />
+                </label>
+                <label>
+                  优先级
+                  <SimpleSelect
+                    ariaLabel="优先级"
+                    value={priority}
+                    options={[
+                      { value: 'none', label: '无' },
+                      { value: 'low', label: '低' },
+                      { value: 'medium', label: '中' },
+                      { value: 'high', label: '高' },
+                    ]}
+                    onChange={(value) => {
+                      if (typeof value === 'string') setPriority(value);
+                    }}
+                  />
+                </label>
+                <label>
+                  关联任务
+                  <SimpleSelect
+                    allowClear
+                    ariaLabel="关联任务"
+                    className="w-full"
+                    placeholder="不关联任务"
+                    value={goalId || undefined}
+                    options={snapshot.goals
+                      .filter(
+                        (goal) =>
+                          goal.id !== task.id &&
+                          (goal.status !== 'archived' || goal.id === task.goalId),
+                      )
+                      .map((goal) => ({ value: goal.id, label: goal.title }))}
+                    onChange={(value) =>
+                      setGoalId(typeof value === 'string' ? value : '')
+                    }
+                  />
+                </label>
+              </div>
+            </details>
+            {snapshot.tasks.some((linked) => linked.goalId === task.id) && (
+              <section className="grid gap-2" aria-label="关联任务列表">
+                <strong>关联任务</strong>
+                {snapshot.tasks
+                  .filter((linked) => linked.goalId === task.id)
+                  .map((linked) => (
+                    <div key={linked.id} className="flex justify-between gap-2">
+                      <span>{linked.title}</span>
+                      <span>
+                        {linked.state === 'completed'
+                          ? '已完成'
+                          : linked.state === 'skipped'
+                            ? '已跳过'
+                            : linked.paused
+                              ? '已暂停'
+                              : '待处理'}
+                      </span>
+                    </div>
+                  ))}
+              </section>
+            )}
+            <TaskReminderEditor task={task} />
+          </div>
+        </DialogBody>
         <DialogFooter className="border-t bg-background">
           <div className="flex flex-wrap justify-end gap-2">
             {task.state === 'pending' ? (

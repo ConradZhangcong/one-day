@@ -8,7 +8,7 @@ import {
   schedulePointSchema,
   scheduledPointSchema,
 } from '../schedule/time';
-import { taskDetailsSchema } from '../task/model';
+import { subtasksSchema, taskDetailsSchema } from '../task/model';
 
 const nonEmptyIdSchema = z.string().min(1);
 
@@ -78,7 +78,7 @@ export const fixedRecurrenceRuleSchema = z.discriminatedUnion('frequency', [
 export type FixedRecurrenceRule = z.infer<typeof fixedRecurrenceRuleSchema>;
 
 export const taskTemplateSchema = taskDetailsSchema
-  .extend({ goalId: nonEmptyIdSchema.optional() })
+  .extend({ goalId: nonEmptyIdSchema.optional(), subtasks: subtasksSchema.optional() })
   .strict();
 export type TaskTemplate = z.infer<typeof taskTemplateSchema>;
 
@@ -162,6 +162,7 @@ const occurrenceBaseShape = {
   overridePlannedAt: schedulePointSchema.optional(),
   overrideDeadlineAt: schedulePointSchema.optional(),
   templateSnapshot: taskSnapshotSchema.optional(),
+  subtasks: subtasksSchema.optional(),
 } as const;
 
 const pendingOccurrenceSchema = z

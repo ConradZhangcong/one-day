@@ -2,6 +2,7 @@ import { Temporal } from 'temporal-polyfill';
 
 import {
   compareLocalDates,
+  compareScheduledPoints,
   createOccurrenceKey,
   decodeTimeZoneId,
   localDateSchema,
@@ -10,6 +11,7 @@ import {
   projectOccurrenceRecordSchedule,
   projectOccurrenceSchedule,
   schedulePointLocalDate,
+  type Subtask,
   type Instant,
   type LocalDate,
   type OccurrenceRecord,
@@ -32,6 +34,7 @@ export interface TaskOccurrenceView {
   readonly seriesId?: string;
   readonly title: string;
   readonly notes: string;
+  readonly subtasks?: Subtask[] | undefined;
   readonly plannedAt: SchedulePoint;
   readonly deadlineAt: SchedulePoint;
   readonly state: 'pending' | 'completed' | 'skipped';
@@ -98,6 +101,7 @@ function occurrenceView(
     seriesId: series.id,
     title: template.title,
     notes: template.notes,
+    subtasks: occurrence.subtasks ?? template.subtasks,
     plannedAt: schedule.plannedAt,
     deadlineAt: schedule.deadlineAt,
     state: occurrence.state,
@@ -160,6 +164,7 @@ export class OccurrenceQueryService {
         ownerId: task.id,
         title: task.title,
         notes: task.notes,
+        subtasks: task.subtasks,
         plannedAt: task.plannedAt,
         deadlineAt: task.deadlineAt,
         state: task.state,
@@ -239,6 +244,8 @@ export class OccurrenceQueryService {
         projectedPatterns.set(patternKey, projected);
       }
       for (const { originalAnchor, schedule } of projected) {
+        // Earlier slots were already handled or replaced by a series revision.
+        if (compareScheduledPoints(originalAnchor, active.originalAnchor) <= 0) continue;
         const occurrenceKey = createOccurrenceKey(
           series.id,
           series.revision,

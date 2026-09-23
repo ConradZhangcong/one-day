@@ -1,5 +1,5 @@
 import { Check, Forward, Pause, Pencil, Repeat2, Square } from 'lucide-react';
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { getApplicationServices } from '@/app/application';
@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogBody,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -26,8 +27,15 @@ import {
 } from '@/components/ui/dialog';
 import { ScheduleFields } from './ScheduleFields';
 import { useCurrentLocalDate } from './useCurrentLocalDate';
-import { type SchedulePoint, occurrenceKeySchema, type RecurrenceSeries } from '@/domain';
+import {
+  type SchedulePoint,
+  occurrenceKeySchema,
+  type RecurrenceSeries,
+  type Subtask,
+} from '@/domain';
 
+import { SubtaskEditor } from './SubtaskEditor';
+import { cleanSubtasks } from './subtasks';
 import { SeriesEditForm } from './SeriesEditForm';
 
 interface OccurrenceDetailsDrawerProps {
@@ -43,6 +51,10 @@ export function OccurrenceDetailsDrawer({
   series,
   snapshot,
 }: OccurrenceDetailsDrawerProps) {
+  const seriesFormId = useId();
+  const [subtasks, setSubtasks] = useState(item.subtasks ?? []);
+  const savedSubtasks = useRef(item.subtasks ?? []);
+  const savingSubtasks = useRef(false);
   const [busy, setBusy] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(false);
   const [editingSeries, setEditingSeries] = useState(false);
@@ -83,6 +95,29 @@ export function OccurrenceDetailsDrawer({
     }
   };
 
+  const saveSubtasks = async (next: Subtask[]) => {
+    if (item.readonly || savingSubtasks.current) return;
+    const cleaned = cleanSubtasks(next);
+    if (JSON.stringify(cleaned) === JSON.stringify(savedSubtasks.current)) return;
+    savingSubtasks.current = true;
+    setBusy(true);
+    try {
+      await (
+        await getApplicationServices()
+      ).recurrence.updateOccurrenceSubtasks(
+        occurrenceKeySchema.parse(item.ownerId),
+        cleaned,
+      );
+      savedSubtasks.current = cleaned;
+    } catch {
+      setSubtasks(savedSubtasks.current);
+      toast.error('保存失败，已恢复上次保存的子任务，请重试或重新打开。');
+    } finally {
+      savingSubtasks.current = false;
+      setBusy(false);
+    }
+  };
+
   const saveSchedule = async () => {
     setBusy(true);
     try {
@@ -118,7 +153,7 @@ export function OccurrenceDetailsDrawer({
 
   return (
     <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[90dvh] sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Repeat2 className="size-4" />
@@ -132,51 +167,84 @@ export function OccurrenceDetailsDrawer({
                 : '本次完成、跳过和改期只影响这一次；暂停和停止作用于整个系列。'}
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3 px-6 pb-2">
-          <div className="flex flex-wrap gap-2">
-            <Badge variant={item.readonly ? 'outline' : 'secondary'}>
-              {item.virtual ? '未来只读' : item.readonly ? '历史只读' : '本次安排'}
-            </Badge>
-            <Badge variant="outline">整个系列可单独管理</Badge>
-          </div>
-          {editingSeries && series !== undefined && snapshot !== undefined ? (
-            <SeriesEditForm
-              series={series}
-              snapshot={snapshot}
-              disabled={busy}
-              onCancel={() => setEditingSeries(false)}
-              onSubmit={setPendingSeriesDraft}
-            />
-          ) : null}
-          {!item.virtual && editingSchedule && !editingSeries ? (
-            <div className="grid grid-cols-2 gap-3">
-              {today ? (
-                <>
-                  <ScheduleFields
-                    label="仅本次计划"
-                    value={plannedAt}
-                    defaultDate={today}
-                    onChange={setPlannedAt}
-                  />
-                  <ScheduleFields
-                    label="仅本次截止"
-                    value={deadlineAt}
-                    defaultDate={today}
-                    onChange={setDeadlineAt}
-                  />
-                </>
-              ) : null}
-              <Button
-                disabled={busy}
-                className="col-span-2"
-                onClick={() => void saveSchedule()}
-              >
-                保存仅本次改期
-              </Button>
+        <DialogBody>
+          <div className="grid gap-3 px-6 pb-2">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={item.readonly ? 'outline' : 'secondary'}>
+                {item.virtual ? '未来只读' : item.readonly ? '历史只读' : '本次安排'}
+              </Badge>
+              <Badge variant="outline">整个系列可单独管理</Badge>
             </div>
-          ) : null}
-        </div>
+            {!editingSeries && (
+              <>
+                <SubtaskEditor
+                  value={subtasks}
+                  onChange={setSubtasks}
+                  onCommit={(next) => void saveSubtasks(next)}
+                  disabled={busy}
+                  readOnly={item.readonly}
+                />
+                {!item.readonly && (
+                  <div className="grid gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      勾选后自动保存，名称编辑后离开输入框自动保存。修改仅影响本次；以后每次的子项请在「编辑整个系列」中设置。
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+            {editingSeries && series !== undefined && snapshot !== undefined ? (
+              <SeriesEditForm
+                formId={seriesFormId}
+                series={series}
+                snapshot={snapshot}
+                disabled={busy}
+                onCancel={() => setEditingSeries(false)}
+                onSubmit={setPendingSeriesDraft}
+              />
+            ) : null}
+            {!item.virtual && editingSchedule && !editingSeries ? (
+              <div className="grid grid-cols-2 gap-3">
+                {today ? (
+                  <>
+                    <ScheduleFields
+                      label="仅本次计划"
+                      value={plannedAt}
+                      defaultDate={today}
+                      onChange={setPlannedAt}
+                    />
+                    <ScheduleFields
+                      label="仅本次截止"
+                      value={deadlineAt}
+                      defaultDate={today}
+                      onChange={setDeadlineAt}
+                    />
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </DialogBody>
         <DialogFooter className="flex-wrap sm:justify-start">
+          {editingSeries && (
+            <>
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => setEditingSeries(false)}
+              >
+                取消编辑
+              </Button>
+              <Button type="submit" form={seriesFormId} disabled={busy}>
+                保存整个系列
+              </Button>
+            </>
+          )}
+          {editingSchedule && !editingSeries && (
+            <Button disabled={busy} onClick={() => void saveSchedule()}>
+              保存仅本次改期
+            </Button>
+          )}
           {!item.readonly &&
           !editingSeries &&
           series !== undefined &&
@@ -238,7 +306,7 @@ export function OccurrenceDetailsDrawer({
           <AlertDialogHeader>
             <AlertDialogTitle>确认编辑整个系列？</AlertDialogTitle>
             <AlertDialogDescription>
-              当前待处理实例会被替换；已完成和已跳过的历史会保留；未来将按新规则重新计算。
+              当前待处理实例会被替换，子项按系列清单重置为未完成；已完成和已跳过的历史保留；未来按新规则重新计算。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

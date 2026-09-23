@@ -731,6 +731,10 @@
       dialog::backdrop {
         background: #0006;
       }
+      #modal[open] { display: flex; flex-direction: column; overflow: hidden; }
+      #modal > .dialog-head, #modal > .dialog-actions { flex-shrink: 0; }
+      .dialog-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+      #modal > .dialog-actions { margin-top: 16px; }
       .dialog-head {
         display: flex;
         justify-content: space-between;
@@ -741,6 +745,15 @@
         border: 0;
         font-size: 20px;
       }
+      .subtasks { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; }
+      .subtask-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+      .subtask-row, .subtask-add { display: flex; gap: 8px; align-items: center; min-width: 0; }
+      .subtask-row input[type="checkbox"] { width: 18px; height: 18px; flex: 0 0 18px; accent-color: var(--green); }
+      .subtask-row input[type="text"], .subtask-add input { min-width: 0; width: 100%; flex: 1; }
+      .subtask-row:has(:checked) input[type="text"], .subtask-row:has(:checked) span { text-decoration: line-through; color: var(--muted); }
+      .subtask-row span { overflow-wrap: anywhere; min-width: 0; }
+      .subtask-row button, .subtask-add button { flex-shrink: 0; }
+      .subtask-items { display: grid; gap: 8px; }
       .detail-grid {
         display: grid;
         grid-template-columns: 80px minmax(0, 1fr);
@@ -984,13 +997,13 @@
   </head>
   <body>
     <dialog id="account-demo" aria-labelledby="account-demo-title" style="width:min(420px,calc(100% - 32px));padding:28px;border:1px solid #ddd;border-radius:20px">
-      <form id="account-demo-form" class="stack">
+      <form id="account-demo-form" class="stack" novalidate>
         <img src="../logo/concentric-ring-master-metal.svg" alt="One Day" width="48" />
         <p class="muted">ONE DAY · 每一天，井然有序</p>
         <h1 id="account-demo-title">欢迎回来</h1>
         <p>登录后，待办与计划随账号保存，在不同设备继续使用。</p>
-        <label>账号<input name="account" autocomplete="off" placeholder="原型演示，无需真实账号" /></label>
-        <label>密码<input type="password" autocomplete="off" placeholder="请勿输入真实密码" /></label>
+        <label>账号<input name="account" autocomplete="off" placeholder="3–32 位字母、数字或下划线" aria-describedby="demo-account-error" /></label><div id="demo-account-error" role="alert" style="color:var(--danger,#b42318);font-size:14px" hidden></div>
+        <label>密码<input name="password" type="password" autocomplete="off" placeholder="请勿输入真实密码，至少 10 位" aria-describedby="demo-password-error" /></label><div id="demo-password-error" role="alert" style="color:var(--danger,#b42318);font-size:14px" hidden></div>
         <button class="primary" type="submit" id="account-demo-submit">登录</button>
         <button type="button" id="account-demo-toggle">还没有账号？创建账号</button>
         <p class="muted">交互原型：仅演示流程，不创建真实账号，不上传或保存输入。</p>
@@ -1117,6 +1130,11 @@
           state: 'pending',
           goal: 'g1',
           notes: '整理三类高频问题，补充具体案例。',
+          subtasks: [
+            { title: '收集本周客户反馈', completed: true },
+            { title: '归纳三类高频问题', completed: false },
+            { title: '补充典型案例', completed: false },
+          ],
         },
         {
           id: 't2',
@@ -1147,6 +1165,7 @@
           state: 'pending',
           repeat: '每周三、五',
           series: 'fitness',
+          subtasks: [{ title: '热身', completed: false }, { title: '力量训练', completed: false }, { title: '拉伸放松', completed: false }],
         },
         {
           id: 't5',
@@ -1205,6 +1224,7 @@
           state: 'pending',
           repeat: '每周三、五',
           series: 'fitness',
+          subtasks: [{ title: '热身', completed: false }, { title: '力量训练', completed: false }, { title: '拉伸放松', completed: false }],
           future: true,
         },
         {
@@ -1282,7 +1302,7 @@
         ['recovery', '待恢复', '↺'],
         ['upcoming', '即将到来', '↗'],
         ['history', '已处理', '✓'],
-        ['goals', '长期目标', '◎'],
+        ['goals', '长期任务', '◎'],
         ['review', '回顾', '◴'],
         ['settings', '设置', '⚙'],
       ];
@@ -1382,7 +1402,7 @@
       }
       function taskRow(t, recover = false) {
         const s = status(t);
-        return `<article class="task ${s}"><button class="task-check" data-complete="${t.id}" aria-label="${t.state === 'completed' ? '查看' : t.future ? '查看后续安排' : '完成'}${escapeHtml(t.title)}">${t.state === 'completed' ? '✓' : t.future ? '↻' : t.state === 'skipped' ? '–' : ''}</button><div class="task-copy"><button class="task-title" data-open="${t.id}">${escapeHtml(t.title)}</button><div class="task-meta">${t.plan ? `<span>计划 ${formatTime(t.plan)}</span>` : ''}${t.deadline ? `<span class="${past(t.deadline) && t.state === 'pending' ? 'danger' : ''}">${formatTime(t.deadline)} 截止</span>` : ''}${!t.plan && !t.deadline ? '<span>未安排日期</span>' : ''}</div><div class="task-meta"><span>${t.list}</span>${t.priority === '高' ? '<span class="badge missed">高优先级</span>' : ''}${['overdue', 'missed'].includes(s) ? `<span class="badge ${s}">${s === 'overdue' ? '!' : '◷'} ${stateCopy[s]}</span>` : ''}${t.repeat ? `<span class="badge repeat">↻ ${escapeHtml(t.repeat)} · ${t.future ? '后续安排' : t.state === 'pending' ? '当前待处理' : '已处理记录'}</span>` : ''}${t.state !== 'pending' ? `<span>${stateCopy[t.state]} · ${formatTime(t.completedAt)}</span>` : ''}${recover && s === 'overdue' && past(t.plan) ? '<span>计划也已错过</span>' : ''}</div></div>${recover ? `<div class="task-actions"><button data-skip="${t.id}">跳过${t.repeat ? '本次' : ''}</button><button class="primary" data-reschedule="${t.id}">${t.repeat ? '仅本次改期' : '重新安排'}</button></div>` : ''}</article>`;
+        return `<article class="task ${s}"><span class="task-check" aria-hidden="true">${t.state === 'completed' ? '✓' : t.future ? '↻' : t.paused ? 'Ⅱ' : t.state === 'skipped' ? '–' : ''}</span><div class="task-copy"><button class="task-title" data-open="${t.id}">${escapeHtml(t.title)}</button><div class="task-meta">${t.plan ? `<span>计划 ${formatTime(t.plan)}</span>` : ''}${t.deadline ? `<span class="${past(t.deadline) && t.state === 'pending' ? 'danger' : ''}">${formatTime(t.deadline)} 截止</span>` : ''}${!t.plan && !t.deadline ? '<span>长期任务</span>' : ''}</div><div class="task-meta"><span>${t.list}</span>${t.subtasks?.length ? `<span>子任务 ${t.subtasks.filter((item) => item.completed).length}/${t.subtasks.length}</span>` : ''}${t.priority === '高' ? '<span class="badge missed">高优先级</span>' : ''}${['overdue', 'missed'].includes(s) ? `<span class="badge ${s}">${s === 'overdue' ? '!' : '◷'} ${stateCopy[s]}</span>` : ''}${t.repeat ? `<span class="badge repeat">↻ ${escapeHtml(t.repeat)} · ${t.future ? '后续安排' : t.state === 'pending' ? '当前待处理' : '已处理记录'}</span>` : ''}${t.state !== 'pending' ? `<span>${stateCopy[t.state]} · ${formatTime(t.completedAt)}</span>` : ''}${recover && s === 'overdue' && past(t.plan) ? '<span>计划也已错过</span>' : ''}</div></div>${!recover ? `<div class="task-actions">${!t.future && t.state === 'pending' && !t.paused ? `<button data-complete="${t.id}">完成</button><button data-skip="${t.id}">跳过</button>` : ''}${!t.repeat && t.state === 'completed' ? `<button data-undo="${t.id}">撤销完成</button>` : ''}${!t.plan && !t.deadline && t.state === 'pending' ? `<button data-task-pause="${t.id}">${t.paused ? '恢复' : '暂停'}</button>` : ''}${!t.repeat ? `<button data-reschedule="${t.id}" aria-label="编辑${escapeHtml(t.title)}" title="编辑">✎</button><button data-task-delete="${t.id}" aria-label="删除${escapeHtml(t.title)}" title="删除">⌫</button>` : ''}</div>` : ''}${recover ? `<div class="task-actions"><button data-skip="${t.id}">跳过${t.repeat ? '本次' : ''}</button><button class="primary" data-reschedule="${t.id}">${t.repeat ? '仅本次改期' : '重新安排'}</button></div>` : ''}</article>`;
       }
       function quickForm() {
         return `<form class="quick" id="quick-form"><input name="title" required aria-label="快速新增任务标题" placeholder="添加一件事，按 Enter 保存" autocomplete="off"><button type="submit" class="primary">添加</button><button type="button" class="date-shortcut ghost" data-action="new">日期与更多选项…</button></form>`;
@@ -1519,33 +1539,10 @@
             '',
           )}</div><button data-action="new">＋ 在 ${shortDate(anchor)} 添加</button><div class="date-nav"><button data-shift="-1" aria-label="上一范围">‹</button><input id="calendar-date" type="date" value="${anchor}" aria-label="日历日期"><button data-action="calendar-today">今天</button><button data-shift="1" aria-label="下一范围">›</button></div></div>${filterControls()}${view === 'agenda' && recoveryTasks().length ? `<button class="recovery-link" data-page="recovery">另有 ${recoveryTasks().length} 项待恢复 · 查看全部 →</button>` : ''}${body}</div>`;
       }
+      for (const goal of goals) tasks.push({ id: goal.id, title: goal.title, notes: goal.description, plan: '', deadline: '', list: '收件箱', priority: '无', state: goal.state === '已完成' ? 'completed' : 'pending', paused: goal.state === '已归档', subtasks: [] });
       function goalsPage() {
-        return `<div class="stack"><div class="section-title"><small>目标状态由你决定，任务完成率自动计算。</small><button data-action="new-goal">＋ 新建目标</button></div><div class="goals">${goals
-          .map((g) => {
-            const linked = tasks.filter((t) => t.goal === g.id && !t.repeat),
-              done = linked.filter((t) => t.state === 'completed').length,
-              percent = linked.length ? Math.round((done / linked.length) * 100) : 0;
-            return `<article class="card goal"><div class="row between"><h2>${escapeHtml(g.title)}</h2><span class="badge">${g.state}</span></div><p class="muted">${escapeHtml(g.description)}</p><progress value="${percent}" max="100" aria-label="${escapeHtml(g.title)}任务完成率"></progress><div class="row between"><small>${done} / ${linked.length} 个任务完成</small><strong>${percent}%</strong></div><div class="goal-tasks">${
-              linked
-                .slice(0, 3)
-                .map(
-                  (t) =>
-                    `<button data-open="${t.id}">${t.state === 'completed' ? '✓' : '○'} ${escapeHtml(t.title)}</button>`,
-                )
-                .join('') || '<small>添加第一件事，让目标开始前进。</small>'
-            }</div>${
-              linked.length > 3
-                ? `<details><summary>其余 ${linked.length - 3} 项</summary><div class="goal-tasks">${linked
-                    .slice(3)
-                    .map(
-                      (t) =>
-                        `<button data-open="${t.id}">${escapeHtml(t.title)}</button>`,
-                    )
-                    .join('')}</div></details>`
-                : ''
-            }<div class="row">${g.state !== '已归档' ? `<button data-goal-add="${g.id}">＋ 添加关联任务</button>` : ''}<button class="ghost" data-goal-edit="${g.id}">编辑目标</button></div></article>`;
-          })
-          .join('')}</div></div>`;
+        const items = tasks.filter(task => !task.plan && !task.deadline && task.state === 'pending');
+        return `<div class="stack"><p class="muted">无时间的是长期任务，设置时间后进入日期安排；暂停后可随时恢复。</p>${quickForm()}${items.map(task => taskRow(task)).join('') || empty('还没有长期任务')}</div>`;
       }
       function reviewPage() {
         const done = tasks.filter(
@@ -1573,14 +1570,20 @@
       function showToast(message, action) {
         clearTimeout(toastTimer);
         $('#toast').innerHTML =
-          `<span>${escapeHtml(message)}</span>${action ? `<button data-open="${action}">查看任务</button>` : ''}`;
+          `<span>${escapeHtml(message)}</span>${action ? `<button data-open="${action}">查看任务</button>` : ''}<button data-toast-close aria-label="关闭提示">×</button>`;
         $('#toast').hidden = false;
         toastTimer = setTimeout(() => ($('#toast').hidden = true), 8000);
       }
       function modal(title, body) {
         if (!$('#modal').open) returnFocus = document.activeElement;
         $('#modal').innerHTML =
-          `<div class="dialog-head"><h2 id="modal-title">${escapeHtml(title)}</h2><button data-action="close" aria-label="关闭弹窗">×</button></div>${body}`;
+          `<div class="dialog-head"><h2 id="modal-title">${escapeHtml(title)}</h2><button data-action="close" aria-label="关闭弹窗">×</button></div><div class="dialog-body">${body}</div>`;
+        const actions = $('#modal .dialog-actions');
+        if (actions) {
+          const form = actions.closest('form');
+          if (form) actions.querySelectorAll('button[type="submit"]').forEach(button => button.setAttribute('form', form.id));
+          $('#modal').append(actions);
+        }
         if (!$('#modal').open) $('#modal').showModal();
         $('#modal').querySelector('[autofocus], button')?.focus();
       }
@@ -1592,13 +1595,62 @@
         const timed = value.includes('T');
         return `<fieldset style="border:0;padding:0;margin:0;display:grid;gap:8px"><legend style="font-size:12px;color:var(--muted);margin-bottom:6px">${label}</legend><div class="split"><label class="field">日期<input type="date" name="${prefix}Date" value="${dateOf(value)}"></label><label class="field">具体时间（留空为全天）<input type="time" name="${prefix}Time" value="${timed ? value.slice(11) : ''}"></label></div></fieldset>`;
       }
+      function subtaskRow(item, editable = true) {
+        return `<div class="subtask-row"><input type="checkbox" aria-label="完成子项" ${item.completed ? 'checked' : ''} ${editable ? '' : 'disabled'}>${editable ? `<input type="text" aria-label="子项名称" value="${escapeHtml(item.title)}"><button type="button" data-subtask-remove aria-label="删除子项">×</button>` : `<span>${escapeHtml(item.title)}</span>`}</div>`;
+      }
+      function subtaskSection(items = [], editable = true) {
+        return `<section class="subtasks" aria-label="子任务"><div class="subtask-heading"><strong>子任务</strong><span class="muted" data-subtask-progress>${items.filter((item) => item.completed).length}/${items.length}</span></div><div class="subtask-items">${items.map((item) => subtaskRow(item, editable)).join('')}</div>${editable ? '<div class="subtask-add"><input type="text" aria-label="新子项名称" placeholder="添加子项，按 Enter 继续"><button type="button" data-subtask-add>＋ 添加</button></div><small class="muted">子项没有独立时间，全部勾选后仍需手动完成任务。</small>' : ''}</section>`;
+      }
+      function readSubtasks() {
+        const items = [...document.querySelectorAll('#modal .subtask-row')].map((row) => ({ title: row.querySelector('input[type="text"]').value.trim(), completed: row.querySelector('input[type="checkbox"]').checked })).filter((item) => item.title);
+        const pending = $('#modal .subtask-add input')?.value.trim();
+        if (pending) items.push({ title: pending, completed: false });
+        return items;
+      }
+      function autoSaveOccurrenceSubtasks() {
+        const detail = $('#modal [data-auto-subtasks]');
+        if (!detail) return;
+        const task = tasks.find(item => item.id === detail.dataset.autoSubtasks);
+        if (task) { task.subtasks = readSubtasks(); render(); }
+      }
+      document.addEventListener('focusout', (event) => {
+        if (event.target.matches('.subtasks input[type="text"]')) autoSaveOccurrenceSubtasks();
+      });
+      function refreshSubtaskProgress() {
+        const rows = [...document.querySelectorAll('#modal .subtask-row')];
+        $('#modal [data-subtask-progress]').textContent = `${rows.filter((row) => row.querySelector('input[type="checkbox"]').checked).length}/${rows.length}`;
+      }
+      function addSubtask() {
+        const input = $('#modal .subtask-add input');
+        if (!input.value.trim()) return;
+        $('#modal .subtask-items').insertAdjacentHTML('beforeend', subtaskRow({ title: input.value.trim(), completed: false }));
+        input.value = '';
+        input.focus();
+        refreshSubtaskProgress();
+        autoSaveOccurrenceSubtasks();
+      }
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' || event.isComposing || !event.target.closest('.subtasks')) return;
+        event.preventDefault();
+        if (event.target.matches('.subtask-add input')) addSubtask();
+        else if (event.target.matches('input[type="text"]')) $('#modal .subtask-add input')?.focus();
+        else if (event.target.matches('button')) event.target.click();
+      });
+      document.addEventListener('change', (event) => {
+        if (event.target.matches('[data-repeat-demo]')) {
+          const days = $('#modal [data-repeat-days]');
+          days.hidden = !['weekly', 'workdays'].includes(event.target.value);
+          days.querySelectorAll('input').forEach((input, index) => { input.checked = event.target.value === 'workdays' ? index < 5 : index === 0; });
+        }
+        if (event.target.matches('.subtask-row input[type="checkbox"]')) { refreshSubtaskProgress(); autoSaveOccurrenceSubtasks(); }
+      });
       function taskForm(task, goal) {
         const editing = !!task;
         const defaultPlan = task ? task.plan : page === 'calendar' ? anchor : '';
         const list = task?.list || (page.startsWith('list:') ? page.slice(5) : '收件箱');
         modal(
           editing ? (task.repeat ? '仅本次改期' : '编辑任务') : '添加一件事',
-          `<form id="task-form" class="dialog-form" data-id="${task?.id || ''}"><label class="field">任务标题<input name="title" required autofocus value="${escapeHtml(task?.title || '')}" ${task?.repeat ? 'readonly' : ''} placeholder="例如：给妈妈打电话"></label>${task?.repeat ? '<div class="notice">仅修改本次计划与截止，保留原具体时间。固定重复周期不变。</div>' : ''}${timeFields('plan', defaultPlan, '计划执行')}${timeFields('deadline', task?.deadline || '', '截止时间')}<div class="row"><button type="button" data-plan-day="${TODAY}">计划今天</button><button type="button" data-plan-day="${addDays(TODAY, 1)}">计划明天</button><button type="button" data-action="clear-plan">清除计划</button></div><details ${goal || editing ? 'open' : ''}><summary>清单、优先级与更多选项</summary><div class="stack"><div class="split"><label class="field">清单<select name="list" ${task?.repeat ? 'disabled' : ''}>${lists.map((l) => `<option ${selected(l, list)}>${l}</option>`).join('')}</select></label><label class="field">优先级<select name="priority" ${task?.repeat ? 'disabled' : ''}>${['无', '低', '中', '高'].map((l) => `<option ${selected(l, task?.priority || '无')}>${l}</option>`).join('')}</select></label></div><label class="field">关联长期目标<select name="goal" ${task?.repeat ? 'disabled' : ''}><option value="">不关联</option>${goals
+          `<form id="task-form" class="dialog-form" data-id="${task?.id || ''}"><label class="field">任务标题<input name="title" required autofocus value="${escapeHtml(task?.title || '')}" ${task?.repeat ? 'readonly' : ''} placeholder="例如：给妈妈打电话"></label>${task?.repeat ? '<div class="notice">仅修改本次计划与截止，保留原具体时间。固定重复周期不变。</div>' : ''}${subtaskSection(task?.subtasks)}${!editing ? `<fieldset class="stack"><legend>重复选项演示</legend><select aria-label="重复频率演示" data-repeat-demo><option value="none">不重复</option><option value="daily">每天</option><option value="workdays">工作日</option><option value="weekly">每周某几天</option><option value="monthly">每月</option><option value="yearly">每年</option></select><div class="row" data-repeat-days hidden>${['一','二','三','四','五','六','日'].map((day, index) => `<label><input type="checkbox" value="${index + 1}">周${day}</label>`).join('')}</div><small class="muted">工作日为周一至周五，不含节假日调休。本原型仅演示选项，实际重复生成请在正式应用验证。</small></fieldset>` : ''}${timeFields('plan', defaultPlan, '计划执行')}${timeFields('deadline', task?.deadline || '', '截止时间')}<div class="row"><button type="button" data-plan-day="${TODAY}">计划今天</button><button type="button" data-plan-day="${addDays(TODAY, 1)}">计划明天</button><button type="button" data-action="clear-plan">清除计划</button></div><details ${goal || editing ? 'open' : ''}><summary>清单、优先级与更多选项</summary><div class="stack"><div class="split"><label class="field">清单<select name="list" ${task?.repeat ? 'disabled' : ''}>${lists.map((l) => `<option ${selected(l, list)}>${l}</option>`).join('')}</select></label><label class="field">优先级<select name="priority" ${task?.repeat ? 'disabled' : ''}>${['无', '低', '中', '高'].map((l) => `<option ${selected(l, task?.priority || '无')}>${l}</option>`).join('')}</select></label></div><label class="field">关联长期任务<select name="goal" ${task?.repeat ? 'disabled' : ''}><option value="">不关联</option>${goals
             .filter((g) => g.state !== '已归档' || g.id === task?.goal)
             .map(
               (g) =>
@@ -1615,7 +1667,7 @@
         const s = status(t);
         modal(
           t.title,
-          `<div class="stack"><div class="row"><span class="badge ${s}">${stateCopy[s]}</span>${t.repeat ? `<span class="badge repeat">↻ ${escapeHtml(t.repeat)}</span>` : ''}</div>${t.future ? '<div class="notice">这是后续安排，暂不能完成或单次改期。需要调整周期时，请管理整个系列。</div>' : ''}<dl class="detail-grid"><dt>计划执行</dt><dd>${formatTime(t.plan)}</dd><dt>截止时间</dt><dd>${formatTime(t.deadline)}</dd><dt>清单</dt><dd>${t.list}</dd><dt>优先级</dt><dd>${t.priority}</dd>${t.goal ? '<dt>长期目标</dt><dd>' + escapeHtml(goals.find((g) => g.id === t.goal)?.title) + '</dd>' : ''}<dt>备注</dt><dd>${escapeHtml(t.notes || '无')}</dd></dl>${t.state !== 'pending' ? `<p class="muted">${stateCopy[s]}于 ${formatTime(t.completedAt)}</p>` : ''}<div class="dialog-actions">${!t.future && t.state === 'pending' ? `<button data-skip="${id}">跳过${t.repeat ? '本次' : ''}</button><button data-reschedule="${id}">${t.repeat ? '仅本次改期' : '编辑 / 改期'}</button><button class="primary" data-complete="${id}">完成${t.repeat ? '本次' : ''}</button>` : t.future ? '<button data-info="系列编辑将统一展示规则预览、影响范围与确认。这一轮原型暂未模拟规则修改。">管理整个系列 · 流程说明</button>' : !t.repeat && t.state === 'completed' ? `<button data-undo="${id}">撤销完成</button>` : ''}</div></div>`,
+          `<div class="stack" ${t.repeat && t.state === 'pending' && !t.future ? `data-auto-subtasks="${id}"` : ''}><div class="row"><span class="badge ${s}">${stateCopy[s]}</span>${t.repeat ? `<span class="badge repeat">↻ ${escapeHtml(t.repeat)}</span>` : ''}</div>${t.future ? '<div class="notice">这是后续安排，暂不能完成或单次改期。需要调整周期时，请管理整个系列。</div>' : ''}${subtaskSection(t.subtasks, t.state === 'pending' && !t.future)}${t.repeat ? '<p class="muted">勾选、删除和名称修改自动保存，仅影响本次；下次从未完成开始。编辑系列子项会替换待处理子项，已处理历史保留。</p>' : ''}<dl class="detail-grid"><dt>计划执行</dt><dd>${formatTime(t.plan)}</dd><dt>截止时间</dt><dd>${formatTime(t.deadline)}</dd><dt>清单</dt><dd>${t.list}</dd><dt>优先级</dt><dd>${t.priority}</dd>${t.goal ? '<dt>长期任务</dt><dd>' + escapeHtml(tasks.find((g) => g.id === t.goal)?.title) + '</dd>' : ''}<dt>备注</dt><dd>${escapeHtml(t.notes || '无')}</dd></dl>${t.state !== 'pending' ? `<p class="muted">${stateCopy[s]}于 ${formatTime(t.completedAt)}</p>` : ''}<div class="dialog-actions">${t.repeat && t.state === 'pending' ? `<button data-series-subtasks="${id}">编辑系列子项</button>` : ''}${!t.repeat && !t.future && t.state === 'pending' ? `<button data-action="close">取消</button><button class="primary" data-subtasks-save="${id}">保存更改</button>` : ''}${!t.future && t.state === 'pending' ? `<button data-skip="${id}">跳过${t.repeat ? '本次' : ''}</button><button data-reschedule="${id}">${t.repeat ? '仅本次改期' : '编辑 / 改期'}</button><button class="primary" data-complete="${id}">完成${t.repeat ? '本次' : ''}</button>` : t.future ? '<button data-info="系列编辑将统一展示规则预览、影响范围与确认。这一轮原型暂未模拟规则修改。">管理整个系列 · 流程说明</button>' : !t.repeat && t.state === 'completed' ? `<button data-undo="${id}">撤销完成</button>` : ''}</div></div>`,
         );
       }
       function processTask(id, state) {
@@ -1634,13 +1686,42 @@
       function goalForm(id) {
         const g = goals.find((x) => x.id === id);
         modal(
-          g ? '编辑长期目标' : '新建长期目标',
+          g ? '编辑长期任务' : '新建长期任务',
           `<form id="goal-form" data-id="${g?.id || ''}" class="dialog-form"><label class="field">目标名称<input name="title" value="${escapeHtml(g?.title || '')}" required autofocus></label><label class="field">说明<textarea name="description">${escapeHtml(g?.description || '')}</textarea></label><label class="field">目标状态<select name="state">${['计划中', '进行中', '已完成', '已归档'].map((s) => `<option ${selected(s, g?.state || '计划中')}>${s}</option>`).join('')}</select></label><p class="muted">状态由你决定，任务完成率单独计算。</p><div class="dialog-actions"><button type="button" data-action="close">取消</button><button type="submit" class="primary">保存目标</button></div></form>`,
         );
       }
       document.addEventListener('click', (event) => {
         const b = event.target.closest('button');
         if (!b) return;
+        if (b.hasAttribute('data-task-pause')) { const task = tasks.find(t => t.id === b.dataset.taskPause); task.paused = !task.paused; render(); showToast(task.paused ? '长期任务已暂停' : '长期任务已恢复'); return; }
+        if (b.hasAttribute('data-task-delete')) { modal('删除任务？', `<p>关联任务会保留。删除后无法撤销。</p><div class="dialog-actions"><button data-action="close">取消</button><button data-task-delete-confirm="${b.dataset.taskDelete}">确认删除</button></div>`); return; }
+        if (b.hasAttribute('data-task-delete-confirm')) { tasks = tasks.filter(t => t.id !== b.dataset.taskDeleteConfirm); tasks.forEach(t => { if (t.goal === b.dataset.taskDeleteConfirm) delete t.goal; }); $('#modal').close(); render(); return; }
+        if (b.hasAttribute('data-toast-close')) { $('#toast').hidden = true; return; }
+        if (b.hasAttribute('data-subtask-add')) { addSubtask(); return; }
+        if (b.hasAttribute('data-subtask-remove')) {
+          const next = b.closest('.subtask-row').nextElementSibling?.querySelector('input[type="text"]');
+          b.closest('.subtask-row').remove();
+          refreshSubtaskProgress();
+          autoSaveOccurrenceSubtasks();
+          (next || $('#modal .subtask-add input')).focus();
+          return;
+        }
+        if (b.dataset.seriesSubtasks) {
+          const task = tasks.find((t) => t.id === b.dataset.seriesSubtasks);
+          const template = tasks.find((t) => t.series === task.series && t.future) || task;
+          modal('编辑系列子项', `<div class="stack"><p class="muted">每次重复从未完成开始；保存替换本系列待处理子项，保留历史。</p>${subtaskSection((template.subtasks || []).map((item) => ({ ...item, completed: false })))}<div class="dialog-actions"><button data-action="close">取消</button><button class="primary" data-series-subtasks-save="${task.id}">保存系列子项</button></div></div>`);
+          return;
+        }
+        if (b.dataset.seriesSubtasksSave) {
+          const task = tasks.find((t) => t.id === b.dataset.seriesSubtasksSave);
+          const items = readSubtasks().map((item) => ({ ...item, completed: false }));
+          tasks.filter((t) => t.series === task.series && t.state === 'pending').forEach((t) => { t.subtasks = structuredClone(items); });
+          $('#modal').close(); render(); showToast('系列子项已保存，历史保持不变'); return;
+        }
+        if (b.dataset.subtasksSave) {
+          tasks.find((t) => t.id === b.dataset.subtasksSave).subtasks = readSubtasks();
+          $('#modal').close(); render(); showToast('子任务已保存'); return;
+        }
         if (b.dataset.page) {
           $('#modal').close();
           go(b.dataset.page);
@@ -1819,6 +1900,7 @@
             notes: old?.repeat ? old.notes : String(data.get('notes')),
             goal: old?.repeat ? old.goal : String(data.get('goal') || ''),
             state: old?.state || 'pending',
+            subtasks: readSubtasks(),
           };
           if (old) tasks = tasks.map((t) => (t.id === old.id ? task : t));
           else tasks.push(task);
@@ -1864,7 +1946,34 @@
         document.querySelector('#account-demo-submit').textContent = registerDemo ? '注册并登录' : '登录';
         document.querySelector('#account-demo-toggle').textContent = registerDemo ? '已有账号？返回登录' : '还没有账号？创建账号';
       };
-      loginDemo.onsubmit = event => { event.preventDefault(); loginDemo.hidden = true; legacyDemo.hidden = false; };
+      function validateDemoField(input) {
+        const value = input.value;
+        const message = input.name === 'account'
+          ? (!value.trim() ? '请输入账号' : /^[a-zA-Z0-9_]{3,32}$/.test(value.trim()) ? '' : '账号需为 3–32 位字母、数字或下划线')
+          : (!value ? '请输入密码' : value.length >= 10 && value.length <= 128 ? '' : '密码需为 10–128 位');
+        const error = document.querySelector(`#demo-${input.name}-error`);
+        error.textContent = message;
+        error.hidden = !message;
+        input.setAttribute('aria-invalid', String(!!message));
+        return !message;
+      }
+      loginDemo.querySelectorAll('input').forEach(input => {
+        input.onblur = () => validateDemoField(input);
+        input.oninput = () => { if (input.getAttribute('aria-invalid') === 'true') validateDemoField(input); };
+      });
+      document.querySelector('#account-demo-toggle').addEventListener('click', () => {
+        loginDemo.querySelectorAll('input').forEach(input => {
+          input.removeAttribute('aria-invalid');
+          document.querySelector(`#demo-${input.name}-error`).hidden = true;
+        });
+      });
+      loginDemo.onsubmit = event => {
+        event.preventDefault();
+        const invalid = [...loginDemo.querySelectorAll('input')].filter(input => !validateDemoField(input));
+        if (invalid.length) { invalid[0].focus(); return; }
+        loginDemo.hidden = true;
+        legacyDemo.hidden = false;
+      };
       document.addEventListener('click', event => {
         if (event.target.closest('[data-demo-choice]')) { accountDemo.close(); loginDemo.reset(); }
         if (event.target.closest('[data-demo-logout]')) { loginDemo.hidden = false; legacyDemo.hidden = true; accountDemo.showModal(); }

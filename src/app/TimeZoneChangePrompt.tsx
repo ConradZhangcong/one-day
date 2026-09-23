@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogBody,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -90,17 +91,19 @@ export function TimeZoneChangePrompt() {
             One Day 不会因为设备时区变化而静默移动你的计划。
           </DialogDescription>
         </DialogHeader>
-        {inspection === undefined ? null : (
-          <Alert>
-            <TriangleAlert />
-            <AlertTitle>计划时间不会自动随设备变化</AlertTitle>
-            <AlertDescription>
-              当前应用时区为 {inspection.applicationTimeZone}，设备时区为{' '}
-              {inspection.deviceTimeZone}
-              。只有确认后才会修改应用时区；全天计划日期保持不变。
-            </AlertDescription>
-          </Alert>
-        )}
+        <DialogBody>
+          {inspection === undefined ? null : (
+            <Alert>
+              <TriangleAlert />
+              <AlertTitle>计划时间不会自动随设备变化</AlertTitle>
+              <AlertDescription>
+                当前应用时区为 {inspection.applicationTimeZone}，设备时区为{' '}
+                {inspection.deviceTimeZone}
+                。只有确认后才会修改应用时区；全天计划日期保持不变。
+              </AlertDescription>
+            </Alert>
+          )}
+        </DialogBody>
         <DialogFooter>
           <Button
             variant="outline"

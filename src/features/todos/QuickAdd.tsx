@@ -4,6 +4,7 @@ import { useId, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { getApplicationServices } from '@/app/application';
+import { DialogBody, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SimpleSelect } from '@/components/ui/compat';
@@ -14,7 +15,10 @@ import {
   type SchedulePoint,
   type LongTermGoal,
   type FixedRecurrenceRule,
+  type Subtask,
 } from '@/domain';
+import { SubtaskEditor } from './SubtaskEditor';
+import { cleanSubtasks } from './subtasks';
 import { ScheduleFields } from './ScheduleFields';
 import { RecurrenceFields } from './RecurrenceFields';
 
@@ -26,7 +30,9 @@ export function QuickAdd({
   defaultPlannedDate,
   onCreated,
   initiallyExpanded = false,
+  inDialog = false,
 }: {
+  readonly inDialog?: boolean;
   readonly onCreated?: () => void;
   readonly initiallyExpanded?: boolean;
   readonly defaultGoalId?: string;
@@ -38,6 +44,7 @@ export function QuickAdd({
   const navigate = useNavigate();
   const inputId = useId();
   const [expanded, setExpanded] = useState(initiallyExpanded || Boolean(defaultGoalId));
+  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [title, setTitle] = useState('');
   const [plannedAt, setPlannedAt] = useState<SchedulePoint>(
     defaultPlannedDate
@@ -78,10 +85,17 @@ export function QuickAdd({
         deadlineAt,
         ...(goalId ? { goalId } : {}),
       };
-      if (recurring) await services.recurrence.createSeries({ ...draft, rule });
-      else await services.todos.createTask(draft);
+      if (recurring)
+        await services.recurrence.createSeries({
+          ...draft,
+          rule,
+          subtasks: cleanSubtasks(subtasks),
+        });
+      else
+        await services.todos.createTask({ ...draft, subtasks: cleanSubtasks(subtasks) });
       onCreated?.();
       setTitle('');
+      setSubtasks([]);
       setPlannedAt(
         defaultPlannedDate
           ? decodeSchedulePoint({ kind: 'allDay', date: defaultPlannedDate })
@@ -94,16 +108,18 @@ export function QuickAdd({
         recurring
           ? '重复事项已创建'
           : plannedAt.kind === 'none' && deadlineAt.kind === 'none'
-            ? '已添加，可在收件箱或所属清单查看'
+            ? '长期任务已添加'
             : '任务已加入',
         {
           action: {
             label: '查看任务',
             onClick: () =>
               void navigate(
-                defaultListId === SYSTEM_INBOX_ID
-                  ? '/inbox'
-                  : `/lists/${encodeURIComponent(defaultListId)}`,
+                plannedAt.kind === 'none' && deadlineAt.kind === 'none'
+                  ? '/long-term'
+                  : defaultListId === SYSTEM_INBOX_ID
+                    ? '/inbox'
+                    : `/lists/${encodeURIComponent(defaultListId)}`,
               ),
           },
         },
@@ -121,8 +137,9 @@ export function QuickAdd({
   };
 
   const tomorrow = Temporal.PlainDate.from(today).add({ days: 1 }).toString();
-  return (
+  const form = (
     <form
+      id={inputId + '-form'}
       className="quick-add"
       onSubmit={(event) => {
         event.preventDefault();
@@ -141,25 +158,67 @@ export function QuickAdd({
           placeholder="添加一件待办，按 Enter 保存"
         />
       </div>
-      <div className="flex gap-2">
-        {!initiallyExpanded ? (
+      {!inDialog && (
+        <div className="flex gap-2">
+          {!initiallyExpanded ? (
+            <Button
+              type="button"
+              variant="outline"
+              aria-expanded={expanded}
+              onClick={() => setExpanded((value) => !value)}
+            >
+              日期与更多
+            </Button>
+          ) : null}
           <Button
-            type="button"
-            variant="outline"
-            aria-expanded={expanded}
-            onClick={() => setExpanded((value) => !value)}
+            type="submit"
+            disabled={saving || (recurring && recurrenceAnchor === undefined)}
           >
-            日期与更多
+            {saving ? '正在添加…' : recurring ? '创建重复事项' : '添加'}
           </Button>
-        ) : null}
-        <Button
-          type="submit"
-          disabled={saving || (recurring && recurrenceAnchor === undefined)}
-        >
-          {saving ? '正在添加…' : recurring ? '创建重复事项' : '添加'}
-        </Button>
-      </div>
+        </div>
+      )}
       <div hidden={!expanded} className="quick-add-details">
+        <div className="grid gap-2">
+          <span className="text-sm font-medium">任务类型</span>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant={
+                plannedAt.kind === 'none' && deadlineAt.kind === 'none'
+                  ? 'secondary'
+                  : 'outline'
+              }
+              onClick={() => {
+                setPlannedAt({ kind: 'none' });
+                setDeadlineAt({ kind: 'none' });
+                setRecurring(false);
+              }}
+            >
+              长期任务（无时间）
+            </Button>
+            <Button
+              type="button"
+              variant={
+                plannedAt.kind !== 'none' || deadlineAt.kind !== 'none'
+                  ? 'secondary'
+                  : 'outline'
+              }
+              onClick={() => {
+                if (plannedAt.kind === 'none' && deadlineAt.kind === 'none')
+                  setPlannedAt({ kind: 'allDay', date: decodeLocalDate(today) });
+              }}
+            >
+              定时任务
+            </Button>
+          </div>
+        </div>
+        <SubtaskEditor
+          value={subtasks}
+          onChange={setSubtasks}
+          disabled={saving}
+          templateMode={recurring}
+        />
         {recurring && plannedAt.kind === 'none' && deadlineAt.kind === 'none' ? (
           <p className="text-sm text-destructive">请先选择首次发生日期（计划或截止）。</p>
         ) : null}
@@ -223,8 +282,8 @@ export function QuickAdd({
           />
           <SimpleSelect
             allowClear
-            ariaLabel="关联长期目标"
-            placeholder="关联目标"
+            ariaLabel="关联长期任务"
+            placeholder="关联任务"
             value={goalId || undefined}
             options={goals
               .filter((goal) => goal.status !== 'archived')
@@ -235,6 +294,7 @@ export function QuickAdd({
             type="button"
             variant={recurring ? 'secondary' : 'outline'}
             size="sm"
+            disabled={saving}
             onClick={() => setRecurring((value) => !value)}
           >
             <Repeat2 data-icon="inline-start" /> {recurring ? '收起重复' : '重复'}
@@ -242,5 +302,21 @@ export function QuickAdd({
         </div>
       </div>
     </form>
+  );
+  return inDialog ? (
+    <>
+      <DialogBody>{form}</DialogBody>
+      <DialogFooter>
+        <Button
+          type="submit"
+          form={inputId + '-form'}
+          disabled={saving || (recurring && recurrenceAnchor === undefined)}
+        >
+          {saving ? '正在添加…' : recurring ? '创建重复事项' : '添加'}
+        </Button>
+      </DialogFooter>
+    </>
+  ) : (
+    form
   );
 }

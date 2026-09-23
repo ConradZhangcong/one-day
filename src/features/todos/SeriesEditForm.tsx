@@ -20,9 +20,12 @@ import {
 } from '@/domain';
 
 import { RecurrenceFields } from './RecurrenceFields';
+import { SubtaskEditor } from './SubtaskEditor';
+import { cleanSubtasks } from './subtasks';
 import { ScheduleFields } from './ScheduleFields';
 
 interface SeriesEditFormProps {
+  readonly formId?: string;
   readonly series: RecurrenceSeries;
   readonly snapshot: TodoSnapshot;
   readonly disabled?: boolean;
@@ -37,11 +40,13 @@ function parsePriority(value: string): Priority {
 
 export function SeriesEditForm({
   disabled,
+  formId,
   onCancel,
   onSubmit,
   series,
   snapshot,
 }: SeriesEditFormProps) {
+  const [subtasks, setSubtasks] = useState(series.template.subtasks ?? []);
   const [title, setTitle] = useState(series.template.title);
   const [notes, setNotes] = useState(series.template.notes);
   const [listId, setListId] = useState(series.template.listId);
@@ -96,6 +101,7 @@ export function SeriesEditForm({
     onSubmit({
       title: title.trim(),
       notes,
+      subtasks: cleanSubtasks(subtasks),
       listId,
       tagNames,
       ...(goalId ? { goalId } : {}),
@@ -107,11 +113,19 @@ export function SeriesEditForm({
   };
 
   return (
-    <div className="grid gap-4" aria-label="编辑整个系列">
+    <form
+      id={formId}
+      className="grid gap-4"
+      aria-label="编辑整个系列"
+      onSubmit={(event) => {
+        event.preventDefault();
+        submit();
+      }}
+    >
       <Alert>
         <AlertTitle>作用范围：整个系列</AlertTitle>
         <AlertDescription>
-          保存会替换当前待处理实例、保留已完成或已跳过的历史，并按新规则重算未来。
+          保存会替换当前待处理实例，子项重置为未完成；保留已完成或已跳过的历史，并按新规则重算未来。
         </AlertDescription>
       </Alert>
       <div className="grid gap-1">
@@ -122,6 +136,12 @@ export function SeriesEditForm({
           onChange={(event) => setTitle(event.target.value)}
         />
       </div>
+      <SubtaskEditor
+        value={subtasks}
+        onChange={setSubtasks}
+        disabled={disabled ?? false}
+        templateMode
+      />
       <div className="grid gap-1">
         <Label htmlFor="series-notes">系列备注</Label>
         <Textarea
@@ -179,13 +199,13 @@ export function SeriesEditForm({
           />
         </div>
         <div className="grid gap-1">
-          <Label htmlFor="series-goal">长期目标</Label>
+          <Label htmlFor="series-goal">关联任务</Label>
           <NativeSelect
             id="series-goal"
             value={goalId}
             onChange={(event) => setGoalId(event.target.value)}
           >
-            <NativeSelectOption value="">不关联目标</NativeSelectOption>
+            <NativeSelectOption value="">不关联任务</NativeSelectOption>
             {snapshot.goals
               .filter(
                 (goal) =>
@@ -223,14 +243,16 @@ export function SeriesEditForm({
           请检查标题、时间顺序、首次发生日和重复规则。
         </p>
       ) : null}
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button type="button" variant="outline" disabled={disabled} onClick={onCancel}>
-          取消编辑
-        </Button>
-        <Button type="button" disabled={(disabled ?? false) || !valid} onClick={submit}>
-          保存整个系列
-        </Button>
-      </div>
-    </div>
+      {!formId && (
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button type="button" variant="outline" disabled={disabled} onClick={onCancel}>
+            取消编辑
+          </Button>
+          <Button type="button" disabled={(disabled ?? false) || !valid} onClick={submit}>
+            保存整个系列
+          </Button>
+        </div>
+      )}
+    </form>
   );
 }

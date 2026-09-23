@@ -19,7 +19,13 @@ import { useState, type ComponentType } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 
 import logoUrl from '../../logo/concentric-ring-master-metal.svg';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogBody,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { SYSTEM_INBOX_ID } from '@/domain';
 import { useTodoSnapshot } from '@/features/todos/useTodoSnapshot';
@@ -56,7 +62,7 @@ export function AppShell() {
   const secondaryNavigation: readonly NavigationItem[] = [
     { label: '即将到来', to: '/upcoming', icon: Clock3 },
     { label: '已处理', to: '/completed', icon: CheckCircle2 },
-    { label: '长期目标', to: '/goals', icon: Target },
+    { label: '长期任务', to: '/long-term', icon: Target },
     { label: '回顾', to: '/review?period=day', icon: History },
     { label: '设置', to: '/settings', icon: Settings },
   ];
@@ -164,22 +170,24 @@ export function AppShell() {
           <DialogHeader>
             <DialogTitle>更多</DialogTitle>
           </DialogHeader>
-          <nav className="mobile-more-menu">
-            {secondaryNavigation.map(renderNavigationItem)}
-            <AccountButton />
-            <h2>我的清单</h2>
-            {snapshot?.lists
-              .filter((list) => !list.isSystem && !list.archived)
-              .map((list) => (
-                <NavLink
-                  key={list.id}
-                  to={`/lists/${encodeURIComponent(list.id)}`}
-                  onClick={() => setMoreOpen(false)}
-                >
-                  {list.name}
-                </NavLink>
-              ))}
-          </nav>
+          <DialogBody>
+            <nav className="mobile-more-menu">
+              {secondaryNavigation.map(renderNavigationItem)}
+              <AccountButton />
+              <h2>我的清单</h2>
+              {snapshot?.lists
+                .filter((list) => !list.isSystem && !list.archived)
+                .map((list) => (
+                  <NavLink
+                    key={list.id}
+                    to={`/lists/${encodeURIComponent(list.id)}`}
+                    onClick={() => setMoreOpen(false)}
+                  >
+                    {list.name}
+                  </NavLink>
+                ))}
+            </nav>
+          </DialogBody>
         </DialogContent>
       </Dialog>
       <TimeZoneChangePrompt />

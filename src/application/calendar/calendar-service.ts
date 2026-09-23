@@ -1,4 +1,5 @@
 import type {
+  Subtask,
   LocalDate,
   Priority,
   SchedulePoint,
@@ -25,6 +26,7 @@ export interface CalendarItemView {
   readonly ownerId: string;
   readonly seriesId?: string;
   readonly title: string;
+  readonly subtasks?: Subtask[] | undefined;
   readonly kind: 'planned' | 'deadline';
   readonly schedule: ScheduledPoint;
   readonly deadlineAt?: SchedulePoint;
@@ -72,6 +74,7 @@ export class CalendarService {
           ownerId: item.ownerId,
           ...(item.seriesId !== undefined ? { seriesId: item.seriesId } : {}),
           title: item.title,
+          subtasks: item.subtasks,
           kind: item.plannedAt.kind !== 'none' ? 'planned' : 'deadline',
           schedule,
           ...(item.deadlineAt.kind !== 'none' ? { deadlineAt: item.deadlineAt } : {}),

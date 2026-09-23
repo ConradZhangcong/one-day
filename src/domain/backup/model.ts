@@ -131,7 +131,10 @@ export function validateBackupGraph(backup: OneDayBackupV1): OneDayBackupV1 {
 
   const listIds = new Set(data.lists.map((item) => item.id));
   const tagIds = new Set(data.tags.map((item) => item.id));
-  const goalIds = new Set(data.longTermGoals.map((item) => item.id));
+  const goalIds = new Set([
+    ...data.longTermGoals.map((item) => item.id),
+    ...data.singleTasks.map((item) => item.id),
+  ]);
   for (const task of data.singleTasks) {
     requireReferences([task.listId], listIds, 'task list');
     requireReferences(task.tagIds, tagIds, 'task tag');

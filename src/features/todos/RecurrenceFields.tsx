@@ -51,7 +51,21 @@ export function RecurrenceFields({ anchor, rule, onChange }: RecurrenceFieldsPro
     }
   }, [anchor, rule]);
 
-  const setFrequency = (frequency: FixedRecurrenceRule['frequency']) => {
+  const workdays =
+    rule.frequency === 'weekly' &&
+    rule.weekdays.length === 5 &&
+    [1, 2, 3, 4, 5].every((day) => rule.weekdays.includes(day));
+  const setFrequency = (value: string) => {
+    if (value === 'workdays') {
+      onChange({
+        frequency: 'weekly',
+        interval: 1,
+        weekdays: [1, 2, 3, 4, 5],
+        end: rule.end ?? { kind: 'never' },
+      });
+      return;
+    }
+    const frequency = recurrenceFrequency(value);
     const end = rule.end ?? { kind: 'never' as const };
     if (frequency === 'weekly') {
       const weekday = Temporal.PlainDate.from(anchorDate).dayOfWeek;
@@ -64,22 +78,33 @@ export function RecurrenceFields({ anchor, rule, onChange }: RecurrenceFieldsPro
   return (
     <fieldset className="grid gap-3 rounded-lg border p-3">
       <legend className="px-1 text-sm font-medium">固定重复</legend>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="grid gap-1">
           <Label htmlFor="recurrence-frequency">频率</Label>
           <NativeSelect
             id="recurrence-frequency"
-            value={rule.frequency}
-            onChange={(event) => setFrequency(recurrenceFrequency(event.target.value))}
+            value={workdays ? 'workdays' : rule.frequency}
+            onChange={(event) => setFrequency(event.target.value)}
           >
             <NativeSelectOption value="daily">每天</NativeSelectOption>
-            <NativeSelectOption value="weekly">每周</NativeSelectOption>
+            <NativeSelectOption value="workdays">工作日</NativeSelectOption>
+            <NativeSelectOption value="weekly">每周某几天</NativeSelectOption>
             <NativeSelectOption value="monthly">每月</NativeSelectOption>
             <NativeSelectOption value="yearly">每年</NativeSelectOption>
           </NativeSelect>
         </div>
         <div className="grid gap-1">
-          <Label htmlFor="recurrence-interval">间隔</Label>
+          <Label htmlFor="recurrence-interval">
+            间隔（
+            {rule.frequency === 'weekly'
+              ? '周'
+              : rule.frequency === 'monthly'
+                ? '月'
+                : rule.frequency === 'yearly'
+                  ? '年'
+                  : '天'}
+            ）
+          </Label>
           <Input
             id="recurrence-interval"
             type="number"
@@ -153,6 +178,11 @@ export function RecurrenceFields({ anchor, rule, onChange }: RecurrenceFieldsPro
           </div>
         ) : null}
       </div>
+      {workdays && (
+        <p className="text-xs text-muted-foreground">
+          按周一至周五重复，不含法定节假日和调休调整。
+        </p>
+      )}
       {rule.frequency === 'weekly' ? (
         <div className="flex flex-wrap gap-1" aria-label="每周重复日期">
           {WEEKDAYS.map((label, index) => {
