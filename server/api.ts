@@ -25,6 +25,7 @@ import {
 
 const SESSION_MS = 7 * 24 * 60 * 60 * 1000;
 const COOKIE = 'one_day_session';
+const ADMIN_COOKIE = 'one_day_admin';
 const credentialsSchema = z
   .object({
     username: z
@@ -101,6 +102,7 @@ export function createAccountApi(
     origin?: string;
     secureCookies?: boolean;
     now?: () => number;
+    adminPassword?: string;
   } = {},
 ) {
   const databasePath =
@@ -115,9 +117,18 @@ export function createAccountApi(
     CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, expires_at INTEGER NOT NULL);
     CREATE INDEX IF NOT EXISTS sessions_expiry ON sessions(expires_at);
     CREATE TABLE IF NOT EXISTS account_data (user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, payload TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 0, legacy_choice INTEGER NOT NULL DEFAULT 0);`);
+  if (
+    !db
+      .prepare('PRAGMA table_info(users)')
+      .all()
+      .some((column) => (column as { name: string }).name === 'disabled')
+  )
+    db.exec('ALTER TABLE users ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0');
   const now = options.now ?? Date.now;
   const secureCookies = options.secureCookies ?? process.env.NODE_ENV === 'production';
   const configuredOrigin = options.origin ?? process.env.ONE_DAY_ORIGIN;
+  const adminPassword = options.adminPassword ?? process.env.ONE_DAY_ADMIN_PASSWORD;
+  const adminSessions = new Map<string, number>();
   const attempts = new Map<string, { count: number; until: number }>();
   const queues = new Map<string, Promise<unknown>>();
   const serial = async <T>(id: string, work: () => Promise<T>): Promise<T> => {
@@ -141,7 +152,7 @@ export function createAccountApi(
   const session = (request: IncomingMessage): User => {
     const user = db
       .prepare(
-        'SELECT u.id, u.username FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=? AND s.expires_at>?',
+        'SELECT u.id, u.username FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=? AND s.expires_at>? AND u.disabled=0',
       )
       .get(hash(tokenOf(request)), now()) as unknown as User | undefined;
     if (!user) throw new HttpError(401, '登录已失效，请重新登录');
@@ -155,6 +166,22 @@ export function createAccountApi(
       'Set-Cookie',
       `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secureCookies ? '; Secure' : ''}`,
     );
+  const adminCookie = (response: ServerResponse, token: string, maxAge: number) =>
+    response.setHeader(
+      'Set-Cookie',
+      `${ADMIN_COOKIE}=${token}; Path=/api/admin; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secureCookies ? '; Secure' : ''}`,
+    );
+  const adminToken = (request: IncomingMessage) =>
+    request.headers.cookie
+      ?.split(';')
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(`${ADMIN_COOKIE}=`))
+      ?.slice(ADMIN_COOKIE.length + 1) ?? '';
+  const requireAdmin = (request: IncomingMessage) => {
+    const token = adminToken(request);
+    if (!token || (adminSessions.get(hash(token)) ?? 0) <= now())
+      throw new HttpError(401, '管理员登录已失效');
+  };
   const signIn = (request: IncomingMessage, response: ServerResponse, user: User) => {
     const token = randomBytes(32).toString('hex');
     db.exec('BEGIN IMMEDIATE');
@@ -210,6 +237,103 @@ export function createAccountApi(
     response: ServerResponse,
   ): Promise<unknown> {
     const path = new URL(request.url ?? '/', 'http://localhost').pathname;
+    if (path.startsWith('/api/admin/')) {
+      if (!adminPassword || adminPassword.length < 16)
+        throw new HttpError(503, '请配置至少 16 位的管理员密码');
+      if (request.method === 'GET') {
+        requireAdmin(request);
+        if (path === '/api/admin/session') return { ok: true };
+        if (path === '/api/admin/users')
+          return {
+            users: db
+              .prepare(
+                `SELECT u.id,u.username,u.disabled,a.revision,
+            (SELECT COUNT(*) FROM sessions s WHERE s.user_id=u.id AND s.expires_at>?) AS activeSessions
+            FROM users u JOIN account_data a ON a.user_id=u.id ORDER BY u.username`,
+              )
+              .all(now()),
+          };
+        const match = /^\/api\/admin\/users\/([^/]+)$/.exec(path);
+        if (match) {
+          const row = db
+            .prepare(
+              'SELECT u.id,u.username,u.disabled,a.payload,a.revision FROM users u JOIN account_data a ON a.user_id=u.id WHERE u.id=?',
+            )
+            .get(match[1]!) as
+            | {
+                id: string;
+                username: string;
+                disabled: number;
+                payload: string;
+                revision: number;
+              }
+            | undefined;
+          if (!row) throw new HttpError(404, '用户不存在');
+          return {
+            user: {
+              id: row.id,
+              username: row.username,
+              disabled: Boolean(row.disabled),
+              revision: row.revision,
+            },
+            data: JSON.parse(row.payload) as BackupDataV1,
+          };
+        }
+        throw new HttpError(404, '接口不存在');
+      }
+      if (request.method !== 'POST') throw new HttpError(404, '接口不存在');
+      if (
+        request.headers['x-one-day-request'] !== '1' ||
+        request.headers.origin !==
+          (configuredOrigin ?? `http://${request.headers.host ?? ''}`)
+      )
+        throw new HttpError(403, '请求来源无效');
+      if (path === '/api/admin/login') {
+        rateLimit(`admin:${request.socket.remoteAddress ?? 'unknown'}`, 15);
+        const parsed = z
+          .object({ password: z.string() })
+          .strict()
+          .safeParse(await readJson(request));
+        const given = Buffer.from(hash(parsed.success ? parsed.data.password : ''));
+        if (!timingSafeEqual(given, Buffer.from(hash(adminPassword))))
+          throw new HttpError(401, '管理员密码不正确');
+        const token = randomBytes(32).toString('hex');
+        adminSessions.set(hash(token), now() + SESSION_MS);
+        adminCookie(response, token, SESSION_MS / 1000);
+        return { ok: true };
+      }
+      requireAdmin(request);
+      if (path === '/api/admin/logout') {
+        adminSessions.delete(hash(adminToken(request)));
+        adminCookie(response, '', 0);
+        return { ok: true };
+      }
+      const match = /^\/api\/admin\/users\/([^/]+)\/(disable|password)$/.exec(path);
+      if (!match) throw new HttpError(404, '接口不存在');
+      const id = match[1]!;
+      if (!db.prepare('SELECT id FROM users WHERE id=?').get(id))
+        throw new HttpError(404, '用户不存在');
+      const input = await readJson(request);
+      if (match[2] === 'disable') {
+        const { disabled } = z.object({ disabled: z.boolean() }).strict().parse(input);
+        db.prepare('UPDATE users SET disabled=? WHERE id=?').run(disabled ? 1 : 0, id);
+        if (disabled) db.prepare('DELETE FROM sessions WHERE user_id=?').run(id);
+      } else {
+        const { password } = z
+          .object({ password: z.string().min(10).max(128) })
+          .strict()
+          .parse(input);
+        const salt = randomBytes(16).toString('hex');
+        const derived = await passwordHash(password, salt);
+        db.prepare('UPDATE users SET salt=?, password_hash=? WHERE id=?').run(
+          salt,
+          derived.toString('hex'),
+          id,
+        );
+        db.prepare('DELETE FROM sessions WHERE user_id=?').run(id);
+      }
+      return { ok: true };
+    }
     if (request.method === 'GET' && path === '/api/session') {
       const user = session(request);
       const data = load(user.id);
@@ -239,7 +363,14 @@ export function createAccountApi(
       const existing = db
         .prepare('SELECT * FROM users WHERE username=?')
         .get(username) as
-        { id: string; username: string; salt: string; password_hash: string } | undefined;
+        | {
+            id: string;
+            username: string;
+            salt: string;
+            password_hash: string;
+            disabled: number;
+          }
+        | undefined;
       if (path === '/api/register') {
         const salt = randomBytes(16).toString('hex');
         const passwordKey = await passwordHash(password, salt);
@@ -249,12 +380,9 @@ export function createAccountApi(
         const data = emptyAccountData(decodeTimeZoneId(parsed.data.timeZone ?? 'UTC'));
         db.exec('BEGIN IMMEDIATE');
         try {
-          db.prepare('INSERT INTO users VALUES (?,?,?,?)').run(
-            user.id,
-            username,
-            salt,
-            passwordKey.toString('hex'),
-          );
+          db.prepare(
+            'INSERT INTO users (id,username,salt,password_hash) VALUES (?,?,?,?)',
+          ).run(user.id, username, salt, passwordKey.toString('hex'));
           db.prepare('INSERT INTO account_data(user_id,payload) VALUES (?,?)').run(
             user.id,
             JSON.stringify(data),
@@ -271,7 +399,16 @@ export function createAccountApi(
         existing?.salt ?? '00000000000000000000000000000000',
       );
       const expected = Buffer.from(existing?.password_hash ?? '00'.repeat(64), 'hex');
-      if (!timingSafeEqual(derived, expected) || !existing)
+      if (!timingSafeEqual(derived, expected) || !existing || existing.disabled)
+        throw new HttpError(401, '账号或密码不正确');
+      const current = db
+        .prepare('SELECT password_hash,disabled FROM users WHERE id=?')
+        .get(existing.id) as { password_hash: string; disabled: number } | undefined;
+      if (
+        !current ||
+        current.disabled ||
+        current.password_hash !== existing.password_hash
+      )
         throw new HttpError(401, '账号或密码不正确');
       return signIn(request, response, { id: existing.id, username: existing.username });
     }

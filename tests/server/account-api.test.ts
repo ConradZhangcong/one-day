@@ -74,6 +74,7 @@ beforeAll(async () => {
   api = createAccountApi({
     databasePath: join(directory, 'db.sqlite'),
     now: () => clock,
+    adminPassword: 'a-long-admin-password-for-tests',
   });
   server = createServer(api.handle);
   await new Promise<void>((resolve, reject) => {
@@ -81,6 +82,84 @@ beforeAll(async () => {
     server.listen(0, '127.0.0.1', resolve);
   });
   origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+});
+
+describe('administrator access', () => {
+  async function admin(path: string, body?: unknown, cookie?: string) {
+    const response = await fetch(`${origin}/api/admin/${path}`, {
+      method: body === undefined ? 'GET' : 'POST',
+      headers: {
+        Origin: origin,
+        'Content-Type': 'application/json',
+        'X-One-Day-Request': '1',
+        ...(cookie ? { Cookie: cookie } : {}),
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    return {
+      status: response.status,
+      body: await response.json(),
+      cookie: response.headers.get('set-cookie'),
+    };
+  }
+  it('protects user data and revokes sessions on disable and password reset', async () => {
+    const user = await register('managed_user');
+    await rpc(user, 'todos', 'createTask', draft('private task'));
+    expect((await admin('users')).status).toBe(401);
+    expect((await admin('login', { password: 'wrong' })).status).toBe(401);
+    const login = await admin('login', { password: 'a-long-admin-password-for-tests' });
+    expect(login.status).toBe(200);
+    const cookie = login.cookie!.split(';')[0]!;
+    expect(login.cookie).toContain('HttpOnly');
+    expect((await admin('users', undefined, cookie)).body.users).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: user.user, username: 'managed_user' }),
+      ]),
+    );
+    const details = await admin(`users/${user.user}`, undefined, cookie);
+    expect(details.body.data.singleTasks[0].title).toBe('private task');
+    expect(details.body.user).not.toHaveProperty('password_hash');
+    expect(
+      (await admin(`users/${user.user}/disable`, { disabled: true }, cookie)).status,
+    ).toBe(200);
+    expect((await rpc(user, 'todos', 'snapshot')).status).toBe(401);
+    expect(
+      (
+        await request('login', {
+          username: 'managed_user',
+          password: 'correct horse battery',
+        })
+      ).status,
+    ).toBe(401);
+    expect(
+      (await admin(`users/${user.user}/disable`, { disabled: false }, cookie)).status,
+    ).toBe(200);
+    expect(
+      (
+        await admin(
+          `users/${user.user}/password`,
+          { password: 'a-new-valid-password' },
+          cookie,
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await request('login', {
+          username: 'managed_user',
+          password: 'correct horse battery',
+        })
+      ).status,
+    ).toBe(401);
+    expect(
+      (
+        await request('login', {
+          username: 'managed_user',
+          password: 'a-new-valid-password',
+        })
+      ).status,
+    ).toBe(200);
+  });
 });
 afterAll(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));

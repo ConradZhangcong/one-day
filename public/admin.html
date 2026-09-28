@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>One Day 管理后台</title>
+    <style>
+      :root {
+        font-family: system-ui, sans-serif;
+        color: #222;
+        background: #f7f7f5;
+      }
+      body {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 20px;
+      }
+      header,
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      h1 {
+        font-size: 25px;
+      }
+      h2 {
+        font-size: 19px;
+      }
+      section {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 20px;
+      }
+      input,
+      button {
+        font: inherit;
+        padding: 9px 12px;
+        border-radius: 7px;
+        border: 1px solid #aaa;
+      }
+      button {
+        cursor: pointer;
+        background: white;
+      }
+      button:hover {
+        background: #f1f1f1;
+      }
+      .danger {
+        color: #a32424;
+      }
+      .muted {
+        color: #666;
+      }
+      .error {
+        color: #a32424;
+        min-height: 1.5em;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 8px;
+        border-bottom: 1px solid #eee;
+      }
+      .scroll {
+        overflow-x: auto;
+      }
+      pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        max-height: 65vh;
+        overflow: auto;
+        background: #f7f7f7;
+        padding: 12px;
+      }
+      @media (max-width: 600px) {
+        body {
+          padding: 16px;
+        }
+        header {
+          align-items: start;
+        }
+        .toolbar {
+          flex-wrap: wrap;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>One Day 管理后台</h1>
+      <button id="logout" hidden>退出管理</button>
+    </header>
+    <p class="error" id="message" role="alert"></p>
+    <section id="login">
+      <h2>管理员登录</h2>
+      <form id="login-form">
+        <input
+          name="password"
+          type="password"
+          placeholder="管理员密码"
+          autocomplete="current-password"
+          required
+        /><button>登录</button>
+      </form>
+    </section>
+    <main id="main" hidden>
+      <section>
+        <div class="toolbar">
+          <h2>用户</h2>
+          <button id="refresh">刷新</button>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>账号</th>
+                <th>状态</th>
+                <th>活跃会话</th>
+                <th>数据版本</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="users"></tbody>
+          </table>
+        </div>
+      </section>
+      <section id="detail" hidden>
+        <div class="toolbar">
+          <h2 id="detail-title"></h2>
+          <button id="close-detail">关闭</button>
+        </div>
+        <p class="muted">以下为该账号保存的完整业务数据。密码及会话不会显示。</p>
+        <div class="toolbar">
+          <button id="toggle"></button><button id="reset" class="danger">重置密码</button>
+        </div>
+        <pre id="payload"></pre>
+      </section>
+    </main>
+    <script type="module">
+      const $ = (id) => document.getElementById(id);
+      let selected;
+      async function api(path, body) {
+        const response = await fetch('/api/admin/' + path, {
+          method: body === undefined ? 'GET' : 'POST',
+          credentials: 'same-origin',
+          headers:
+            body === undefined
+              ? {}
+              : { 'Content-Type': 'application/json', 'X-One-Day-Request': '1' },
+          ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw Error(result.message || '操作失败');
+        return result;
+      }
+      function showError(error) {
+        $('message').textContent = error instanceof Error ? error.message : '操作失败';
+      }
+      function loggedIn(value) {
+        $('login').hidden = value;
+        $('main').hidden = !value;
+        $('logout').hidden = !value;
+      }
+      async function refresh() {
+        const { users } = await api('users');
+        $('users').replaceChildren();
+        for (const user of users) {
+          const row = document.createElement('tr');
+          for (const value of [
+            user.username,
+            user.disabled ? '已禁用' : '正常',
+            user.activeSessions,
+            user.revision,
+          ]) {
+            const cell = document.createElement('td');
+            cell.textContent = String(value);
+            row.append(cell);
+          }
+          const cell = document.createElement('td');
+          const button = document.createElement('button');
+          button.textContent = '查看';
+          button.onclick = () => detail(user.id).catch(showError);
+          cell.append(button);
+          row.append(cell);
+          $('users').append(row);
+        }
+      }
+      async function detail(id) {
+        const result = await api('users/' + encodeURIComponent(id));
+        selected = result.user;
+        $('detail').hidden = false;
+        $('detail-title').textContent = result.user.username;
+        $('toggle').textContent = result.user.disabled ? '启用账号' : '禁用账号';
+        $('toggle').className = result.user.disabled ? '' : 'danger';
+        $('payload').textContent = JSON.stringify(result.data, null, 2);
+      }
+      $('login-form').onsubmit = async (event) => {
+        event.preventDefault();
+        $('message').textContent = '';
+        try {
+          await api('login', {
+            password: new FormData(event.currentTarget).get('password'),
+          });
+          event.currentTarget.reset();
+          loggedIn(true);
+          await refresh();
+        } catch (error) {
+          showError(error);
+        }
+      };
+      $('refresh').onclick = () => refresh().catch(showError);
+      $('close-detail').onclick = () => {
+        $('detail').hidden = true;
+        selected = undefined;
+      };
+      $('toggle').onclick = async () => {
+        if (!selected) return;
+        const disabled = !selected.disabled;
+        if (
+          !confirm(
+            `确定${disabled ? '禁用' : '启用'}账号 ${selected.username}？${disabled ? '该账号现有登录会立即失效。' : ''}`,
+          )
+        )
+          return;
+        try {
+          await api(`users/${encodeURIComponent(selected.id)}/disable`, { disabled });
+          await detail(selected.id);
+          await refresh();
+        } catch (error) {
+          showError(error);
+        }
+      };
+      $('reset').onclick = async () => {
+        if (!selected) return;
+        const password = prompt(`为 ${selected.username} 设置新密码（至少 10 位）：`);
+        if (password === null) return;
+        if (password.length < 10 || password.length > 128) {
+          showError(Error('密码需为 10–128 位'));
+          return;
+        }
+        if (!confirm(`确定重置 ${selected.username} 的密码？该账号现有登录会立即失效。`))
+          return;
+        try {
+          await api(`users/${encodeURIComponent(selected.id)}/password`, { password });
+          alert('密码已重置，请通过安全渠道告知用户。');
+          await refresh();
+        } catch (error) {
+          showError(error);
+        }
+      };
+      $('logout').onclick = async () => {
+        try {
+          await api('logout', {});
+          loggedIn(false);
+          $('detail').hidden = true;
+        } catch (error) {
+          showError(error);
+        }
+      };
+      api('session')
+        .then(() => {
+          loggedIn(true);
+          return refresh();
+        })
+        .catch(() => loggedIn(false));
+    </script>
+  </body>
+</html>
