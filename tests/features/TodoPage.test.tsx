@@ -14,6 +14,7 @@ import { TodoPage } from '../../src/features/todos/TodoPage';
 import { createSingleTask } from '../infrastructure/db/fixtures';
 
 const taskActions = vi.hoisted(() => ({
+  createTask: vi.fn(),
   setTaskState: vi.fn(),
   setTaskPaused: vi.fn(),
   undoTaskCompletion: vi.fn(),
@@ -102,6 +103,7 @@ function renderPage(path: string, data: TodoSnapshot) {
 
 describe('TodoPage rows', () => {
   beforeEach(() => {
+    taskActions.createTask.mockReset();
     hookMocks.useTodoSnapshot.mockReset();
     hookMocks.useCurrentLocalDate.mockReset();
     hookMocks.useCurrentLocalDate.mockReturnValue(today);
@@ -214,6 +216,22 @@ describe('TodoPage rows', () => {
     ).toBeVisible();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('keeps the composer open on backdrop clicks and saves notes', async () => {
+    const user = userEvent.setup();
+    taskActions.createTask.mockResolvedValue(undefined);
+    renderPage('/today', snapshot());
+    await user.click(screen.getByRole('button', { name: '添加任务' }));
+    const dialog = screen.getByRole('dialog', { name: '添加任务' });
+    await user.type(within(dialog).getByRole('textbox', { name: '任务标题' }), '测试任务');
+    await user.type(within(dialog).getByRole('textbox', { name: '备注' }), '测试备注');
+    await user.click(document.querySelector<HTMLElement>('[data-slot="dialog-overlay"]')!);
+    expect(dialog).toBeVisible();
+    await user.click(within(dialog).getByRole('button', { name: '添加' }));
+    expect(taskActions.createTask).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '测试任务', notes: '测试备注' }),
+    );
   });
 
   it('shows only the nearest filtered occurrence for each series in upcoming', () => {

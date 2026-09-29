@@ -7,6 +7,7 @@ import { getApplicationServices } from '@/app/application';
 import { DialogBody, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { SimpleSelect } from '@/components/ui/compat';
 import {
   decodeSchedulePoint,
@@ -46,6 +47,7 @@ export function QuickAdd({
   const [expanded, setExpanded] = useState(initiallyExpanded || Boolean(defaultGoalId));
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [title, setTitle] = useState('');
+  const [notes, setNotes] = useState('');
   const [plannedAt, setPlannedAt] = useState<SchedulePoint>(
     defaultPlannedDate
       ? decodeSchedulePoint({ kind: 'allDay', date: defaultPlannedDate })
@@ -77,7 +79,7 @@ export function QuickAdd({
       const services = await getApplicationServices();
       const draft = {
         title,
-        notes: '',
+        notes,
         listId: defaultListId,
         tagNames: [],
         priority: 'none' as const,
@@ -95,6 +97,7 @@ export function QuickAdd({
         await services.todos.createTask({ ...draft, subtasks: cleanSubtasks(subtasks) });
       onCreated?.();
       setTitle('');
+      setNotes('');
       setSubtasks([]);
       setPlannedAt(
         defaultPlannedDate
@@ -158,6 +161,15 @@ export function QuickAdd({
           placeholder="添加一件待办，按 Enter 保存"
         />
       </div>
+      <label className="grid gap-2 text-sm font-medium">
+        备注
+        <Textarea
+          value={notes}
+          rows={3}
+          onChange={(event) => setNotes(event.target.value)}
+          placeholder="添加备注（可选）"
+        />
+      </label>
       {!inDialog && (
         <div className="flex gap-2">
           {!initiallyExpanded ? (

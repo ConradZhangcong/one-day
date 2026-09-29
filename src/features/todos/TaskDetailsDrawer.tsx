@@ -143,6 +143,15 @@ export function TaskDetailsDrawer({ onClose, snapshot, task }: Props) {
                 }}
               />
             </label>
+            <label>
+              备注
+              <Textarea
+                value={notes}
+                rows={4}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="纯文本备注"
+              />
+            </label>
             <SubtaskEditor
               value={subtasks}
               onChange={setSubtasks}
@@ -164,18 +173,8 @@ export function TaskDetailsDrawer({ onClose, snapshot, task }: Props) {
               onChange={setDeadlineAt}
             />
             <details className="detail-more">
-              <summary>更多信息 · 清单、优先级与备注</summary>
+              <summary>更多信息 · 清单与优先级</summary>
               <div className="detail-more-fields">
-                {' '}
-                <label>
-                  备注
-                  <Textarea
-                    value={notes}
-                    rows={5}
-                    onChange={(event) => setNotes(event.target.value)}
-                    placeholder="纯文本备注"
-                  />
-                </label>
                 <label>
                   清单
                   <SimpleSelect

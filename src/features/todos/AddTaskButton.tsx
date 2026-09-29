@@ -27,7 +27,7 @@ export function AddTaskButton({ className, ...defaults }: AddTaskOptions) {
         <Plus />
         <span>添加任务</span>
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={setOpen} disablePointerDismissal>
         <DialogContent className="task-composer-dialog">
           <DialogHeader>
             <DialogTitle>添加任务</DialogTitle>
