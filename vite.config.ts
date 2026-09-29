@@ -1,18 +1,16 @@
 import { accountApiPlugin } from './server/vite-plugin';
+import { loadServerConfig } from './server/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), 'ONE_DAY_');
-  for (const name of ['ONE_DAY_ORIGIN', 'ONE_DAY_DATABASE', 'ONE_DAY_ADMIN_PASSWORD']) {
-    if (!process.env[name] && env[name]) process.env[name] = env[name];
-  }
+export default defineConfig(({ command }) => {
+  const config = command === 'serve' ? loadServerConfig() : undefined;
   return {
     server: {
-      port: 53028,
+      ...(config ? { host: config.host, port: config.port } : {}),
       strictPort: true,
       fs: {
         deny: [
@@ -26,8 +24,12 @@ export default defineConfig(({ mode }) => {
         ],
       },
     },
+    preview: {
+      ...(config ? { host: config.host, port: config.port } : {}),
+      strictPort: true,
+    },
     plugins: [
-      accountApiPlugin(),
+      ...(config ? [accountApiPlugin(config)] : []),
       react(),
       tailwindcss(),
       VitePWA({

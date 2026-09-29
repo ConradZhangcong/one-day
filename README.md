@@ -37,8 +37,8 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-开发服务器固定使用 [http://localhost:53028](http://localhost:53028)；如果端口已占用，启动会报错，不会自动切换端口。
-首次使用先将 `.env.example` 复制为 `.env` 并修改配置；本地开发应把 `ONE_DAY_ORIGIN` 改为 `http://localhost:53028`，并选择本地数据库路径。`.env` 已被 Git 忽略，开发、预览和生产启动都会读取它。
+开发、预览和正式服务启动时都从项目根目录的 `.env` 读取来源、数据库路径、监听地址和端口；缺少文件或必填项会报错。端口占用时不会自动切换。本地开发可将 `ONE_DAY_ORIGIN` 设为 `http://localhost:53028`，并把 `ONE_DAY_DATABASE` 设为 `data/one-day.sqlite`。`.env` 已被 Git 忽略。
+端到端测试通过 `ONE_DAY_CONFIG_FILE` 读取 `tests/e2e/server.env`，使用独立端口和数据库。
 
 ## 生产构建与预览
 
@@ -57,7 +57,7 @@ cp -n .env.example .env
 pnpm start
 ```
 
-生产启动会从项目根目录的 `.env` 读取配置。服务默认监听 `127.0.0.1:53028`，由 HTTPS 反向代理转发；可用 `HOST`、`PORT` 修改监听地址。`ONE_DAY_ORIGIN` 必须与浏览器访问来源完全一致。数据默认存于 `data/one-day.sqlite`，可通过 `ONE_DAY_DATABASE` 指定持久卷路径。不要将数据库加入版本控制或部署到临时文件系统；备份 SQLite 时须连同 WAL 正确处理，建议停止服务后备份整个 `data/` 目录。
+生产启动同样读取 `.env`，通过 `HOST`、`PORT` 指定监听地址，通过 `ONE_DAY_DATABASE` 指定持久卷路径。`ONE_DAY_ORIGIN` 必须与浏览器访问来源完全一致。不要将数据库加入版本控制或部署到临时文件系统；备份 SQLite 时须连同 WAL 正确处理，建议停止服务后备份整个 `data/` 目录。
 
 PWA manifest、Service Worker 和离线应用外壳只应以生产构建结果为准；安装能力通常需要 HTTPS 或 `localhost`。
 

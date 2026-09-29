@@ -2,15 +2,15 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { createAccountApi } from './api';
+import { loadServerConfig } from './config';
 
-if (!process.env.ONE_DAY_ORIGIN)
-  throw new Error(
-    '请设置 ONE_DAY_ORIGIN 为访问应用的完整来源，例如 https://todo.example.com',
-  );
-const origin = new URL(process.env.ONE_DAY_ORIGIN);
-if (origin.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(origin.hostname))
-  throw new Error('非本机部署必须使用 HTTPS');
-const api = createAccountApi({ secureCookies: origin.protocol === 'https:' });
+const config = loadServerConfig();
+const api = createAccountApi({
+  databasePath: config.databasePath,
+  origin: config.origin,
+  ...(config.adminPassword ? { adminPassword: config.adminPassword } : {}),
+  secureCookies: config.origin.startsWith('https://'),
+});
 const root = resolve('dist');
 const types: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -69,8 +69,8 @@ const server = createServer((req, res) => {
     res.writeHead(500).end('服务暂时不可用');
   });
 });
-server.listen(Number(process.env.PORT ?? 53028), process.env.HOST ?? '127.0.0.1', () =>
-  console.log(`One Day listening on ${process.env.PORT ?? 53028}`),
+server.listen(config.port, config.host, () =>
+  console.log(`One Day listening on ${config.host}:${config.port}`),
 );
 const close = () => {
   server.close(() => {

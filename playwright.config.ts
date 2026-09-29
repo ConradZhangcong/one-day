@@ -31,9 +31,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run build && npm run preview -- --host 127.0.0.1 --port 4173',
+    command: 'pnpm build && pnpm preview',
     port: 4173,
-    env: { ONE_DAY_DATABASE: 'test-results/accounts.sqlite' },
+    env: { ONE_DAY_CONFIG_FILE: 'tests/e2e/server.env' },
     reuseExistingServer: !process.env.CI,
   },
 });

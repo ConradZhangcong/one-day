@@ -1,12 +1,16 @@
 import type { Plugin } from 'vite';
 import { createAccountApi } from './api';
+import type { ServerConfig } from './config';
 
-export function accountApiPlugin(): Plugin {
+export function accountApiPlugin(config: ServerConfig): Plugin {
   return {
     name: 'one-day-account-api',
     configureServer(server) {
       const api = createAccountApi({
-        secureCookies: process.env.ONE_DAY_ORIGIN?.startsWith('https://') ?? false,
+        databasePath: config.databasePath,
+        origin: config.origin,
+        ...(config.adminPassword ? { adminPassword: config.adminPassword } : {}),
+        secureCookies: config.origin.startsWith('https://'),
       });
       server.middlewares.use('/api', (req, res) => {
         req.url = `/api${req.url ?? ''}`;
@@ -16,7 +20,10 @@ export function accountApiPlugin(): Plugin {
     },
     configurePreviewServer(server) {
       const api = createAccountApi({
-        secureCookies: process.env.ONE_DAY_ORIGIN?.startsWith('https://') ?? false,
+        databasePath: config.databasePath,
+        origin: config.origin,
+        ...(config.adminPassword ? { adminPassword: config.adminPassword } : {}),
+        secureCookies: config.origin.startsWith('https://'),
       });
       server.middlewares.use('/api', (req, res) => {
         req.url = `/api${req.url ?? ''}`;

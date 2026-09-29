@@ -7,7 +7,7 @@ import {
 } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname } from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { z } from 'zod';
 import {
@@ -105,10 +105,8 @@ export function createAccountApi(
     adminPassword?: string;
   } = {},
 ) {
-  const databasePath =
-    options.databasePath ??
-    process.env.ONE_DAY_DATABASE ??
-    resolve('data/one-day.sqlite');
+  const databasePath = options.databasePath;
+  if (!databasePath) throw new Error('数据库路径未配置');
   if (databasePath !== ':memory:')
     mkdirSync(dirname(databasePath), { recursive: true, mode: 0o700 });
   const db = new DatabaseSync(databasePath);
@@ -126,8 +124,8 @@ export function createAccountApi(
     db.exec('ALTER TABLE users ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0');
   const now = options.now ?? Date.now;
   const secureCookies = options.secureCookies ?? process.env.NODE_ENV === 'production';
-  const configuredOrigin = options.origin ?? process.env.ONE_DAY_ORIGIN;
-  const adminPassword = options.adminPassword ?? process.env.ONE_DAY_ADMIN_PASSWORD;
+  const configuredOrigin = options.origin;
+  const adminPassword = options.adminPassword;
   const adminSessions = new Map<string, number>();
   const attempts = new Map<string, { count: number; until: number }>();
   const queues = new Map<string, Promise<unknown>>();

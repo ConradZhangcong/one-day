@@ -22,7 +22,7 @@
     "test:performance": "vitest run --config vitest.performance.config.ts",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
     "test:pwa": "pnpm build && node scripts/verify-pwa-build.mjs",
-    "start": "node --env-file=.env dist-server/main.js"
+    "start": "node dist-server/main.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
